@@ -88,9 +88,26 @@ repositories {
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
     }
+    // Groundworks and libworks-runtime, from the local maven only, where their releases publish them.
+    // CI builds their tags there first.
+    mavenLocal {
+        content {
+            includeModule 'io.github.5thlayer', 'groundworks'
+            includeModule 'io.github.5thlayer', 'libworks-runtime'
+        }
+    }
 }
 
 dependencies {
+    // Required, and never jar-in-jar: every Consumer and the Pack share one Groundworks. The least the
+    // Library accepts at load is the one it is built against, capped below the next minor (0.6).
+    implementation "io.github.5thlayer:groundworks:$groundworks_version"
+
+    // Nested by jar-in-jar, so players install nothing more; FML loads the newest nested copy in range.
+    jarJar(implementation('io.github.5thlayer:libworks-runtime')) {
+        version { strictly "[$libworks_runtime_version,1.0)"; prefer libworks_runtime_version }
+    }
+
     // Both soft: their code is reached only from classes that load when the mod is present.
     compileOnly(ftbChunks) { transitive = false }
     compileOnly(ftbLibrary) { transitive = false }
@@ -133,6 +150,7 @@ tasks.named('check') { dependsOn checkJarLicensing }
 def modProperties = [
         mod_id: mod_id, mod_name: mod_name, mod_description: mod_description, version: mod_version,
         minecraft_version: minecraft_version, neoforge_version: neoforge_version,
+        groundworks_version: groundworks_version, libworks_runtime_version: libworks_runtime_version,
 ]
 processResources {
     inputs.properties modProperties
