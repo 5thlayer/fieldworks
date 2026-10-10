@@ -13,6 +13,7 @@ import io.github._5thlayer.groundworks.FootprintItem;
 import io.github._5thlayer.groundworks.FootprintPartBlock;
 import io.github._5thlayer.groundworks.FootprintShape;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -23,6 +24,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -44,6 +46,7 @@ public final class Harvesters {
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Fieldworks.MOD_ID);
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, Fieldworks.MOD_ID);
+    private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, Fieldworks.MOD_ID);
 
     private static final Map<TierBlock, Footprint> FOOTPRINTS = new EnumMap<>(TierBlock.class);
     private static final Map<TierBlock, DeferredBlock<HarvesterBlock>> BLOCK_BY_TIER = new EnumMap<>(TierBlock.class);
@@ -67,6 +70,9 @@ public final class Harvesters {
             BLOCK_ENTITIES.register("harvester", () -> new BlockEntityType<>(HarvesterBlockEntity::new,
                     BLOCK_BY_TIER.values().stream().map(Supplier::get).toArray(Block[]::new)));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<HarvesterMenu>> MENU =
+            MENUS.register("harvester", () -> IMenuTypeExtension.create(HarvesterMenu::new));
+
     private Harvesters() {
     }
 
@@ -79,6 +85,7 @@ public final class Harvesters {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         BLOCK_ENTITIES.register(modBus);
+        MENUS.register(modBus);
         HarvestRecipes.register(modBus);
         modBus.addListener(Harvesters::registerCapabilities);
         modBus.addListener(Harvesters::addToCreativeTabs);

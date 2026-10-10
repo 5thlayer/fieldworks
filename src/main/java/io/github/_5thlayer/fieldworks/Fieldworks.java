@@ -8,8 +8,10 @@ import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.fluid.client.CrudeOilClient;
 import io.github._5thlayer.fieldworks.gametest.FieldworksGameTests;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
+import io.github._5thlayer.fieldworks.harvester.client.HarvesterClient;
 import io.github._5thlayer.fieldworks.marker.MarkerEvents;
 import io.github._5thlayer.fieldworks.marker.client.PatchMapClient;
+import io.github._5thlayer.fieldworks.network.HoldRecipePacket;
 import io.github._5thlayer.fieldworks.network.PatchMarkersPacket;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.worldgen.FieldworksWorldgen;
@@ -43,6 +45,7 @@ public final class Fieldworks {
         NeoForge.EVENT_BUS.addListener(MarkerEvents::onLogout);
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
             CrudeOilClient.register(modBus);
+            HarvesterClient.register(modBus);
             PatchMapClient.register();
         }
         FieldworksGameTests.register(modBus);
@@ -50,6 +53,7 @@ public final class Fieldworks {
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
         event.registrar(NETWORK_VERSION)
-                .playToClient(PatchMarkersPacket.TYPE, PatchMarkersPacket.STREAM_CODEC, PatchMarkersPacket::handle);
+                .playToClient(PatchMarkersPacket.TYPE, PatchMarkersPacket.STREAM_CODEC, PatchMarkersPacket::handle)
+                .playToServer(HoldRecipePacket.TYPE, HoldRecipePacket.STREAM_CODEC, HoldRecipePacket::handle);
     }
 }

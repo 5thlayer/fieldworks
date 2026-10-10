@@ -7,6 +7,8 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -16,6 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -59,6 +62,15 @@ public final class HarvesterBlock extends HorizontalDirectionalBlock implements 
             return null;
         }
         return (world, pos, blockState, entity) -> ((HarvesterBlockEntity) entity).serverTick((ServerLevel) world);
+    }
+
+    /** Opens the Harvester's menu; Groundworks' parts forward a click on any of them here. */
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof HarvesterBlockEntity harvester) {
+            player.openMenu(harvester, pos);
+        }
+        return InteractionResult.SUCCESS;
     }
 
     /** Going takes the footprint's parts with it. */
