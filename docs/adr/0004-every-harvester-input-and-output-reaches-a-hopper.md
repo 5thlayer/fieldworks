@@ -15,6 +15,10 @@ so one hopper feeding mud bottles and empty buckets together fills both slots. E
 containers join the result in the **output buffer**, which the Harvester pushes out of its output face
 into whatever item handler is there. It never drops items in the world.
 
+The product tank is pushed the same way: crude goes into any fluid handler at the output face, since
+some pipe mods' pipes (Pipeworks') pull from nothing. The Drilling Fluid tank stays passive, because
+whatever supplies it already pushes.
+
 Crude oil therefore gets a bucket, `fieldworks:crude_oil_bucket`, superseding ADR 0002's "no
 bucket": without one, a world with no pipe mod could pump crude and never move it.
 
