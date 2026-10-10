@@ -57,8 +57,8 @@ final class HarvestRecipeTests {
                 .orElseThrow(() -> helper.assertionException("the iron_nuggets recipe did not load"));
         helper.assertTrue(nuggets.source().contains(FieldworksRegistries.ore(OreResource.IRON).get().builtInRegistryHolder()),
                 "the recipe's source does not hold iron ore");
-        helper.assertValueEqual(nuggets.result().item().value(), Items.IRON_NUGGET, "the recipe's result item");
-        helper.assertValueEqual(nuggets.result().count(), 3, "the recipe's result count");
+        helper.assertValueEqual(nuggets.result().stack().getItem(), Items.IRON_NUGGET, "the recipe's result item");
+        helper.assertValueEqual(nuggets.result().stack().getCount(), 3, "the recipe's result count");
         helper.assertValueEqual(nuggets.duration(), 40, "the recipe's duration");
         helper.assertValueEqual(nuggets.minimumTier().orElseThrow(), TierBlock.HARVESTER_1.id(), "the recipe's minimum tier");
         helper.assertFalse(nuggets.replacesDefault(), "replaces_default is false when omitted");

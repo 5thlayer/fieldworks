@@ -12,10 +12,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.mojang.datafixers.util.Either;
+import io.netty.buffer.ByteBuf;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.YieldCondition;
+import io.github._5thlayer.fieldworks.oil.OilWellBlock;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryCodecs;
@@ -45,6 +49,11 @@ import net.minecraft.world.level.material.Fluid;
  * <p>{@code drilling_fluid}, optional, is a fluid, fluid tag or list of fluids and the mB an operation takes of it
  * from the Harvester's Drilling Fluid tank; only a Held recipe takes it (#11).
  *
+ * <p>{@code result} is an item stack, or for an oil well {@code {"crude_oil": <mB>}}, the crude one operation
+ * pumps in place of the well's own cycle's yield (the cycle still takes its step off the well, ADR 0002).
+ * {@code yield_condition}, optional and for a well, is {@code above_floor} or {@code at_floor}: the recipe works
+ * a well only in that state, and with none it works a well either way (#12).
+ *
  * <p>{@code minimum_tier} names a Harvester block, compared by the tier's rank (ADR 0005), and
  * {@code replaces_default}, false when omitted, removes its sources' Default recipes (a fluid-only resource).
  *
@@ -53,8 +62,38 @@ import net.minecraft.world.level.material.Fluid;
  *
  * <p>{@link #matches} is false: nothing looks one up by its inputs. A Harvester reads them by id.
  */
-public record HarvestRecipe(HolderSet<Block> source, ItemStackTemplate result, int duration,
-        Optional<Identifier> minimumTier, boolean replacesDefault, Optional<FluidInput> drillingFluid) implements Recipe<RecipeInput> {
+public record HarvestRecipe(HolderSet<Block> source, Result result, int duration,
+        Optional<Identifier> minimumTier, boolean replacesDefault, Optional<FluidInput> drillingFluid,
+        Optional<YieldCondition> yieldCondition) implements Recipe<RecipeInput> {
+
+    /**
+     * What one operation yields: an item stack, or crude oil in mB. Exactly one of them: {@code crude} is 0 for an item.
+     */
+    public record Result(Optional<ItemStackTemplate> item, int crude) {
+
+        /** Crude is an object, {@code {"crude_oil": 10}}; anything else is read as an item stack. */
+        private static final Codec<Result> CODEC = Codec.either(Codec.INT.fieldOf("crude_oil").codec(), ItemStackTemplate.CODEC).xmap(
+                either -> either.map(Result::crude, Result::of),
+                result -> result.item().isPresent() ? Either.right(result.item().get()) : Either.left(result.crude));
+
+        private static final StreamCodec<RegistryFriendlyByteBuf, Result> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.optional(ItemStackTemplate.STREAM_CODEC), Result::item,
+                ByteBufCodecs.VAR_INT, Result::crude,
+                Result::new);
+
+        public static Result of(ItemStackTemplate item) {
+            return new Result(Optional.of(item), 0);
+        }
+
+        public static Result crude(int millibuckets) {
+            return new Result(Optional.empty(), millibuckets);
+        }
+
+        /** The item stack, or an empty stack for crude. */
+        public ItemStack stack() {
+            return item.map(ItemStackTemplate::create).orElse(ItemStack.EMPTY);
+        }
+    }
 
     /**
      * The Drilling Fluid a recipe consumes: a fluid, a fluid tag or a list of fluids, and the mB one operation
@@ -96,7 +135,7 @@ public record HarvestRecipe(HolderSet<Block> source, ItemStackTemplate result, i
 
     @Override
     public ItemStack assemble(RecipeInput input) {
-        return result.create();
+        return result.stack();
     }
 
     /** A Harvest Recipe has no item ingredient, so it is special: vanilla warns at each load of one that isn't. */
@@ -149,7 +188,7 @@ public record HarvestRecipe(HolderSet<Block> source, ItemStackTemplate result, i
         Optional<OperationChoice.DrillingFluid> fluid = drillingFluid.map(input -> new OperationChoice.DrillingFluid(
                 input.serving().stream().flatMap(holder -> holder.unwrapKey().stream()).map(key -> key.identifier().toString())
                         .collect(Collectors.toUnmodifiableSet()), input.amount()));
-        return new OperationChoice.Recipe(id.toString(), blocks, tags, duration, minimum, replacesDefault, fluid);
+        return new OperationChoice.Recipe(id.toString(), blocks, tags, duration, minimum, replacesDefault, fluid, yieldCondition);
     }
 
     private static DataResult<HarvestRecipe> check(HarvestRecipe recipe) {
@@ -163,25 +202,51 @@ public record HarvestRecipe(HolderSet<Block> source, ItemStackTemplate result, i
             return DataResult.error(() -> "a Harvest Recipe's minimum_tier must be a Harvester block, one of "
                     + Stream.of(TierBlock.values()).map(tier -> tier.id().toString()).toList() + ", not " + recipe.minimumTier.get());
         }
+        if (recipe.result.item().isEmpty() && recipe.result.crude() < 1) {
+            return DataResult.error(() -> "a Harvest Recipe's crude_oil result must be at least 1 mB, not " + recipe.result.crude());
+        }
+        // A block tag is read after the load, so only a source named block by block can be checked here (#12).
+        List<Holder<Block>> named = recipe.source.unwrap().right().orElse(List.of());
+        boolean wells = named.stream().anyMatch(block -> block.value() instanceof OilWellBlock);
+        boolean others = named.stream().anyMatch(block -> !(block.value() instanceof OilWellBlock));
+        if (recipe.result.item().isEmpty() && others) {
+            return DataResult.error(() -> "a Harvest Recipe's crude result is for an oil well, and its source names another block");
+        }
+        if (recipe.result.item().isPresent() && wells) {
+            return DataResult.error(() -> "a Harvest Recipe's source names an oil well, which yields crude_oil, not an item");
+        }
+        if (recipe.yieldCondition.isPresent() && others) {
+            return DataResult.error(() -> "a Harvest Recipe's yield_condition is for an oil well, and its source names another block");
+        }
         return DataResult.success(recipe);
     }
 
+    private static final Codec<YieldCondition> YIELD_CODEC = Codec.STRING.comapFlatMap(
+            name -> YieldCondition.byId(name).map(DataResult::success).orElseGet(() -> DataResult.error(
+                    () -> "a Harvest Recipe's yield_condition must be above_floor or at_floor, not " + name)),
+            YieldCondition::id);
+
+    private static final StreamCodec<ByteBuf, YieldCondition> YIELD_STREAM_CODEC =
+            ByteBufCodecs.STRING_UTF8.map(name -> YieldCondition.byId(name).orElseThrow(), YieldCondition::id);
+
     static final MapCodec<HarvestRecipe> CODEC = RecordCodecBuilder.<HarvestRecipe>mapCodec(instance -> instance.group(
             RegistryCodecs.homogeneousList(Registries.BLOCK).fieldOf("source").forGetter(HarvestRecipe::source),
-            ItemStackTemplate.CODEC.fieldOf("result").forGetter(HarvestRecipe::result),
+            Result.CODEC.fieldOf("result").forGetter(HarvestRecipe::result),
             Codec.INT.fieldOf("duration").forGetter(HarvestRecipe::duration),
             Identifier.CODEC.optionalFieldOf("minimum_tier").forGetter(HarvestRecipe::minimumTier),
             Codec.BOOL.optionalFieldOf("replaces_default", false).forGetter(HarvestRecipe::replacesDefault),
-            FluidInput.CODEC.optionalFieldOf("drilling_fluid").forGetter(HarvestRecipe::drillingFluid)
+            FluidInput.CODEC.optionalFieldOf("drilling_fluid").forGetter(HarvestRecipe::drillingFluid),
+            YIELD_CODEC.optionalFieldOf("yield_condition").forGetter(HarvestRecipe::yieldCondition)
     ).apply(instance, HarvestRecipe::new)).flatXmap(HarvestRecipe::check, HarvestRecipe::check);
 
     static final StreamCodec<RegistryFriendlyByteBuf, HarvestRecipe> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.holderSet(Registries.BLOCK), HarvestRecipe::source,
-            ItemStackTemplate.STREAM_CODEC, HarvestRecipe::result,
+            Result.STREAM_CODEC, HarvestRecipe::result,
             ByteBufCodecs.VAR_INT, HarvestRecipe::duration,
             ByteBufCodecs.optional(Identifier.STREAM_CODEC), HarvestRecipe::minimumTier,
             ByteBufCodecs.BOOL, HarvestRecipe::replacesDefault,
             ByteBufCodecs.optional(FluidInput.STREAM_CODEC), HarvestRecipe::drillingFluid,
+            ByteBufCodecs.optional(YIELD_STREAM_CODEC), HarvestRecipe::yieldCondition,
             HarvestRecipe::new);
 
     static RecipeSerializer<HarvestRecipe> serializer() {

@@ -19,6 +19,7 @@ import io.github._5thlayer.fieldworks.harvester.OperationChoice.Operation;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Recipe;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Tank;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.YieldCondition;
 import org.junit.jupiter.api.Test;
 
 /** The choice of the Harvester's next operation over the layer under its footprint. */
@@ -30,6 +31,7 @@ class OperationChoiceTest {
     private static final Source DIAMOND = Source.harvestable("minecraft:diamond_ore", Set.of("c:ores"));
     private static final Source NONE = Source.NONE;
     private static final Source WELL = Source.well("fieldworks:oil_well");
+    private static final Source FLOORED_WELL = Source.flooredWell("fieldworks:oil_well");
 
     @Test
     void oreBlocksAreWorkedInTurnInTheLayersOrder() {
@@ -407,6 +409,83 @@ class OperationChoiceTest {
 
         assertEquals(new OperationChoice.Idle(IdleReason.OUTPUT_FULL),
                 OperationChoice.choose(layer, 0, List.of(), Optional.empty(), Machine.ready(1).withFits(operation -> false)));
+    }
+
+    private static Recipe wellRecipe(Optional<YieldCondition> condition, boolean replacesDefault) {
+        return new Recipe("test:crude", Set.of("fieldworks:oil_well"), Set.of(), 20, OptionalInt.empty(), replacesDefault,
+                Optional.empty(), condition);
+    }
+
+    @Test
+    void aHeldRecipeConditionedAtTheFloorWorksAWellAtItsFloor() {
+        List<Source> layer = List.of(FLOORED_WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe held = wellRecipe(Optional.of(YieldCondition.AT_FLOOR), false);
+
+        Operation operation = (Operation) OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), 1);
+
+        assertEquals(held, operation.recipe().orElseThrow());
+    }
+
+    @Test
+    void aHeldRecipeConditionedAtTheFloorIdlesOnAWellAboveItAndNeverFallsBackToTheDefault() {
+        List<Source> layer = List.of(WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe held = wellRecipe(Optional.of(YieldCondition.AT_FLOOR), false);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_MATCHING),
+                OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), 1));
+    }
+
+    @Test
+    void aHeldRecipeConditionedAboveTheFloorWorksAWellAboveItAndIdlesOnAFlooredOne() {
+        Recipe held = wellRecipe(Optional.of(YieldCondition.ABOVE_FLOOR), false);
+        List<Source> above = List.of(WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        List<Source> floored = List.of(FLOORED_WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(held, ((Operation) OperationChoice.choose(above, 0, List.of(held), Optional.of(held), 1)).recipe().orElseThrow());
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_MATCHING),
+                OperationChoice.choose(floored, 0, List.of(held), Optional.of(held), 1));
+    }
+
+    @Test
+    void aHeldRecipeWithNoYieldConditionWorksAWellAboveItsFloorAndAtIt() {
+        Recipe held = wellRecipe(Optional.empty(), false);
+
+        for (Source well : List.of(WELL, FLOORED_WELL)) {
+            List<Source> layer = List.of(well, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+            assertEquals(Operation.class, OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), 1).getClass());
+        }
+    }
+
+    @Test
+    void aYieldConditionedRecipeNotHeldNeverRunsAndALoneWellIsPumpedByItsDefault() {
+        List<Source> layer = List.of(FLOORED_WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe atFloor = wellRecipe(Optional.of(YieldCondition.AT_FLOOR), false);
+
+        Operation operation = (Operation) OperationChoice.choose(layer, 0, List.of(atFloor), Optional.empty(), 1);
+
+        assertEquals(Optional.empty(), operation.recipe());
+        assertEquals(OperationChoice.WELL_PUMP_TICKS, operation.ticks());
+    }
+
+    @Test
+    void aRecipeThatReplacesTheDefaultReplacesItOnlyWhereItsYieldConditionHolds() {
+        Recipe replaces = wellRecipe(Optional.of(YieldCondition.AT_FLOOR), true);
+        List<Source> floored = List.of(FLOORED_WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        List<Source> above = List.of(WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_TO_WORK),
+                OperationChoice.choose(floored, 0, List.of(replaces), Optional.empty(), 1));
+        assertEquals(Operation.class, OperationChoice.choose(above, 0, List.of(replaces), Optional.empty(), 1).getClass());
+    }
+
+    @Test
+    void aYieldConditionMatchesNoSourceButAWell() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe odd = new Recipe("test:odd", Set.of("fieldworks:iron_ore"), Set.of(), 20, OptionalInt.empty(), false,
+                Optional.empty(), Optional.of(YieldCondition.ABOVE_FLOOR));
+
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_MATCHING),
+                OperationChoice.choose(layer, 0, List.of(odd), Optional.of(odd), 1));
     }
 
     private static List<Integer> heldPositions(List<Source> layer, Recipe held, int count) {

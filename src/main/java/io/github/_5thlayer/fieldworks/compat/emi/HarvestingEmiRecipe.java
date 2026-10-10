@@ -10,6 +10,7 @@ import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
 import io.github._5thlayer.fieldworks.compat.HarvestRecipeLines;
+import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 
 /** One Harvest Recipe, written or Default, as EMI draws it: the source blocks, an arrow timed to it, the result. */
@@ -21,11 +22,16 @@ final class HarvestingEmiRecipe extends BasicEmiRecipe {
     HarvestingEmiRecipe(EmiRecipeCategory category, HarvestRecipeView view) {
         super(category, view.id(), HarvestRecipeLines.WIDTH, HarvestRecipeLines.HEIGHT);
         this.view = view;
-        inputs.add(EmiIngredient.of(view.sources().stream().map(EmiStack::of).toList()));
+        inputs.add(EmiIngredient.of(view.sourceIcons().stream().map(EmiStack::of).toList()));
         if (!view.fluids().isEmpty()) {
             inputs.add(EmiIngredient.of(view.fluids().stream().map(fluid -> (EmiIngredient) EmiStack.of(fluid, view.fluidAmount())).toList()));
         }
-        outputs.add(EmiStack.of(view.result()));
+        // Crude for a well, in mB; a harvestable block's loot is the loot table's, so it lists none (#12).
+        if (view.crude() > 0) {
+            outputs.add(EmiStack.of(CrudeOil.SOURCE.get(), view.crude()));
+        } else if (!view.breaksForLoot()) {
+            outputs.add(EmiStack.of(view.result()));
+        }
     }
 
     boolean isDefault() {
@@ -41,8 +47,9 @@ final class HarvestingEmiRecipe extends BasicEmiRecipe {
         }
         widgets.addTexture(EmiTexture.EMPTY_ARROW, 24 + shift, 5);
         widgets.addFillingArrow(24 + shift, 5, Math.max(view.duration(), 1) * 50);
-        widgets.addSlot(outputs.get(0), 54 + shift, 4).recipeContext(this);
+        widgets.addSlot(outputs.isEmpty() ? EmiStack.EMPTY : outputs.get(0), 54 + shift, 4).recipeContext(this);
         widgets.addText(HarvestRecipeLines.seconds(view), 0, 24, 0xFF808080, false);
         widgets.addText(HarvestRecipeLines.note(view), 0, 35, 0xFF808080, false);
+        widgets.addText(HarvestRecipeLines.detail(view), 0, 46, 0xFF808080, false);
     }
 }

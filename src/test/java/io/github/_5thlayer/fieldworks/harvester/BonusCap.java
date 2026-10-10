@@ -52,6 +52,10 @@ final class BonusCap {
                         || (recipe.has("replaces_default") && recipe.get("replaces_default").getAsBoolean())) {
                     continue;
                 }
+                if (recipe.get("result").isJsonObject() && !recipe.get("result").getAsJsonObject().has("id")) {
+                    // Crude in mB for a well (#12): a well's Default yield depends on the well, so there is none to judge it by.
+                    continue;
+                }
                 String item = itemOf(recipe.get("result"));
                 int count = countOf(recipe.get("result"));
                 for (String block : blocks(root, recipe.get("source"))) {
