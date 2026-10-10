@@ -74,10 +74,10 @@ public final class OperationChoice {
                     if (!held.get().drillingFluid().map(machine.tank()::holds).orElse(true)) {
                         return new Idle(IdleReason.NO_FLUID);
                     }
-                    return machine.run(new Operation(position, held.get().duration(), next, held));
+                    return machine.run(new Operation(position, held.get().duration(), next, held), source);
                 }
             } else if (recipes.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
-                return machine.run(new Operation(position, defaultTicks(source.kind()), next, Optional.empty()));
+                return machine.run(new Operation(position, defaultTicks(source.kind()), next, Optional.empty()), source);
             }
         }
         return new Idle(held.isPresent() ? IdleReason.NOTHING_MATCHING : IdleReason.NOTHING_TO_WORK);
@@ -111,10 +111,13 @@ public final class OperationChoice {
             return new Machine(tierRank, tank, fits, powered);
         }
 
-        /** The operation, or why the Harvester cannot run it now: a result with nowhere to go comes before power. */
-        Choice run(Operation operation) {
+        /**
+         * The operation on {@code source}, or why the Harvester cannot run it now: a result with nowhere to go comes
+         * before power. A well's crude goes to the product tank, every other result to the output buffer (#13).
+         */
+        Choice run(Operation operation, Source source) {
             if (!fits.test(operation)) {
-                return new Idle(IdleReason.OUTPUT_FULL);
+                return new Idle(source.kind() == Kind.WELL ? IdleReason.PRODUCT_TANK_FULL : IdleReason.OUTPUT_FULL);
             }
             return powered ? operation : new Idle(IdleReason.NO_POWER);
         }
@@ -231,7 +234,9 @@ public final class OperationChoice {
         /** No tick of power to spend: no burn left and no fuel to light. */
         NO_POWER,
         /** The output buffer has no room for the operation's result. */
-        OUTPUT_FULL
+        OUTPUT_FULL,
+        /** The product tank has no room for another cycle of the well's crude (#13). */
+        PRODUCT_TANK_FULL
     }
 
     /** What {@link #choose} returns: an operation, or why there is none. */
