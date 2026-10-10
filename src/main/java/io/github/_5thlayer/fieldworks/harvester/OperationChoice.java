@@ -244,6 +244,11 @@ public final class OperationChoice {
      * for a Default recipe.
      */
     public record Operation(int position, int ticks, int nextCursor, Optional<Recipe> recipe) implements Choice {
+
+        /** The Drilling Fluid the operation consumes when it completes: only a Held recipe's, never a Default's (#11). */
+        public Optional<DrillingFluid> drillingFluid() {
+            return recipe.flatMap(Recipe::drillingFluid);
+        }
     }
 
     public record Idle(IdleReason reason) implements Choice {

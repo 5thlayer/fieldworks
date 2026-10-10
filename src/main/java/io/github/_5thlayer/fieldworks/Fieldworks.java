@@ -5,7 +5,9 @@ package io.github._5thlayer.fieldworks;
 
 import io.github._5thlayer.fieldworks.config.FieldworksConfig;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
+import io.github._5thlayer.fieldworks.fluid.DrillingMud;
 import io.github._5thlayer.fieldworks.fluid.client.CrudeOilClient;
+import io.github._5thlayer.fieldworks.fluid.client.DrillingMudClient;
 import io.github._5thlayer.fieldworks.gametest.FieldworksGameTests;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.client.HarvesterClient;
@@ -36,6 +38,7 @@ public final class Fieldworks {
         FieldworksConfig.register(container);
         FieldworksRegistries.register(modBus);
         CrudeOil.register(modBus);
+        DrillingMud.register(modBus);
         Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);
         modBus.addListener(Fieldworks::registerPayloads);
@@ -45,6 +48,7 @@ public final class Fieldworks {
         NeoForge.EVENT_BUS.addListener(MarkerEvents::onLogout);
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
             CrudeOilClient.register(modBus);
+            DrillingMudClient.register(modBus);
             HarvesterClient.register(modBus);
             PatchMapClient.register();
         }
