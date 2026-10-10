@@ -1,0 +1,7 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "fieldworks:uranium_ore",
+  "result": "fieldworks:raw_uranium",
+  "duration": 20,
+  "replaces_default": true
+}

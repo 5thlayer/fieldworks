@@ -1,0 +1,6 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "#c:ores",
+  "result": "minecraft:cobblestone",
+  "duration": 100
+}

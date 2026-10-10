@@ -162,7 +162,7 @@ final class HarvesterTests {
         helper.succeed();
     }
 
-    private static void tick(GameTestHelper helper, HarvesterBlockEntity machine, int ticks) {
+    static void tick(GameTestHelper helper, HarvesterBlockEntity machine, int ticks) {
         for (int i = 0; i < ticks; i++) {
             machine.serverTick(helper.getLevel());
         }
@@ -183,7 +183,11 @@ final class HarvesterTests {
      * initial amount. The chunk's other draws are kept: tests stand side by side and may share it.
      */
     private static int ore(GameTestHelper helper, BlockPos rel, int drawn) {
-        OreBlock ore = FieldworksRegistries.ore(OreResource.IRON).get();
+        return ore(helper, OreResource.IRON, rel, drawn);
+    }
+
+    static int ore(GameTestHelper helper, OreResource resource, BlockPos rel, int drawn) {
+        OreBlock ore = FieldworksRegistries.ore(resource).get();
         helper.setBlock(rel, ore);
         BlockPos pos = helper.absolutePos(rel);
         if (drawn > 0) {
@@ -195,7 +199,7 @@ final class HarvesterTests {
         return OreMining.initialAmount(helper.getLevel(), ore, pos);
     }
 
-    private static int remaining(GameTestHelper helper, BlockPos rel) {
+    static int remaining(GameTestHelper helper, BlockPos rel) {
         BlockPos pos = helper.absolutePos(rel);
         if (!(helper.getLevel().getBlockState(pos).getBlock() instanceof OreBlock ore)) {
             return 0;
@@ -203,7 +207,7 @@ final class HarvesterTests {
         return OreMining.remaining(helper.getLevel(), pos, ore);
     }
 
-    private static int count(GameTestHelper helper, BlockPos chest, Item item) {
+    static int count(GameTestHelper helper, BlockPos chest, Item item) {
         Container container = helper.getBlockEntity(chest, ChestBlockEntity.class);
         int count = 0;
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
@@ -223,7 +227,7 @@ final class HarvesterTests {
      * test has set: a click on air would place it there instead. A footprint faces the player who lays it, and
      * that player is returned.
      */
-    private static FakePlayer place(GameTestHelper helper, Direction facing) {
+    static FakePlayer place(GameTestHelper helper, Direction facing) {
         FakePlayer player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "fieldworks_harvester"));
         player.setGameMode(GameType.SURVIVAL);
         Vec3 feet = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(0, 1, 0)));

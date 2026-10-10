@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.fieldworks.harvester;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.mojang.logging.LogUtils;
@@ -35,6 +36,29 @@ public final class HarvesterTiers extends SimpleJsonResourceReloadListener<Harve
     /** The tier a Harvester block works at, or null when its file is missing or was refused. */
     public static @Nullable HarvesterTier get(TierBlock block) {
         return loaded.get(block.id());
+    }
+
+    /** The tiers loaded now: a new map at each reload, so it tells a reload from none. */
+    static Map<Identifier, HarvesterTier> snapshot() {
+        return loaded;
+    }
+
+    /**
+     * Swaps one tier's figures until the result is closed, for a game test that must run a tier at a speed the
+     * shipped file doesn't give. The test runs it inside one server tick, so no other test sees the swap.
+     */
+    public static Swap swapped(TierBlock block, HarvesterTier tier) {
+        Map<Identifier, HarvesterTier> before = loaded;
+        Map<Identifier, HarvesterTier> during = new HashMap<>(before);
+        during.put(block.id(), tier);
+        loaded = Map.copyOf(during);
+        return () -> loaded = before;
+    }
+
+    /** Puts the tiers back. */
+    public interface Swap extends AutoCloseable {
+        @Override
+        void close();
     }
 
     static void addListener(AddServerReloadListenersEvent event) {
