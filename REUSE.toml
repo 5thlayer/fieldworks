@@ -17,6 +17,7 @@ path = [
     "src/main/resources/**/*.nbt",
     "LICENSE",
     "NOTICE",
+    "publish/summary.txt",
     ".github/**",
     "src/main/resources/assets/fieldworks/textures/block/ore/stone_stage*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/sulfur_stage*.png",
@@ -44,5 +45,11 @@ path = [
     "src/main/resources/assets/fieldworks/textures/block/fluid/crude_oil.png",
     "src/main/resources/assets/fieldworks/textures/block/fluid/crude_oil.png.mcmeta",
 ]
+SPDX-FileCopyrightText = ["Malcolm Riley", "2026 5thlayer"]
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Temporary cover and icon for mod pages, drawn from the ore sprites.
+[[annotations]]
+path = ["publish/*.png"]
 SPDX-FileCopyrightText = ["Malcolm Riley", "2026 5thlayer"]
 SPDX-License-Identifier = "CC-BY-4.0"
