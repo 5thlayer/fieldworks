@@ -7,6 +7,7 @@ import io.github._5thlayer.fieldworks.config.FieldworksConfig;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.fluid.client.CrudeOilClient;
 import io.github._5thlayer.fieldworks.gametest.FieldworksGameTests;
+import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.marker.MarkerEvents;
 import io.github._5thlayer.fieldworks.marker.client.PatchMapClient;
 import io.github._5thlayer.fieldworks.network.PatchMarkersPacket;
@@ -20,7 +21,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
-/** The Library's entry point: ore patches, oil wells and crude oil, and their map markers. */
+/** The Library's entry point: ore patches, oil wells and crude oil, their map markers, and the Harvester. */
 @Mod(Fieldworks.MOD_ID)
 public final class Fieldworks {
 
@@ -33,6 +34,7 @@ public final class Fieldworks {
         FieldworksConfig.register(container);
         FieldworksRegistries.register(modBus);
         CrudeOil.register(modBus);
+        Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);
         modBus.addListener(Fieldworks::registerPayloads);
         NeoForge.EVENT_BUS.addListener(OreMining::onBreak);

@@ -6,6 +6,8 @@
   "block.fieldworks.uranium_ore": "Uranium Ore Patch",
   "block.fieldworks.sulfur_ore": "Sulfur Patch",
   "block.fieldworks.oil_well": "Oil Well",
+  "block.fieldworks.harvester_1": "Burner Harvester",
+  "block.fieldworks.harvester_1_part": "Burner Harvester",
   "block.fieldworks.crude_oil": "Crude Oil",
   "fluid_type.fieldworks.crude_oil": "Crude Oil",
   "item.fieldworks.raw_uranium": "Raw Uranium",
