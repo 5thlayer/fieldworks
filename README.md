@@ -1,8 +1,16 @@
 ![Fieldworks](https://raw.githubusercontent.com/5thlayer/fieldworks/main/publish/fieldworks-cover.png)
 
-Fieldworks makes resources something you find, claim and work, the way a factory game does: ore comes in **patches** that run down as you mine them, oil comes from **wells** that never run dry, and the **Harvester** works both. It sits beside vanilla's own ores rather than replacing them.
 
-**NeoForge, Minecraft 26.1.2 only.** Fieldworks is early work, so please report any issues you find on [GitHub](https://github.com/5thlayer/fieldworks/issues).
+Fieldworks adds a new way to gather resources less wandering around looking for them. Ore comes in **patches** that run down as you mine them, and crude oil comes from **wells** that never run dry. If hand-mining gets tedious, you can craft a **Harvester** that does all the hard work. Vanilla ore still generates as usual; the patches come on top of it.
+
+## Why?
+
+I wanted Factorio's ore patches in modded Minecraft.
+
+I also wanted endgame mining that doesn’t mean strip-mining whole chunks. Patches get bigger the further out you go, so when a base needs more ore, you build out to a richer patch. Oil wells never run dry.
+
+
+**NeoForge, Minecraft 26.1.2 only.** Fieldworks is still young, so please report anything odd on [GitHub](https://github.com/5thlayer/fieldworks/issues).
 
 ## Features
 
