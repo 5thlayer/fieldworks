@@ -51,6 +51,10 @@ public final class FieldworksGameTests {
         var environment = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf(List.of()));
         var tests = new Registrar(event, environment);
         LoadTests.register(tests);
+        DataTests.register(tests);
+        OutfieldDiscTests.register(tests);
+        OilFieldTests.register(tests);
+        HandMiningTests.register(tests);
     }
 
     private static Identifier id(String path) {
