@@ -13,7 +13,8 @@ import net.minecraft.resources.Identifier;
  * {@code data/<ns>/harvester_tier/<path>.json}, which gives every figure; its name comes from lang.
  */
 public enum TierBlock {
-    HARVESTER_1;
+    HARVESTER_1,
+    HARVESTER_2;
 
     /** The block and item name, {@code harvester_1}. */
     public String blockName() {

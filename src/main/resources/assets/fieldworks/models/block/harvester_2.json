@@ -1,0 +1,158 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "side": "minecraft:block/iron_block",
+    "top": "minecraft:block/observer_top",
+    "front": "minecraft:block/dropper_front_vertical",
+    "bottom": "minecraft:block/smooth_stone",
+    "particle": "minecraft:block/iron_block"
+  },
+  "loader": "neoforge:composite",
+  "children": {
+    "lower": {
+      "textures": {
+        "side": "minecraft:block/iron_block",
+        "top": "minecraft:block/observer_top",
+        "front": "minecraft:block/dropper_front_vertical",
+        "bottom": "minecraft:block/smooth_stone"
+      },
+      "elements": [
+        {
+          "from": [
+            -16,
+            0,
+            -16
+          ],
+          "to": [
+            32,
+            32,
+            32
+          ],
+          "faces": {
+            "down": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#bottom"
+            },
+            "north": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#front"
+            },
+            "south": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#side"
+            },
+            "east": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#side"
+            },
+            "west": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#side"
+            }
+          }
+        }
+      ]
+    },
+    "upper": {
+      "textures": {
+        "side": "minecraft:block/iron_block",
+        "top": "minecraft:block/observer_top",
+        "front": "minecraft:block/dropper_front_vertical",
+        "bottom": "minecraft:block/smooth_stone"
+      },
+      "transform": {
+        "translation": [
+          0,
+          1,
+          0
+        ]
+      },
+      "elements": [
+        {
+          "from": [
+            -16,
+            16,
+            -16
+          ],
+          "to": [
+            32,
+            32,
+            32
+          ],
+          "faces": {
+            "up": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#top"
+            },
+            "north": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#side"
+            },
+            "south": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#side"
+            },
+            "east": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#side"
+            },
+            "west": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#side"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

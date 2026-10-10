@@ -11,6 +11,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 - Crude oil has a bucket, `fieldworks:crude_oil_bucket`, a plain `BucketItem` with NeoForge's fluid item capability. Empty buckets a hopper feeds the Harvester come out of its output face filled with crude (#9).
 - The Harvester exposes NeoForge's fluid capability on every face: a pipe can drain its crude and can fill nothing. It also pushes crude into the fluid handler at its output face, and pulls nothing from it. The oil well itself still exposes no fluid capability (#9).
 - The oil field marker on the FTB Chunks map draws the crude oil bucket in place of the vanilla bucket (#9).
+- The Electric Harvester, `fieldworks:harvester_2`, ships at rank 2 and speed ×2 on FE alone: 40 FE per tick of work from a 50,000 FE buffer, taken through NeoForge's energy capability on every face of its footprint, which gives none back. A tier file's `power` may name `fuel`, `fe_per_tick` or both, with `fe_buffer`; a tier that takes both pays FE first and lights fuel only when the buffer is short of a tick's cost, and a fuel item already burning finishes before FE is spent again. A tier exposes only the power it declares: one that takes no FE has no energy capability, and one that takes no fuel accepts none. Default English names are "Burner Harvester" and "Electric Harvester", from lang (#7).
 
 ## 0.1.0
 
