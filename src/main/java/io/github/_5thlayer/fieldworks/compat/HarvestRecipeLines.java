@@ -16,7 +16,14 @@ public final class HarvestRecipeLines {
     public static final int WIDTH = 120;
     public static final int HEIGHT = 44;
 
+    /** How far a recipe with a Drilling Fluid moves its arrow and result right, to make room for the fluid's slot. */
+    public static final int FLUID_SHIFT = 20;
+
     private HarvestRecipeLines() {
+    }
+
+    public static int shift(HarvestRecipeView view) {
+        return view.fluids().isEmpty() ? 0 : FLUID_SHIFT;
     }
 
     public static Component seconds(HarvestRecipeView view) {

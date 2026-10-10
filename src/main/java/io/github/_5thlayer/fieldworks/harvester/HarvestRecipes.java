@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import com.mojang.logging.LogUtils;
 import io.github._5thlayer.fieldworks.Fieldworks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -24,6 +25,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.slf4j.Logger;
 
 /**
  * The {@code fieldworks:harvesting} recipe type and what a Harvester reads of it. The type and its serializer
@@ -33,6 +35,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * every datapack sync: a recipe viewer lists them from what it is sent (#10).
  */
 public final class HarvestRecipes {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private static final DeferredRegister<RecipeType<?>> TYPES = DeferredRegister.create(Registries.RECIPE_TYPE, Fieldworks.MOD_ID);
     private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS =
@@ -92,6 +96,10 @@ public final class HarvestRecipes {
             Identifier id = holder.id().identifier();
             OperationChoice.Recipe choice = holder.value().forChoice(id, tier ->
                     tiers.containsKey(tier) ? OptionalInt.of(tiers.get(tier).rank()) : OptionalInt.empty());
+            if (choice.drillingFluid().filter(fluid -> fluid.fluids().isEmpty()).isPresent()) {
+                // Loaded, but nothing can meet it: only fluids in #fieldworks:drilling_fluids serve (#1).
+                LOGGER.warn("Harvest Recipe {} names no fluid in #fieldworks:drilling_fluids, so it can never run", id);
+            }
             choices.add(choice);
             byId.put(choice.id(), new Entry(holder.value(), choice));
         }

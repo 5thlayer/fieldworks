@@ -22,6 +22,9 @@ final class HarvestingEmiRecipe extends BasicEmiRecipe {
         super(category, view.id(), HarvestRecipeLines.WIDTH, HarvestRecipeLines.HEIGHT);
         this.view = view;
         inputs.add(EmiIngredient.of(view.sources().stream().map(EmiStack::of).toList()));
+        if (!view.fluids().isEmpty()) {
+            inputs.add(EmiIngredient.of(view.fluids().stream().map(fluid -> (EmiIngredient) EmiStack.of(fluid, view.fluidAmount())).toList()));
+        }
         outputs.add(EmiStack.of(view.result()));
     }
 
@@ -31,10 +34,14 @@ final class HarvestingEmiRecipe extends BasicEmiRecipe {
 
     @Override
     public void addWidgets(WidgetHolder widgets) {
+        int shift = HarvestRecipeLines.shift(view);
         widgets.addSlot(inputs.get(0), 0, 4);
-        widgets.addTexture(EmiTexture.EMPTY_ARROW, 24, 5);
-        widgets.addFillingArrow(24, 5, Math.max(view.duration(), 1) * 50);
-        widgets.addSlot(outputs.get(0), 54, 4).recipeContext(this);
+        if (inputs.size() > 1) {
+            widgets.addSlot(inputs.get(1), HarvestRecipeLines.FLUID_SHIFT, 4);
+        }
+        widgets.addTexture(EmiTexture.EMPTY_ARROW, 24 + shift, 5);
+        widgets.addFillingArrow(24 + shift, 5, Math.max(view.duration(), 1) * 50);
+        widgets.addSlot(outputs.get(0), 54 + shift, 4).recipeContext(this);
         widgets.addText(HarvestRecipeLines.seconds(view), 0, 24, 0xFF808080, false);
         widgets.addText(HarvestRecipeLines.note(view), 0, 35, 0xFF808080, false);
     }

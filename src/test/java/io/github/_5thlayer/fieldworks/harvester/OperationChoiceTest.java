@@ -348,6 +348,38 @@ class OperationChoiceTest {
                 Optional.of(MUDDY_IRON), stuck));
     }
 
+    @Test
+    void anOperationOfAHeldRecipeNamesTheDrillingFluidItConsumes() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        Operation operation = (Operation) OperationChoice.choose(layer, 0, List.of(MUDDY_IRON), Optional.of(MUDDY_IRON),
+                Machine.ready(1).withTank(new Tank("fieldworks:drilling_mud", 1_000)));
+
+        assertEquals(Optional.of(new DrillingFluid(Set.of("fieldworks:drilling_mud"), 250)), operation.drillingFluid());
+    }
+
+    @Test
+    void aFluidRecipeNotHeldIsNeverRunSoNothingIsConsumedHoweverMuchIsInTheTank() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Machine full = Machine.ready(1).withTank(new Tank("fieldworks:drilling_mud", 8_000));
+
+        Operation operation = (Operation) OperationChoice.choose(layer, 0, List.of(MUDDY_IRON), Optional.empty(), full);
+
+        assertEquals(Optional.empty(), operation.recipe());
+        assertEquals(Optional.empty(), operation.drillingFluid());
+    }
+
+    @Test
+    void aHeldRecipeWithNoDrillingFluidConsumesNone() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe plain = new Recipe("test:plain", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), false);
+
+        Operation operation = (Operation) OperationChoice.choose(layer, 0, List.of(plain), Optional.of(plain),
+                Machine.ready(1).withTank(new Tank("fieldworks:drilling_mud", 8_000)));
+
+        assertEquals(Optional.empty(), operation.drillingFluid());
+    }
+
     private static List<Integer> heldPositions(List<Source> layer, Recipe held, int count) {
         List<Integer> positions = new ArrayList<>();
         int cursor = 0;
