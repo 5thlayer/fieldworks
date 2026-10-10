@@ -42,4 +42,4 @@ A 5thlayer Library: a mod the FactoryWorks Pack consumes as a pinned local jar. 
 ## License
 
 MIT, with the art above under CC BY 4.0. Source is on [GitHub](https://github.com/5thlayer/fieldworks).
-Releases are on [CurseForge](https://www.curseforge.com/projects/1737485).
+Releases are on [Modrinth](https://modrinth.com/mod/V0pWlACG) and [CurseForge](https://www.curseforge.com/projects/1737485).
