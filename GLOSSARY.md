@@ -44,7 +44,7 @@ _Avoid_: oil spring, pumpjack site
 A group of oil wells placed together on land, spaced apart and never on a patch's ore.
 
 **Crude oil**:
-The fluid an oil well yields, in the `c:crude_oil` tag. Fieldworks gives it no bucket.
+The fluid an oil well yields, in the `c:crude_oil` tag, carried in its own bucket.
 
 ### Markers
 

@@ -42,7 +42,8 @@ wells and crude oil work, ported from FactoryWorks Core at commit `fb05f50`.
   apart, none on an ore column, none within 150 blocks of the origin and none off the land. A well's
   amount is `(cone / 0.0208 + 220000) × max((1000 + d) / 2600, 1)` for the column's distance `d`, with no
   cap, so a far well starts above 100%.
-- **Crude oil is a fluid with a block and no bucket**, in `c:crude_oil`. The Harvester that pumps a
+- **Crude oil is a fluid with a block and no bucket**, in `c:crude_oil`. (The bucket is superseded
+  by ADR 0004: crude gets one.) The Harvester that pumps a
   well is a later ticket (#1).
 - **A well exposes no fluid capability until the Harvester.** The yield per cycle and the decay step
   are the Harvester's to drive, and a capability now would let any other mod's pump or pipe drain a
