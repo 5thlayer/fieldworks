@@ -38,7 +38,6 @@
   "fieldworks.harvester.idle.no_fluid": "Not enough Drilling Fluid",
   "fieldworks.harvester.idle.no_power": "No power",
   "fieldworks.harvester.idle.output_full": "Output full",
-  "fieldworks.harvester.idle.product_tank_full": "Product tank full",
   "fieldworks.harvester.burn": "Burning: %s s",
   "fieldworks.harvester.energy": "%s / %s FE",
   "fieldworks.harvester.empty": "empty",

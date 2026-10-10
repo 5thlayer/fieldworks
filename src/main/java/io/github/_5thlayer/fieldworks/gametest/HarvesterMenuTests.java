@@ -81,7 +81,7 @@ final class HarvesterMenuTests {
                 HarvesterMenuTests::slots);
         tests.test("a_harvester_with_no_power_idles_with_no_power_and_again_when_its_fuel_runs_out", 3_000, HarvesterMenuTests::noPower);
         tests.test("a_harvester_with_a_full_output_buffer_idles_with_output_full", 20, HarvesterMenuTests::outputFull);
-        tests.test("a_harvester_over_a_well_with_a_full_product_tank_idles_with_product_tank_full", 20, HarvesterMenuTests::productTankFull);
+        tests.test("a_harvester_over_a_well_with_a_full_product_tank_idles_with_output_full", 20, HarvesterMenuTests::productTankFull);
         tests.test("the_status_the_jade_tooltip_reads_crosses_the_wire_and_the_tooltip_names_the_idle_reason", 20,
                 HarvesterMenuTests::statusCrossesTheWire);
     }
@@ -334,8 +334,8 @@ final class HarvesterMenuTests {
         HarvesterTests.tick(helper, machine, 8 * 20 + 40);
 
         helper.assertTrue(FluidStack.matches(menu(helper).product(), new FluidStack(CrudeOil.SOURCE.get(), 8_000)), "the product tank is not full");
-        helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.PRODUCT_TANK_FULL), "the idle reason with a full product tank");
-        helper.assertValueEqual(menu(helper).idleReason(), Optional.of(IdleReason.PRODUCT_TANK_FULL), "the menu's idle reason with a full product tank");
+        helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.OUTPUT_FULL), "the idle reason with a full product tank");
+        helper.assertValueEqual(menu(helper).idleReason(), Optional.of(IdleReason.OUTPUT_FULL), "the menu's idle reason with a full product tank");
         helper.succeed();
     }
 
