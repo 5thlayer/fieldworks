@@ -8,6 +8,7 @@ import io.github._5thlayer.fieldworks.oil.OilField;
 import io.github._5thlayer.fieldworks.oil.OilFieldSource;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import io.github._5thlayer.fieldworks.ore.PatchDisc;
+import io.github._5thlayer.fieldworks.ore.StartPieces;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -21,7 +22,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
-import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 
 /** A crude-oil field as a structure piece: its centre and the wells it drew (ADR-0002). */
@@ -71,12 +71,11 @@ public final class OilFieldPiece extends StructurePiece implements OilFieldSourc
 
     /** Whether a patch disc covers the column, whichever of the two structures places first. */
     public static boolean oreAt(StructureManager structures, int x, int z) {
-        for (StructureStart start : structures.startsForStructure(
-                new ChunkPos(x >> 4, z >> 4), structure -> structure instanceof PatchDiscStructure)) {
-            for (StructurePiece piece : start.getPieces()) {
-                if (piece instanceof PatchDisc.Source disc && disc.covers(x, z)) {
-                    return true;
-                }
+        var starts = structures.startsForStructure(
+                new ChunkPos(x >> 4, z >> 4), structure -> structure instanceof PatchDiscStructure);
+        for (PatchDisc.Source disc : StartPieces.sources(starts, PatchDisc.Source.class)) {
+            if (disc.covers(x, z)) {
+                return true;
             }
         }
         return false;

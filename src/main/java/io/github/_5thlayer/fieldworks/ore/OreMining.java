@@ -18,8 +18,6 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.structure.StructurePiece;
-import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -74,7 +72,7 @@ public final class OreMining {
      */
     public static OreDelta.Draw draw(ServerLevel level, OreBlock ore, BlockPos pos) {
         @Nullable PatchDisc disc = discOf(level, ore, pos);
-        int initial = disc != null ? disc.amountPerBlock() : 0;
+        int initial = initial(disc);
         OreDelta delta = deltaOf(level, pos);
         OreDelta.Draw draw = delta.draw(pos.asLong(), initial);
         level.getChunk(pos).markUnsaved();
@@ -110,20 +108,21 @@ public final class OreMining {
 
     /** The block's initial amount: its patch's quotient, or {@code 0} for a block no patch placed. */
     public static int initialAmount(ServerLevel level, OreBlock ore, BlockPos pos) {
-        PatchDisc disc = discOf(level, ore, pos);
+        return initial(discOf(level, ore, pos));
+    }
+
+    private static int initial(@Nullable PatchDisc disc) {
         return disc != null ? disc.amountPerBlock() : 0;
     }
 
     /** The disc a block belongs to, or null for a block no patch placed. */
     private static @Nullable PatchDisc discOf(ServerLevel level, OreBlock ore, BlockPos pos) {
-        for (StructureStart start : level.structureManager().startsForStructure(ChunkPos.containing(pos), structure -> true)) {
-            for (StructurePiece piece : start.getPieces()) {
-                if (piece instanceof PatchDisc.Source source
-                        && source.disc().resource() == ore.resource()
-                        && piece.getBoundingBox().isInside(pos)
-                        && source.covers(pos.getX(), pos.getZ())) {
-                    return source.disc();
-                }
+        var starts = level.structureManager().startsForStructure(ChunkPos.containing(pos), structure -> true);
+        for (PatchDisc.Source source : StartPieces.sources(starts, PatchDisc.Source.class)) {
+            if (source.disc().resource() == ore.resource()
+                    && source.getBoundingBox().isInside(pos)
+                    && source.covers(pos.getX(), pos.getZ())) {
+                return source.disc();
             }
         }
         return null;

@@ -14,4 +14,9 @@ public interface OilFieldSource {
 
     /** Every well the field drew, before any is turned away by an ore column. */
     List<OilField.Well> wells();
+
+    /** The wells' summed amount less those an ore column turns away. */
+    default long placeableTotal(OilField.Ore ore) {
+        return OilField.total(OilField.placeable(wells(), ore));
+    }
 }

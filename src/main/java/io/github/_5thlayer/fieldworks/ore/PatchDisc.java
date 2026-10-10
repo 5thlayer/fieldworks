@@ -3,6 +3,8 @@
 
 package io.github._5thlayer.fieldworks.ore;
 
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+
 /**
  * One generated patch, as its structure piece records it: the size factor it drew, the blocks it
  * placed and its centre column. Every block holds the amount at the centre's distance from origin.
@@ -13,6 +15,8 @@ public record PatchDisc(OreResource resource, double sizeFactor, int blockCount,
     /** Implemented by the structure piece that places a disc. */
     public interface Source {
         PatchDisc disc();
+
+        BoundingBox getBoundingBox();
 
         /** Whether the disc placed ore in this column; its box is a square around a ragged disc. */
         boolean covers(int x, int z);
