@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Choice;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Idle;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.IdleReason;
@@ -16,6 +17,8 @@ import io.github._5thlayer.fieldworks.harvester.OperationChoice.Machine;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Operation;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Tank;
+import io.github._5thlayer.fieldworks.oil.OilWellBlock;
+import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.libworks.transfer.GuardedResourceHandler;
@@ -38,9 +41,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.CombinedResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
@@ -48,25 +57,39 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A Harvester at work: each tick it pushes its output buffer into the item handler at its output face,
- * then, with room for the result and a tick of power, puts a tick into the operation the choice module
- * names. One burn tick buys one tick of work. A full buffer stops it; nothing is dropped in the world.
+ * A Harvester at work: each tick it fills the container in its fill slot from the product tank, pushes its
+ * output buffer and its crude into the item and fluid handlers at its output face, then, with room for the
+ * result and a tick of power, puts a tick into the operation the choice module names. One burn tick, or one
+ * tick's FE, buys one tick of work. A full buffer or product tank stops it; nothing is dropped in the world.
  */
 public final class HarvesterBlockEntity extends BlockEntity implements MenuProvider {
 
     /** The output buffer's slots. */
     static final int BUFFER_SLOTS = 9;
 
+    /** A tank's capacity in mB: one fixed figure, not tier data (#1). */
+    static final int TANK_CAPACITY = 8_000;
+
     private static final String FUEL_KEY = "fuel";
+    private static final String FILL_KEY = "fill";
     private static final String BUFFER_KEY = "buffer";
+    private static final String PRODUCT_KEY = "product";
+    private static final String ENERGY_KEY = "energy";
     private static final String BURN_KEY = "burn_left";
     private static final String PROGRESS_KEY = "progress";
     private static final String CURSOR_KEY = "cursor";
     private static final String HELD_KEY = "held_recipe";
 
     private final ItemStacksResourceHandler fuel = new Slots(1);
+    private final ItemStacksResourceHandler fill = new Slots(1);
     private final ItemStacksResourceHandler buffer = new Slots(BUFFER_SLOTS);
-    private final ResourceHandler<ItemResource> face = new Face(new CombinedResourceHandler<>(fuel, buffer));
+    private final ResourceHandler<ItemResource> face = new Face(new CombinedResourceHandler<>(fuel, fill, buffer));
+    private final FluidStacksResourceHandler product = new ProductTank();
+    private final ResourceHandler<FluidResource> fluidFace = new FluidFace(product);
+    private final EnergyBuffer energy = new EnergyBuffer();
+
+    /** Whether the energy capability was last seen exposed, so a reload that re-powers the tier invalidates it. */
+    private boolean exposesEnergy;
 
     /** Burn ticks bought by the last fuel item and not yet worked. */
     private int burnLeft;
@@ -87,9 +110,37 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         return face;
     }
 
+    /** The fluid capability on every face of the footprint: the product tank drains and takes nothing. */
+    ResourceHandler<FluidResource> fluidFace() {
+        return fluidFace;
+    }
+
+    /**
+     * The energy capability on every face of the footprint, sized by the tier's FE buffer: it takes FE and gives
+     * none back. A tier that takes no FE exposes none (ADR 0005), and neither does one whose file is missing.
+     */
+    @Nullable EnergyHandler energyFace() {
+        HarvesterTier tier = tier();
+        if (tier == null || !tier.power().fe()) {
+            return null;
+        }
+        energy.resize(tier.feBuffer());
+        return energy.face;
+    }
+
+    private TierBlock tierBlock() {
+        return ((HarvesterBlock) getBlockState().getBlock()).tier();
+    }
+
+    private @Nullable HarvesterTier tier() {
+        return HarvesterTiers.get(tierBlock());
+    }
+
     public void serverTick(ServerLevel level) {
+        fillContainer();
         pushOutput(level);
-        HarvesterTier tier = HarvesterTiers.get(((HarvesterBlock) getBlockState().getBlock()).tier());
+        HarvesterTier tier = tier();
+        exposeEnergy(level, tier != null && tier.power().fe());
         if (tier == null) {
             return;
         }
@@ -106,36 +157,66 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         }
         List<BlockPos> layer = layer();
         // No Drilling Fluid tank yet: #11 hands the choice what the tank holds.
-        Machine machine = new Machine(tier.rank(), Tank.EMPTY,
-                operation -> fits(result(level, recipes, layer, operation)), burnLeft > 0 || tier.power().fuel() && light(level, false));
+        Machine machine = new Machine(tier.rank(), Tank.EMPTY, operation -> work(level, layer, operation, recipes) != null, canPay(level, tier));
         Choice choice = OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, machine);
         if (!(choice instanceof Operation operation)) {
             idle = ((Idle) choice).reason();
             return;
         }
-        idle = null;
-        BlockPos at = layer.get(operation.position());
-        ItemStack stack = result(level, recipes, layer, operation);
-        if (burnLeft == 0) {
-            light(level, true);
+        Runnable work = work(level, layer, operation, recipes);
+        if (work == null || !payTick(level, tier)) {
+            return;
         }
-        burnLeft--;
+        idle = null;
         progress++;
         if (progress >= tier.ticks(operation.ticks())) {
             progress = 0;
             cursor = operation.nextCursor();
-            if (OreMining.draw(level, (OreBlock) level.getBlockState(at).getBlock(), at).paid() > 0 && !stack.isEmpty()) {
-                ResourceHandlerUtil.insertStacking(buffer, ItemResource.of(stack), stack.getCount(), null);
-            }
+            work.run();
         }
         setChanged();
     }
 
-    /** What the operation yields: its Harvest Recipe's result, or for a Default recipe the ore block's drop. */
-    private static ItemStack result(ServerLevel level, HarvestRecipes.Loaded recipes, List<BlockPos> layer, Operation operation) {
-        return operation.recipe()
+    /** The operation's work, or null while there is no room for what it yields. */
+    private @Nullable Runnable work(ServerLevel level, List<BlockPos> layer, Operation operation, HarvestRecipes.Loaded recipes) {
+        BlockPos at = layer.get(operation.position());
+        return level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well) : draw(level, at, operation, recipes);
+    }
+
+    /**
+     * One draw of the ore block at {@code at}, paying the operation's recipe result or the block's own item,
+     * or null while the buffer has no room for it.
+     */
+    private @Nullable Runnable draw(ServerLevel level, BlockPos at, Operation operation, HarvestRecipes.Loaded recipes) {
+        OreBlock ore = (OreBlock) level.getBlockState(at).getBlock();
+        ItemStack stack = operation.recipe()
                 .map(recipe -> recipes.byId().get(recipe.id()).recipe().result().create())
-                .orElseGet(() -> drop((OreBlock) level.getBlockState(layer.get(operation.position())).getBlock()));
+                .orElseGet(() -> drop(ore));
+        ItemResource result = ItemResource.of(stack);
+        if (!fits(result, stack.getCount())) {
+            return null;
+        }
+        return () -> {
+            if (OreMining.draw(level, ore, at).paid() > 0 && !result.isEmpty()) {
+                ResourceHandlerUtil.insertStacking(buffer, result, stack.getCount(), null);
+            }
+        };
+    }
+
+    /** One cycle of the well's yield and decay (ADR 0002), or null while the product tank has no room for it. */
+    private @Nullable Runnable pump(OilWellBlockEntity well) {
+        if (well.nextCycle() > TANK_CAPACITY - product.getAmountAsInt(0)) {
+            return null;
+        }
+        return () -> {
+            int crude = well.cycle();
+            if (crude > 0) {
+                try (Transaction pumping = Transaction.openRoot()) {
+                    product.insert(0, crudeOil(), crude, pumping);
+                    pumping.commit();
+                }
+            }
+        };
     }
 
     /**
@@ -184,8 +265,9 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         List<Source> sources = new ArrayList<>(layer.size());
         for (BlockPos pos : layer) {
             Block block = level.getBlockState(pos).getBlock();
-            sources.add(block instanceof OreBlock
-                    ? Source.oreBlock(BuiltInRegistries.BLOCK.getKey(block).toString(), tagsOf(block))
+            String id = BuiltInRegistries.BLOCK.getKey(block).toString();
+            sources.add(block instanceof OilWellBlock ? Source.well(id)
+                    : block instanceof OreBlock ? Source.oreBlock(id, tagsOf(block))
                     : Source.NONE);
         }
         return sources;
@@ -199,59 +281,164 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         return new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(ore.resource().drop())));
     }
 
-    private boolean fits(ItemStack stack) {
-        if (stack.isEmpty()) {
+    private static FluidResource crudeOil() {
+        return FluidResource.of(CrudeOil.SOURCE.get());
+    }
+
+    private boolean fits(ItemResource result, int amount) {
+        if (result.isEmpty()) {
             return true;
         }
         try (Transaction simulated = Transaction.openRoot()) {
-            return ResourceHandlerUtil.insertStacking(buffer, ItemResource.of(stack), stack.getCount(), simulated) == stack.getCount();
+            return ResourceHandlerUtil.insertStacking(buffer, result, amount, simulated) == amount;
         }
     }
 
+    /** Whether the tier's power rule could pay for a tick of work now, without paying it. */
+    private boolean canPay(ServerLevel level, HarvesterTier tier) {
+        HarvesterTier.Power power = tier.power();
+        if (power.fe()) {
+            energy.resize(tier.feBuffer());
+        }
+        return switch (power.payment(burnLeft, energy.getAmountAsInt())) {
+            case BURN, FE -> true;
+            case LIGHT -> light(level, false);
+            case NONE -> false;
+        };
+    }
+
+    /** Pays for one tick of work as the tier's power rule says (#7): a burn tick, a tick's FE, or a fuel item lit. */
+    private boolean payTick(ServerLevel level, HarvesterTier tier) {
+        HarvesterTier.Power power = tier.power();
+        if (power.fe()) {
+            energy.resize(tier.feBuffer());
+        }
+        return switch (power.payment(burnLeft, energy.getAmountAsInt())) {
+            case BURN -> {
+                burnLeft--;
+                yield true;
+            }
+            case FE -> {
+                try (Transaction paying = Transaction.openRoot()) {
+                    energy.extract(power.fePerTick(), paying);
+                    paying.commit();
+                }
+                yield true;
+            }
+            case LIGHT -> {
+                if (!light(level, true)) {
+                    yield false;
+                }
+                burnLeft--;
+                yield true;
+            }
+            case NONE -> false;
+        };
+    }
+
     /**
-     * Lights the fuel item, when {@code commit}, or says whether it would light. A fuel item's remainder, the bucket
-     * of a lava bucket, goes to the output buffer, so a fuel item whose remainder has no room there is not lit.
+     * Lights the fuel item in the fuel slot, when {@code commit}, or says whether it would light. A fuel item's
+     * remainder, the bucket of a lava bucket, goes to the output buffer, so a fuel item whose remainder has no room
+     * there is not lit.
      */
     private boolean light(ServerLevel level, boolean commit) {
         ItemResource item = fuel.getResource(0);
         int burnTime = item.isEmpty() ? 0 : item.toStack(1).getBurnTime(null, level.fuelValues());
-        if (burnTime <= 0) {
+        if (burnTime == 0) {
             return false;
         }
         try (Transaction lighting = Transaction.openRoot()) {
             fuel.extract(0, item, 1, lighting);
             ItemStackTemplate remainder = item.toStack(1).getCraftingRemainder();
-            if (remainder != null && ResourceHandlerUtil.insertStacking(buffer, ItemResource.of(remainder.create()), 1, lighting) != 1) {
+            if (remainder != null && ResourceHandlerUtil.insertStacking(buffer,
+                    ItemResource.of(remainder.create()), 1, lighting) != 1) {
                 return false;
             }
-            if (commit) {
-                lighting.commit();
-                burnLeft = burnTime;
+            if (!commit) {
+                return true;
             }
-            return true;
+            lighting.commit();
+        }
+        burnLeft = burnTime;
+        return true;
+    }
+
+    /**
+     * Invalidates the energy capability at every block of the footprint when the tier's power changes whether it
+     * is exposed: NeoForge drops cached lookups only when it is told to.
+     */
+    private void exposeEnergy(ServerLevel level, boolean exposed) {
+        if (exposed == exposesEnergy) {
+            return;
+        }
+        exposesEnergy = exposed;
+        Direction facing = getBlockState().getValue(HarvesterBlock.FACING);
+        for (BlockPos pos : Harvesters.footprint(tierBlock()).positions(worldPosition, facing)) {
+            level.invalidateCapabilities(pos);
         }
     }
 
     /**
-     * Pushes the buffer out of the output face, the way the Harvester faces, into the block one past the
-     * footprint's edge at the face's bottom centre.
+     * Fills one container in the fill slot from the product tank, and sends it full to the output buffer.
+     * A container waits while the tank holds too little for it or the buffer has no room.
      */
-    private void pushOutput(ServerLevel level) {
-        if (ResourceHandlerUtil.isEmpty(buffer)) {
+    private void fillContainer() {
+        if (fill.getAmountAsInt(0) == 0 || product.getAmountAsInt(0) == 0) {
             return;
         }
-        Direction out = getBlockState().getValue(HarvesterBlock.FACING);
-        ResourceHandler<ItemResource> target = level.getCapability(Capabilities.Item.BLOCK, worldPosition.relative(out, 2), out.getOpposite());
-        if (target != null) {
-            ResourceHandlerUtil.moveStacking(buffer, target, resource -> true, Integer.MAX_VALUE, null);
+        ResourceHandler<FluidResource> container = new FillSlotAccess().oneByOne().getCapability(Capabilities.Fluid.ITEM);
+        if (container != null) {
+            ResourceHandlerUtil.move(product, container, resource -> true, Integer.MAX_VALUE, null);
         }
+    }
+
+    /**
+     * Pushes the buffer and the product tank out of the output face, the way the Harvester faces, into the
+     * block one past the footprint's edge at the face's bottom centre. Some pipes pull from nothing, so crude
+     * is pushed as items are (ADR 0004); nothing is pulled back.
+     */
+    private void pushOutput(ServerLevel level) {
+        Direction out = getBlockState().getValue(HarvesterBlock.FACING);
+        BlockPos next = worldPosition.relative(out, 2);
+        if (!ResourceHandlerUtil.isEmpty(buffer)) {
+            ResourceHandler<ItemResource> items = level.getCapability(Capabilities.Item.BLOCK, next, out.getOpposite());
+            if (items != null) {
+                ResourceHandlerUtil.moveStacking(buffer, items, resource -> true, Integer.MAX_VALUE, null);
+            }
+        }
+        if (!ResourceHandlerUtil.isEmpty(product)) {
+            ResourceHandler<FluidResource> fluids = level.getCapability(Capabilities.Fluid.BLOCK, next, out.getOpposite());
+            if (fluids != null) {
+                ResourceHandlerUtil.move(product, fluids, resource -> true, Integer.MAX_VALUE, null);
+            }
+        }
+    }
+
+    /** An empty container crude can go into: one that holds no fluid and has room for crude. */
+    private static boolean holdsCrude(ItemResource resource) {
+        if (resource.isEmpty()) {
+            return false;
+        }
+        ResourceHandler<FluidResource> container = ItemAccess.forStack(resource.toStack(1)).getCapability(Capabilities.Fluid.ITEM);
+        if (container == null || !ResourceHandlerUtil.isEmpty(container)) {
+            return false;
+        }
+        for (int index = 0; index < container.size(); index++) {
+            if (container.getCapacityAsLong(index, crudeOil()) > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
         fuel.serialize(output.child(FUEL_KEY));
+        fill.serialize(output.child(FILL_KEY));
         buffer.serialize(output.child(BUFFER_KEY));
+        product.serialize(output.child(PRODUCT_KEY));
+        energy.serialize(output.child(ENERGY_KEY));
         output.putInt(BURN_KEY, burnLeft);
         output.putInt(PROGRESS_KEY, progress);
         output.putInt(CURSOR_KEY, cursor);
@@ -264,7 +451,10 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         fuel.deserialize(input.childOrEmpty(FUEL_KEY));
+        fill.deserialize(input.childOrEmpty(FILL_KEY));
         buffer.deserialize(input.childOrEmpty(BUFFER_KEY));
+        product.deserialize(input.childOrEmpty(PRODUCT_KEY));
+        energy.deserialize(input.childOrEmpty(ENERGY_KEY));
         burnLeft = input.getIntOr(BURN_KEY, 0);
         progress = input.getIntOr(PROGRESS_KEY, 0);
         cursor = input.getIntOr(CURSOR_KEY, 0);
@@ -276,7 +466,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);
         if (level != null) {
-            for (ItemStacksResourceHandler slots : List.of(fuel, buffer)) {
+            for (ItemStacksResourceHandler slots : List.of(fuel, fill, buffer)) {
                 for (ItemStack stack : slots.copyToList()) {
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);
                 }
@@ -298,32 +488,109 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /**
-     * The fuel slot, index 0, takes anything with burn time and gives nothing back; the output buffer takes
+     * The FE buffer, sized by the tier on each use since a reload can change it. It is drawn only by the
+     * Harvester's own work; {@link #face} takes FE in and gives none out.
+     */
+    private final class EnergyBuffer extends SimpleEnergyHandler {
+
+        final EnergyHandler face = new EnergyHandler() {
+            @Override
+            public long getAmountAsLong() {
+                return EnergyBuffer.this.getAmountAsLong();
+            }
+
+            @Override
+            public long getCapacityAsLong() {
+                return EnergyBuffer.this.getCapacityAsLong();
+            }
+
+            @Override
+            public int insert(int amount, TransactionContext transaction) {
+                return EnergyBuffer.this.insert(amount, transaction);
+            }
+
+            @Override
+            public int extract(int amount, TransactionContext transaction) {
+                return 0;
+            }
+        };
+
+        EnergyBuffer() {
+            super(0);
+        }
+
+        void resize(int capacity) {
+            this.capacity = capacity;
+            this.maxInsert = capacity;
+            this.maxExtract = capacity;
+            this.energy = Math.min(energy, capacity);
+        }
+
+        @Override
+        protected void onEnergyChanged(int previousAmount) {
+            setChanged();
+        }
+    }
+
+    /** The product tank: crude only. */
+    private final class ProductTank extends FluidStacksResourceHandler {
+
+        ProductTank() {
+            super(1, TANK_CAPACITY);
+        }
+
+        @Override
+        public boolean isValid(int index, FluidResource resource) {
+            return resource.getFluid() == CrudeOil.SOURCE.get();
+        }
+
+        @Override
+        protected void onContentsChanged(int index, FluidStack previousContents) {
+            setChanged();
+        }
+    }
+
+    /**
+     * Routes items by content (ADR 0004): the fuel slot, index 0, takes anything with burn time while the tier
+     * burns fuel, and nothing on a tier that takes none (ADR 0005), and the fill
+     * slot, index 1, empty containers crude can go into; neither gives anything back. The output buffer takes
      * nothing from outside and gives everything. Buffer slots report no room, so a hopper reads the
-     * Harvester full once the fuel slot is.
+     * Harvester full once the slot its item goes to is.
      */
     private final class Face extends GuardedResourceHandler<ItemResource> {
+
+        private static final int FUEL_SLOT = 0;
+        private static final int FILL_SLOT = 1;
 
         Face(ResourceHandler<ItemResource> slots) {
             super(slots);
         }
 
-        private boolean isFuelSlot(int index) {
-            return index == 0;
+        private boolean isInputSlot(int index) {
+            return index == FUEL_SLOT || index == FILL_SLOT;
         }
 
         private boolean burns(ItemResource resource) {
             return level != null && resource.toStack(1).getBurnTime(null, level.fuelValues()) > 0;
         }
 
+        private boolean takesFuel() {
+            HarvesterTier tier = tier();
+            return tier != null && tier.power().fuel();
+        }
+
         @Override
         public boolean isValid(int index, ItemResource resource) {
-            return isFuelSlot(index) && burns(resource);
+            return switch (index) {
+                case FUEL_SLOT -> takesFuel() && burns(resource);
+                case FILL_SLOT -> holdsCrude(resource);
+                default -> false;
+            };
         }
 
         @Override
         public long getCapacityAsLong(int index, ItemResource resource) {
-            if (!isFuelSlot(index) || !resource.isEmpty() && !burns(resource)) {
+            if (!isInputSlot(index) || index == FUEL_SLOT && !takesFuel() || !resource.isEmpty() && !isValid(index, resource)) {
                 return 0;
             }
             return super.getCapacityAsLong(index, resource);
@@ -336,7 +603,52 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
 
         @Override
         public int extract(int index, ItemResource resource, int amount, TransactionContext transaction) {
-            return isFuelSlot(index) ? 0 : super.extract(index, resource, amount, transaction);
+            return isInputSlot(index) ? 0 : super.extract(index, resource, amount, transaction);
+        }
+    }
+
+    /** The product tank as a pipe sees it: it drains, and takes nothing in. */
+    private static final class FluidFace extends GuardedResourceHandler<FluidResource> {
+
+        FluidFace(ResourceHandler<FluidResource> tanks) {
+            super(tanks);
+        }
+
+        @Override
+        public boolean isValid(int index, FluidResource resource) {
+            return false;
+        }
+
+        @Override
+        public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
+            return 0;
+        }
+    }
+
+    /**
+     * The fill slot as the location of the container being filled: the container leaves the slot, and the
+     * filled one it is exchanged for goes to the output buffer, never back into the slot.
+     */
+    private final class FillSlotAccess implements ItemAccess {
+
+        @Override
+        public ItemResource getResource() {
+            return fill.getResource(0);
+        }
+
+        @Override
+        public int getAmount() {
+            return fill.getAmountAsInt(0);
+        }
+
+        @Override
+        public int insert(ItemResource resource, int amount, TransactionContext transaction) {
+            return ResourceHandlerUtil.insertStacking(buffer, resource, amount, transaction);
+        }
+
+        @Override
+        public int extract(ItemResource resource, int amount, TransactionContext transaction) {
+            return fill.extract(0, resource, amount, transaction);
         }
     }
 }

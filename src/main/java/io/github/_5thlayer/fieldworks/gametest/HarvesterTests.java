@@ -70,7 +70,7 @@ final class HarvesterTests {
         Rotate.press(player, helper.absolutePos(ORIGIN.above().west()), false);
         Direction turned = helper.getBlockState(ORIGIN).getValue(Footprint.FACING);
         helper.assertTrue(turned != Direction.NORTH, "Rotate in Place left the Harvester facing north");
-        expectStanding(helper, turned);
+        expectStanding(helper, turned, TierBlock.HARVESTER_1);
 
         player.gameMode.destroyBlock(helper.absolutePos(ORIGIN.above(2).south().east()));
         for (BlockPos pos : footprint().positions(helper.absolutePos(ORIGIN), turned)) {
@@ -182,7 +182,7 @@ final class HarvesterTests {
      * Sets an iron ore block outside any patch, with {@code drawn} units already taken, and returns its
      * initial amount. The chunk's other draws are kept: tests stand side by side and may share it.
      */
-    private static int ore(GameTestHelper helper, BlockPos rel, int drawn) {
+    static int ore(GameTestHelper helper, BlockPos rel, int drawn) {
         return ore(helper, OreResource.IRON, rel, drawn);
     }
 
@@ -228,26 +228,32 @@ final class HarvesterTests {
      * that player is returned.
      */
     static FakePlayer place(GameTestHelper helper, Direction facing) {
+        return place(helper, facing, TierBlock.HARVESTER_1);
+    }
+
+    /** Places the Harvester of {@code tier} as {@link #place(GameTestHelper, Direction)} does. */
+    static FakePlayer place(GameTestHelper helper, Direction facing, TierBlock tier) {
         FakePlayer player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "fieldworks_harvester"));
         player.setGameMode(GameType.SURVIVAL);
         Vec3 feet = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(0, 1, 0)));
         player.setPos(feet.x, feet.y, feet.z);
         player.setYRot(facing.getOpposite().toYRot());
         player.setYHeadRot(facing.getOpposite().toYRot());
-        ItemStack stack = new ItemStack(Harvesters.item(TierBlock.HARVESTER_1).get());
+        ItemStack stack = new ItemStack(Harvesters.item(tier).get());
         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
         BlockPos floor = helper.absolutePos(ORIGIN.below());
         player.gameMode.useItemOn(player, helper.getLevel(), stack, InteractionHand.MAIN_HAND,
                 new BlockHitResult(Vec3.atCenterOf(floor).relative(Direction.UP, 0.5), Direction.UP, floor, false));
-        expectStanding(helper, facing);
+        expectStanding(helper, facing, tier);
         return player;
     }
 
-    private static void expectStanding(GameTestHelper helper, Direction facing) {
-        List<BlockPos> positions = footprint().positions(helper.absolutePos(ORIGIN), facing);
+    private static void expectStanding(GameTestHelper helper, Direction facing, TierBlock tier) {
+        Footprint footprint = Harvesters.footprint(tier);
+        List<BlockPos> positions = footprint.positions(helper.absolutePos(ORIGIN), facing);
         helper.assertTrue(positions.size() == 27, "a 3x3x3 footprint has " + positions.size() + " blocks");
         for (int i = 0; i < positions.size(); i++) {
-            helper.assertTrue(helper.getLevel().getBlockState(positions.get(i)).equals(footprint().stateAt(i, facing)),
+            helper.assertTrue(helper.getLevel().getBlockState(positions.get(i)).equals(footprint.stateAt(i, facing)),
                     "block " + i + " at " + positions.get(i) + " is " + helper.getLevel().getBlockState(positions.get(i)));
         }
     }

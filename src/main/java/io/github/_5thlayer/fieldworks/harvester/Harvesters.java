@@ -103,6 +103,8 @@ public final class Harvesters {
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         // On every face of every block of the footprint: Groundworks' parts forward their lookups here.
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), (harvester, side) -> harvester.itemFace());
+        event.registerBlockEntity(Capabilities.Fluid.BLOCK, BLOCK_ENTITY.get(), (harvester, side) -> harvester.fluidFace());
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, BLOCK_ENTITY.get(), (harvester, side) -> harvester.energyFace());
     }
 
     private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {

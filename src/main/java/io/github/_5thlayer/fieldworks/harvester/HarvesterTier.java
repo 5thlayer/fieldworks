@@ -25,6 +25,26 @@ public record HarvesterTier(int rank, double speed, Power power, int feBuffer) {
         public boolean fe() {
             return fePerTick > 0;
         }
+
+        /**
+         * What pays for the next tick of work, given the burn ticks left of the fuel item last lit and the FE
+         * buffered (#7): a started burn finishes first, then FE pays while a tick's cost is buffered, and only
+         * then is fuel lit. A burn outlives a reload that took the tier's fuel away.
+         */
+        public Payment payment(int burnLeft, int feStored) {
+            if (burnLeft > 0) {
+                return Payment.BURN;
+            }
+            if (fe() && feStored >= fePerTick) {
+                return Payment.FE;
+            }
+            return fuel ? Payment.LIGHT : Payment.NONE;
+        }
+    }
+
+    /** What pays for a tick of work: a burn tick, a tick's FE, lighting a fuel item to burn, or nothing. */
+    public enum Payment {
+        BURN, FE, LIGHT, NONE
     }
 
     public static final Codec<HarvesterTier> CODEC = RecordCodecBuilder.<HarvesterTier>create(instance -> instance.group(

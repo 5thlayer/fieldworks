@@ -35,7 +35,12 @@ public final class HarvesterTiers extends SimpleJsonResourceReloadListener<Harve
 
     /** The tier a Harvester block works at, or null when its file is missing or was refused. */
     public static @Nullable HarvesterTier get(TierBlock block) {
-        return loaded.get(block.id());
+        return get(block.id());
+    }
+
+    /** The tier file at {@code id}, or null; files no Harvester block names load too, and nothing works at them. */
+    public static @Nullable HarvesterTier get(Identifier id) {
+        return loaded.get(id);
     }
 
     /** The tiers loaded now: a new map at each reload, so it tells a reload from none. */

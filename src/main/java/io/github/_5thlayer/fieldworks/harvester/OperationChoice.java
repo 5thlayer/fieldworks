@@ -21,13 +21,17 @@ public final class OperationChoice {
     /** An ore block's Default recipe: one draw, in this many ticks at speed ×1. */
     static final int ORE_DRAW_TICKS = 20;
 
+    /** A well's Default recipe: one cycle of its yield and decay, in this many ticks at speed ×1. */
+    static final int WELL_PUMP_TICKS = 20;
+
     private OperationChoice() {
     }
 
     /**
      * The next operation from {@code cursor} round the layer: the first source at or after it that can
-     * be worked, wrapping at the end. Positions are the layer's indices, so a source that goes, an ore
-     * block turned to stone, leaves the others' places in the round as they were.
+     * be worked, wrapping at the end. While any well is in the layer, only wells can be worked. Positions
+     * are the layer's indices, so a source that goes, an ore block turned to stone, leaves the others'
+     * places in the round as they were.
      */
     public static Choice choose(List<Source> layer, int cursor) {
         return choose(layer, cursor, List.of(), Optional.empty(), 0);
@@ -51,11 +55,16 @@ public final class OperationChoice {
         if (held.isPresent() && held.get().minimumRank().isPresent() && machine.tierRank() < held.get().minimumRank().getAsInt()) {
             return new Idle(IdleReason.TIER_TOO_LOW);
         }
+        // Any well under the footprint excludes every block source (#1).
+        Kind worked = layer.stream().anyMatch(source -> source.kind() == Kind.WELL) ? Kind.WELL : Kind.ORE_BLOCK;
         int size = layer.size();
         for (int step = 0; step < size; step++) {
             int position = Math.floorMod(cursor + step, size);
             Source source = layer.get(position);
             int next = (position + 1) % size;
+            if (source.kind() != worked) {
+                continue;
+            }
             if (held.isPresent()) {
                 if (held.get().matches(source)) {
                     if (!held.get().drillingFluid().map(machine.tank()::holds).orElse(true)) {
@@ -63,8 +72,8 @@ public final class OperationChoice {
                     }
                     return machine.run(new Operation(position, held.get().duration(), next, held));
                 }
-            } else if (source.kind() == Kind.ORE_BLOCK && recipes.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
-                return machine.run(new Operation(position, ORE_DRAW_TICKS, next, Optional.empty()));
+            } else if (recipes.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
+                return machine.run(new Operation(position, worked == Kind.WELL ? WELL_PUMP_TICKS : ORE_DRAW_TICKS, next, Optional.empty()));
             }
         }
         return new Idle(held.isPresent() ? IdleReason.NOTHING_MATCHING : IdleReason.NOTHING_TO_WORK);
@@ -133,7 +142,8 @@ public final class OperationChoice {
     public enum Kind {
         /** Nothing the Harvester works. */
         NONE,
-        ORE_BLOCK
+        ORE_BLOCK,
+        WELL
     }
 
     /** One position of the layer under the footprint: what stands there, its block id and the block tags it is in. */
@@ -153,6 +163,10 @@ public final class OperationChoice {
 
         public static Source oreBlock(String block, Set<String> tags) {
             return new Source(Kind.ORE_BLOCK, block, tags);
+        }
+
+        public static Source well(String block) {
+            return new Source(Kind.WELL, block, Set.of());
         }
     }
 

@@ -55,7 +55,8 @@ neoForge {
             type = 'gameTestServer'
             gameDirectory = project.file('run/gametest')
             programArguments.addAll '--tests', "${mod_id}:*", '--report', gameTestReport.absolutePath
-            // The recipes only the game tests read, a datapack in the jar that only this run turns on.
+            // What only the game tests stand on, which only this run turns on: a datapack of recipes in
+            // the jar, and a fluid-handler block.
             systemProperty 'fieldworks.gametestPack', 'true'
         }
     }
