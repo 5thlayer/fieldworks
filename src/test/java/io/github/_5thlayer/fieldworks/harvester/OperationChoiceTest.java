@@ -12,10 +12,13 @@ import java.util.OptionalInt;
 import java.util.Set;
 
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Choice;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.DrillingFluid;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.IdleReason;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.Machine;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Operation;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Recipe;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.Tank;
 import org.junit.jupiter.api.Test;
 
 /** The choice of the Harvester's next operation over the layer under its footprint. */
@@ -105,7 +108,7 @@ class OperationChoiceTest {
         List<Source> layer = List.of(IRON, NONE, NONE, NONE, WELL, NONE, NONE, NONE, NONE);
         Recipe held = new Recipe("test:iron", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), false);
 
-        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_TO_WORK),
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_MATCHING),
                 OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), 1));
     }
 
@@ -168,7 +171,7 @@ class OperationChoiceTest {
         List<Source> layer = List.of(COPPER, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
         Recipe held = new Recipe("test:iron_only", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), false);
 
-        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_TO_WORK),
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_MATCHING),
                 OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), 1));
     }
 
@@ -213,6 +216,147 @@ class OperationChoiceTest {
         Operation held = (Operation) OperationChoice.choose(layer, 0, List.of(byId), Optional.of(byId), 1);
         assertEquals(0, held.position());
         assertEquals(60, held.ticks());
+    }
+
+    @Test
+    void aHarvestableBlockIdlesForTheSameReasonsAsAnOreBlock() {
+        List<Source> layer = List.of(DIAMOND, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe replacesDiamond = new Recipe("test:diamond", Set.of("minecraft:diamond_ore"), Set.of(), 60, OptionalInt.empty(), true);
+        Recipe muddyDiamond = new Recipe("test:muddy_diamond", Set.of("minecraft:diamond_ore"), Set.of(), 60, OptionalInt.empty(), false,
+                Optional.of(new DrillingFluid(Set.of("fieldworks:drilling_mud"), 250)));
+
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_TO_WORK),
+                OperationChoice.choose(layer, 0, List.of(replacesDiamond), Optional.empty(), Machine.ready(1)));
+        assertEquals(new OperationChoice.Idle(IdleReason.OUTPUT_FULL),
+                OperationChoice.choose(layer, 0, List.of(), Optional.empty(), Machine.ready(1).withFits(operation -> false)));
+        assertEquals(new OperationChoice.Idle(IdleReason.NO_POWER),
+                OperationChoice.choose(layer, 0, List.of(), Optional.empty(), Machine.ready(1).withPower(false)));
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_MATCHING),
+                OperationChoice.choose(layer, 0, List.of(MUDDY_IRON), Optional.of(MUDDY_IRON), Machine.ready(1)));
+        assertEquals(new OperationChoice.Idle(IdleReason.NO_FLUID),
+                OperationChoice.choose(layer, 0, List.of(muddyDiamond), Optional.of(muddyDiamond), Machine.ready(1)));
+    }
+
+    @Test
+    void aHeldRecipeWorksOnlyTheSourcesItMatchesInTurnAndPassesOverTheRest() {
+        Source taggedCopper = Source.oreBlock("fieldworks:copper_ore", Set.of("c:ores/copper"));
+        List<Source> layer = List.of(IRON, COPPER, NONE, taggedCopper, IRON, NONE, NONE, NONE, NONE);
+        Recipe held = new Recipe("test:copper", Set.of("fieldworks:copper_ore"), Set.of(), 40, OptionalInt.empty(), false);
+
+        assertEquals(List.of(1, 3, 1, 3), heldPositions(layer, held, 4));
+    }
+
+    @Test
+    void aHeldRecipeOnATagMatchesEveryBlockInTheTagAndNoOther() {
+        Source taggedIron = Source.oreBlock("fieldworks:iron_ore", Set.of("c:ores/iron"));
+        List<Source> layer = List.of(COPPER, taggedIron, COPPER, NONE, NONE, NONE, NONE, NONE, taggedIron);
+        Recipe held = new Recipe("test:iron_tag", Set.of(), Set.of("c:ores/iron"), 40, OptionalInt.empty(), false);
+
+        assertEquals(List.of(1, 8, 1), heldPositions(layer, held, 3));
+    }
+
+    @Test
+    void aHeldRecipeRunsOnASourceWhoseDefaultItReplaces() {
+        List<Source> layer = List.of(COPPER, IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe fluidOnly = new Recipe("test:iron_only", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), true);
+
+        assertEquals(List.of(1, 1), heldPositions(layer, fluidOnly, 2));
+    }
+
+    private static final Recipe MUDDY_IRON = new Recipe("test:muddy_iron", Set.of("fieldworks:iron_ore"), Set.of(), 40,
+            OptionalInt.empty(), false, Optional.of(new DrillingFluid(Set.of("fieldworks:drilling_mud"), 250)));
+
+    @Test
+    void aHeldRecipeWithADrillingFluidIdlesWithNoFluidWhenTheTankIsEmpty() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.NO_FLUID), OperationChoice.choose(layer, 0, List.of(MUDDY_IRON),
+                Optional.of(MUDDY_IRON), Machine.ready(1).withTank(Tank.EMPTY)));
+    }
+
+    @Test
+    void aHeldRecipeWithADrillingFluidIdlesWithNoFluidOnTooLittleOrTheWrongFluid() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.NO_FLUID), OperationChoice.choose(layer, 0, List.of(MUDDY_IRON),
+                Optional.of(MUDDY_IRON), Machine.ready(1).withTank(new Tank("fieldworks:drilling_mud", 249))));
+        assertEquals(new OperationChoice.Idle(IdleReason.NO_FLUID), OperationChoice.choose(layer, 0, List.of(MUDDY_IRON),
+                Optional.of(MUDDY_IRON), Machine.ready(1).withTank(new Tank("minecraft:water", 1000))));
+    }
+
+    @Test
+    void aHeldRecipeWithADrillingFluidRunsWithEnoughOfItInTheTank() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(Operation.class, OperationChoice.choose(layer, 0, List.of(MUDDY_IRON), Optional.of(MUDDY_IRON),
+                Machine.ready(1).withTank(new Tank("fieldworks:drilling_mud", 250))).getClass());
+    }
+
+    @Test
+    void aHeldRecipeMatchingNothingSaysSoEvenWithNoFluid() {
+        List<Source> layer = List.of(COPPER, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_MATCHING), OperationChoice.choose(layer, 0, List.of(MUDDY_IRON),
+                Optional.of(MUDDY_IRON), Machine.ready(1).withTank(Tank.EMPTY)));
+    }
+
+    @Test
+    void anOperationWhoseResultHasNoRoomInTheOutputBufferIdlesWithOutputFull() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe held = new Recipe("test:iron", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), false);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.OUTPUT_FULL),
+                OperationChoice.choose(layer, 0, List.of(), Optional.empty(), Machine.ready(1).withFits(operation -> false)));
+        assertEquals(new OperationChoice.Idle(IdleReason.OUTPUT_FULL),
+                OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), Machine.ready(1).withFits(operation -> false)));
+    }
+
+    @Test
+    void roomIsAskedForTheOperationChosenSoAFullBufferForOneResultIsNotFullForAnother() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe held = new Recipe("test:iron", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), false);
+        Machine noRoomForDefaults = Machine.ready(1).withFits(operation -> operation.recipe().isPresent());
+
+        assertEquals(new OperationChoice.Idle(IdleReason.OUTPUT_FULL),
+                OperationChoice.choose(layer, 0, List.of(held), Optional.empty(), noRoomForDefaults));
+        assertEquals(Operation.class, OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), noRoomForDefaults).getClass());
+    }
+
+    @Test
+    void anOperationWithNoPowerToSpendIdlesWithNoPower() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.NO_POWER),
+                OperationChoice.choose(layer, 0, List.of(), Optional.empty(), Machine.ready(1).withPower(false)));
+    }
+
+    @Test
+    void aFullOutputIsTheReasonGivenOverNoPowerSinceFuelIsNotLitForAResultWithNowhereToGo() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.OUTPUT_FULL), OperationChoice.choose(layer, 0, List.of(), Optional.empty(),
+                Machine.ready(1).withFits(operation -> false).withPower(false)));
+    }
+
+    @Test
+    void whatTheLayerOffersIsTheReasonGivenOverPowerOrRoom() {
+        List<Source> empty = List.of(NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Machine stuck = Machine.ready(1).withFits(operation -> false).withPower(false);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_TO_WORK), OperationChoice.choose(empty, 0, List.of(), Optional.empty(), stuck));
+        assertEquals(new OperationChoice.Idle(IdleReason.NO_FLUID), OperationChoice.choose(List.of(IRON), 0, List.of(MUDDY_IRON),
+                Optional.of(MUDDY_IRON), stuck));
+    }
+
+    private static List<Integer> heldPositions(List<Source> layer, Recipe held, int count) {
+        List<Integer> positions = new ArrayList<>();
+        int cursor = 0;
+        for (int i = 0; i < count; i++) {
+            Operation operation = (Operation) OperationChoice.choose(layer, cursor, List.of(held), Optional.of(held), 1);
+            positions.add(operation.position());
+            cursor = operation.nextCursor();
+        }
+        return positions;
     }
 
     /** The positions of {@code count} operations in a row, each starting from the cursor the last one left. */

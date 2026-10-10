@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * The choice of the Harvester's next operation: given the sources in the layer under its footprint, in
@@ -46,7 +47,16 @@ public final class OperationChoice {
      * {@code tierRank} is the rank of the Harvester Tier doing the work.
      */
     public static Choice choose(List<Source> layer, int cursor, List<Recipe> recipes, Optional<Recipe> held, int tierRank) {
-        if (held.isPresent() && held.get().minimumRank().isPresent() && tierRank < held.get().minimumRank().getAsInt()) {
+        return choose(layer, cursor, recipes, held, Machine.ready(tierRank));
+    }
+
+    /**
+     * As {@link #choose(List, int, List, Optional, int)}, for a Harvester in the state {@code machine} reads. A
+     * Held recipe works only the sources it matches, and when it cannot run the Harvester idles with the reason
+     * and never falls back to the Default recipes (#10).
+     */
+    public static Choice choose(List<Source> layer, int cursor, List<Recipe> recipes, Optional<Recipe> held, Machine machine) {
+        if (held.isPresent() && held.get().minimumRank().isPresent() && machine.tierRank() < held.get().minimumRank().getAsInt()) {
             return new Idle(IdleReason.TIER_TOO_LOW);
         }
         // Any well under the footprint excludes every block source (#1).
@@ -61,13 +71,75 @@ public final class OperationChoice {
             }
             if (held.isPresent()) {
                 if (held.get().matches(source)) {
-                    return new Operation(position, held.get().duration(), next, held);
+                    if (!held.get().drillingFluid().map(machine.tank()::holds).orElse(true)) {
+                        return new Idle(IdleReason.NO_FLUID);
+                    }
+                    return machine.run(new Operation(position, held.get().duration(), next, held));
                 }
             } else if (recipes.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
-                return new Operation(position, defaultTicks(source.kind()), next, Optional.empty());
+                return machine.run(new Operation(position, defaultTicks(source.kind()), next, Optional.empty()));
             }
         }
-        return new Idle(IdleReason.NOTHING_TO_WORK);
+        return new Idle(held.isPresent() ? IdleReason.NOTHING_MATCHING : IdleReason.NOTHING_TO_WORK);
+    }
+
+    /**
+     * What the choice reads of the Harvester itself: its tier's rank, its Drilling Fluid tank, whether its output
+     * buffer has room for an operation's result, and whether it has a tick of power to spend.
+     */
+    public record Machine(int tierRank, Tank tank, Predicate<Operation> fits, boolean powered) {
+
+        public Machine {
+            Objects.requireNonNull(tank);
+            Objects.requireNonNull(fits);
+        }
+
+        /** A powered Harvester of this rank with an empty tank and room for anything. */
+        public static Machine ready(int tierRank) {
+            return new Machine(tierRank, Tank.EMPTY, operation -> true, true);
+        }
+
+        public Machine withTank(Tank tank) {
+            return new Machine(tierRank, tank, fits, powered);
+        }
+
+        public Machine withFits(Predicate<Operation> fits) {
+            return new Machine(tierRank, tank, fits, powered);
+        }
+
+        public Machine withPower(boolean powered) {
+            return new Machine(tierRank, tank, fits, powered);
+        }
+
+        /** The operation, or why the Harvester cannot run it now: a result with nowhere to go comes before power. */
+        Choice run(Operation operation) {
+            if (!fits.test(operation)) {
+                return new Idle(IdleReason.OUTPUT_FULL);
+            }
+            return powered ? operation : new Idle(IdleReason.NO_POWER);
+        }
+    }
+
+    /** What the Drilling Fluid tank holds: a fluid id and its mB, or nothing. */
+    public record Tank(String fluid, int amount) {
+
+        public static final Tank EMPTY = new Tank("", 0);
+
+        public Tank {
+            Objects.requireNonNull(fluid);
+        }
+
+        boolean holds(DrillingFluid need) {
+            return need.fluids().contains(fluid) && amount >= need.amount();
+        }
+    }
+
+    /** The Drilling Fluid a Harvest Recipe consumes: the fluids that serve, by id, and the mB per operation. */
+    public record DrillingFluid(Set<String> fluids, int amount) {
+
+        public DrillingFluid {
+            fluids = Set.copyOf(fluids);
+        }
     }
 
     private static int defaultTicks(Kind kind) {
@@ -118,16 +190,22 @@ public final class OperationChoice {
 
     /**
      * A Harvest Recipe as the choice reads it: the blocks and block tags it matches, its duration in ticks at
-     * speed ×1, the lowest tier rank that may run it if it names one, and whether it removes its sources'
-     * Default recipes.
+     * speed ×1, the lowest tier rank that may run it if it names one, whether it removes its sources'
+     * Default recipes, and the Drilling Fluid it consumes, if any.
      */
     public record Recipe(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank,
-            boolean replacesDefault) {
+            boolean replacesDefault, Optional<DrillingFluid> drillingFluid) {
 
         public Recipe {
             Objects.requireNonNull(id);
             blocks = Set.copyOf(blocks);
             tags = Set.copyOf(tags);
+            Objects.requireNonNull(drillingFluid);
+        }
+
+        /** A recipe that takes no Drilling Fluid. */
+        public Recipe(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank, boolean replacesDefault) {
+            this(id, blocks, tags, duration, minimumRank, replacesDefault, Optional.empty());
         }
 
         boolean matches(Source source) {
@@ -142,9 +220,18 @@ public final class OperationChoice {
 
     /** Why the Harvester has no operation to run. */
     public enum IdleReason {
+        /** With no Held recipe, no source in the layer has a Default recipe to run. */
         NOTHING_TO_WORK,
+        /** The Held recipe matches no source in the layer (#10); it never falls back to the Default recipes. */
+        NOTHING_MATCHING,
         /** The Held recipe names a minimum tier above the Harvester's rank. */
-        TIER_TOO_LOW
+        TIER_TOO_LOW,
+        /** The Held recipe's Drilling Fluid is not in the tank, or not enough of it for one operation. */
+        NO_FLUID,
+        /** No tick of power to spend: no burn left and no fuel to light. */
+        NO_POWER,
+        /** The output buffer has no room for the operation's result. */
+        OUTPUT_FULL
     }
 
     /** What {@link #choose} returns: an operation, or why there is none. */

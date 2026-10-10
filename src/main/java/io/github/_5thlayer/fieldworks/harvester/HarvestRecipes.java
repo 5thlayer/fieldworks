@@ -20,6 +20,8 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -27,8 +29,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * The {@code fieldworks:harvesting} recipe type and what a Harvester reads of it. The type and its serializer
  * share a name, so a datapack file says {@code "type": "fieldworks:harvesting"}.
  *
- * <p>The server's recipes are all there is to read: the client has no recipe manager, and sending these to
- * a viewer is the Held recipe's job (#10).
+ * <p>The client has no recipe manager and is sent only the recipe types asked for, so these are asked for at
+ * every datapack sync: a recipe viewer lists them from what it is sent (#10).
  */
 public final class HarvestRecipes {
 
@@ -49,6 +51,11 @@ public final class HarvestRecipes {
     public static void register(IEventBus modBus) {
         TYPES.register(modBus);
         SERIALIZERS.register(modBus);
+        NeoForge.EVENT_BUS.addListener(HarvestRecipes::sendToClients);
+    }
+
+    private static void sendToClients(OnDatapackSyncEvent event) {
+        event.sendRecipes(TYPE.get());
     }
 
     /** The Harvest Recipe at this id, whatever it needs. */

@@ -11,8 +11,13 @@ import java.util.stream.Collectors;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.Choice;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.Idle;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.IdleReason;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.Machine;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Operation;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.Tank;
 import io.github._5thlayer.fieldworks.oil.OilWellBlock;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
@@ -22,10 +27,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.Containers;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStackTemplate;
@@ -57,7 +67,7 @@ import org.jspecify.annotations.Nullable;
  * result and a tick of power, puts a tick into the operation the choice module names. One burn tick, or one
  * tick's FE, buys one tick of work. A full buffer or product tank stops it; nothing is dropped in the world.
  */
-public final class HarvesterBlockEntity extends BlockEntity {
+public final class HarvesterBlockEntity extends BlockEntity implements MenuProvider {
 
     /** The output buffer's slots. */
     static final int BUFFER_SLOTS = 9;
@@ -96,6 +106,8 @@ public final class HarvesterBlockEntity extends BlockEntity {
 
     /** The Held recipe's id, resolved on each tick: a block entity loads before the recipes do. */
     private @Nullable Identifier held;
+    /** Why the last tick did no work, or null if it worked; read again every tick, so never saved. */
+    private @Nullable IdleReason idle;
 
     public HarvesterBlockEntity(BlockPos pos, BlockState state) {
         super(Harvesters.BLOCK_ENTITY.get(), pos, state);
@@ -145,22 +157,25 @@ public final class HarvesterBlockEntity extends BlockEntity {
         if (held != null) {
             HarvestRecipes.Entry entry = recipes.byId().get(held.toString());
             if (entry == null) {
-                // A Held recipe a reload removed runs nothing; it never falls back to the Default recipes.
+                // A Held recipe a reload removed matches nothing; it never falls back to the Default recipes (#10).
+                idle = IdleReason.NOTHING_MATCHING;
                 return;
             }
             heldChoice = Optional.of(entry.choice());
         }
         List<BlockPos> layer = layer();
-        if (!(OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, tier.rank()) instanceof Operation operation)) {
+        // No Drilling Fluid tank yet: #11 hands the choice what the tank holds.
+        Machine machine = new Machine(tier.rank(), Tank.EMPTY, operation -> work(level, layer, operation, recipes) != null, canPay(level, tier));
+        Choice choice = OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, machine);
+        if (!(choice instanceof Operation operation)) {
+            idle = ((Idle) choice).reason();
             return;
         }
-        BlockPos at = layer.get(operation.position());
-        Runnable work = level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well)
-                : level.getBlockState(at).getBlock() instanceof OreBlock ? draw(level, at, operation, recipes)
-                : breakBlock(level, at, operation, recipes);
+        Runnable work = work(level, layer, operation, recipes);
         if (work == null || !payTick(level, tier)) {
             return;
         }
+        idle = null;
         progress++;
         if (progress >= tier.ticks(operation.ticks())) {
             progress = 0;
@@ -168,6 +183,14 @@ public final class HarvesterBlockEntity extends BlockEntity {
             work.run();
         }
         setChanged();
+    }
+
+    /** The operation's work, or null while there is no room for what it yields. */
+    private @Nullable Runnable work(ServerLevel level, List<BlockPos> layer, Operation operation, HarvestRecipes.Loaded recipes) {
+        BlockPos at = layer.get(operation.position());
+        return level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well)
+                : level.getBlockState(at).getBlock() instanceof OreBlock ? draw(level, at, operation, recipes)
+                : breakBlock(level, at, operation, recipes);
     }
 
     /**
@@ -240,6 +263,26 @@ public final class HarvesterBlockEntity extends BlockEntity {
         setChanged();
     }
 
+    /** The Held recipe's id, or empty with none held. */
+    public Optional<Identifier> heldRecipe() {
+        return Optional.ofNullable(held);
+    }
+
+    /** Why the Harvester did no work on its last tick, or empty if it worked (#13 shows it). */
+    public Optional<IdleReason> idleReason() {
+        return Optional.ofNullable(idle);
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return getBlockState().getBlock().getName();
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
+        return new HarvesterMenu(containerId, inventory, this);
+    }
+
     /** The layer under the footprint, in the fixed order the cursor counts in, whatever way the Harvester faces. */
     private List<BlockPos> layer() {
         List<BlockPos> layer = new ArrayList<>(9);
@@ -267,11 +310,11 @@ public final class HarvesterBlockEntity extends BlockEntity {
         return sources;
     }
 
-    private static Set<String> tagsOf(Block block) {
+    static Set<String> tagsOf(Block block) {
         return block.builtInRegistryHolder().tags().map(tag -> tag.location().toString()).collect(Collectors.toUnmodifiableSet());
     }
 
-    private static ItemStack drop(OreBlock ore) {
+    static ItemStack drop(OreBlock ore) {
         return new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(ore.resource().drop())));
     }
 
@@ -300,6 +343,19 @@ public final class HarvesterBlockEntity extends BlockEntity {
         }
     }
 
+    /** Whether the tier's power rule could pay for a tick of work now, without paying it. */
+    private boolean canPay(ServerLevel level, HarvesterTier tier) {
+        HarvesterTier.Power power = tier.power();
+        if (power.fe()) {
+            energy.resize(tier.feBuffer());
+        }
+        return switch (power.payment(burnLeft, energy.getAmountAsInt())) {
+            case BURN, FE -> true;
+            case LIGHT -> light(level, false);
+            case NONE -> false;
+        };
+    }
+
     /** Pays for one tick of work as the tier's power rule says (#7): a burn tick, a tick's FE, or a fuel item lit. */
     private boolean payTick(ServerLevel level, HarvesterTier tier) {
         HarvesterTier.Power power = tier.power();
@@ -319,7 +375,7 @@ public final class HarvesterBlockEntity extends BlockEntity {
                 yield true;
             }
             case LIGHT -> {
-                if (!light(level)) {
+                if (!light(level, true)) {
                     yield false;
                 }
                 burnLeft--;
@@ -330,10 +386,11 @@ public final class HarvesterBlockEntity extends BlockEntity {
     }
 
     /**
-     * Lights the fuel item in the fuel slot. A fuel item's remainder, the bucket of a lava bucket, goes to the
-     * output buffer, so a fuel item whose remainder has no room there is not lit.
+     * Lights the fuel item in the fuel slot, when {@code commit}, or says whether it would light. A fuel item's
+     * remainder, the bucket of a lava bucket, goes to the output buffer, so a fuel item whose remainder has no room
+     * there is not lit.
      */
-    private boolean light(ServerLevel level) {
+    private boolean light(ServerLevel level, boolean commit) {
         ItemResource item = fuel.getResource(0);
         int burnTime = item.isEmpty() ? 0 : item.toStack(1).getBurnTime(null, level.fuelValues());
         if (burnTime == 0) {
@@ -345,6 +402,9 @@ public final class HarvesterBlockEntity extends BlockEntity {
             if (remainder != null && ResourceHandlerUtil.insertStacking(buffer,
                     ItemResource.of(remainder.create()), 1, lighting) != 1) {
                 return false;
+            }
+            if (!commit) {
+                return true;
             }
             lighting.commit();
         }
