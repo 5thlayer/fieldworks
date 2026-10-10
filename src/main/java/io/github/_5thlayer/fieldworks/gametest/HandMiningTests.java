@@ -5,6 +5,7 @@ package io.github._5thlayer.fieldworks.gametest;
 
 import java.util.List;
 
+import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.ore.OreResource;
@@ -45,6 +46,40 @@ final class HandMiningTests {
                 helper -> mine(helper, OreResource.URANIUM, new ChunkPos(124, 180), Items.STONE_PICKAXE, 0));
         tests.test("an_iron_pickaxe_takes_one_unit_of_uranium_per_break", 20,
                 helper -> mine(helper, OreResource.URANIUM, new ChunkPos(132, 180), Items.IRON_PICKAXE, 1));
+        tests.test("an_ore_block_outside_a_patch_yields_its_default_amount", 20,
+                helper -> mineUnpatched(helper, OreResource.IRON));
+    }
+
+    /** An ore block placed where no patch stands starts at its resource's default amount, not zero. */
+    private static void mineUnpatched(GameTestHelper helper, OreResource resource) {
+        ServerLevel level = helper.getLevel();
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 2, 1));
+        OreBlock ore = FieldworksRegistries.ore(resource).get();
+        level.setBlockAndUpdate(pos, ore.defaultBlockState());
+        int amount = resource.corpus().defaultAmount();
+
+        ServerPlayer player = FakePlayerFactory.getMinecraft(level);
+        player.setGameMode(GameType.SURVIVAL);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_PICKAXE));
+        player.gameMode.destroyBlock(pos);
+
+        int remaining = OreMining.remaining(level, pos, ore);
+        if (remaining != amount - 1) {
+            helper.fail("an unpatched " + resource.key() + " block should hold " + amount + " and left " + remaining + " after one break");
+            return;
+        }
+        Item drop = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
+                net.minecraft.resources.Identifier.parse(resource.drop()));
+        int paid = level.getEntities(EntityType.ITEM, new AABB(pos).inflate(2), e -> true).stream()
+                .map(ItemEntity::getItem)
+                .filter(stack -> stack.is(drop))
+                .mapToInt(ItemStack::getCount)
+                .sum();
+        if (paid != 1) {
+            helper.fail("an unpatched " + resource.key() + " block paid " + paid + ", expected 1");
+            return;
+        }
+        helper.succeed();
     }
 
     /** Breaks the patch's first block once with {@code tool} and expects {@code units} drawn and paid. */

@@ -28,6 +28,7 @@
   },
   "resources": {
     "iron": {
+      "default_amount": 8000,
       "stage_ratios": [
         1.0,
         0.6333333333333333,
@@ -49,6 +50,7 @@
       }
     },
     "copper": {
+      "default_amount": 6400,
       "stage_ratios": [
         1.0,
         0.6333333333333333,
@@ -70,6 +72,7 @@
       }
     },
     "coal": {
+      "default_amount": 6400,
       "stage_ratios": [
         1.0,
         0.6333333333333333,
@@ -91,6 +94,7 @@
       }
     },
     "stone": {
+      "default_amount": 3200,
       "stage_ratios": [
         1.0,
         0.6333333333333333,
@@ -112,6 +116,7 @@
       }
     },
     "uranium": {
+      "default_amount": 1440,
       "stage_ratios": [
         1.0,
         0.633,
@@ -133,6 +138,7 @@
       }
     },
     "sulfur": {
+      "default_amount": 2400,
       "stage_ratios": [
         1.0,
         0.633,

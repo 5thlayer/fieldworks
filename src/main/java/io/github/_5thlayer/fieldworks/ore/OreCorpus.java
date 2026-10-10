@@ -57,7 +57,7 @@ public final class OreCorpus {
                 JsonObject entry = entries.getAsJsonObject(name);
                 List<Double> ratios = new ArrayList<>();
                 entry.getAsJsonArray("stage_ratios").forEach(value -> ratios.add(value.getAsDouble()));
-                resources.put(name, new Resource(name, List.copyOf(ratios), patch(entry.getAsJsonObject("patch"))));
+                resources.put(name, new Resource(name, entry.get("default_amount").getAsInt(), List.copyOf(ratios), patch(entry.getAsJsonObject("patch"))));
             }
             JsonObject distance = root.getAsJsonObject("distance_law");
             JsonObject density = root.getAsJsonObject("density_law");
@@ -125,9 +125,10 @@ public final class OreCorpus {
     }
 
     /**
+     * @param defaultAmount what an ore block no patch placed starts with (ADR-0002)
      * @param stageRatios fractions of a block's own initial amount at which each stage begins, richest first
      */
-    public record Resource(String name, List<Double> stageRatios, Patch patch) {
+    public record Resource(String name, int defaultAmount, List<Double> stageRatios, Patch patch) {
     }
 
     /** A resource's autoplace arguments, and the range a spot's size factor is drawn from. */

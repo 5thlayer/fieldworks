@@ -72,7 +72,7 @@ public final class OreMining {
      */
     public static OreDelta.Draw draw(ServerLevel level, OreBlock ore, BlockPos pos) {
         @Nullable PatchDisc disc = discOf(level, ore, pos);
-        int initial = initial(disc);
+        int initial = initial(ore, disc);
         OreDelta delta = deltaOf(level, pos);
         OreDelta.Draw draw = delta.draw(pos.asLong(), initial);
         level.getChunk(pos).markUnsaved();
@@ -106,13 +106,13 @@ public final class OreMining {
         return deltaOf(server, pos).remaining(pos.asLong(), initialAmount(server, ore, pos));
     }
 
-    /** The block's initial amount: its patch's quotient, or {@code 0} for a block no patch placed. */
+    /** The block's initial amount: its patch's quotient, or its resource's default for a block no patch placed. */
     public static int initialAmount(ServerLevel level, OreBlock ore, BlockPos pos) {
-        return initial(discOf(level, ore, pos));
+        return initial(ore, discOf(level, ore, pos));
     }
 
-    private static int initial(@Nullable PatchDisc disc) {
-        return disc != null ? disc.amountPerBlock() : 0;
+    private static int initial(OreBlock ore, @Nullable PatchDisc disc) {
+        return disc != null ? disc.amountPerBlock() : ore.resource().corpus().defaultAmount();
     }
 
     /** The disc a block belongs to, or null for a block no patch placed. */
