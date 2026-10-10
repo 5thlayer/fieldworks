@@ -181,19 +181,27 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             return;
         }
         Runnable work = work(level, layer, operation, recipes);
-        if (work == null || !payTick(level, tier)) {
+        if (work == null) {
+            return;
+        }
+        int ticks = tier.ticks(operation.ticks());
+        boolean completes = progress + 1 >= ticks;
+        // The fluid is taken on completion, so it is checked before that tick is paid for: one short keeps its place (#11).
+        if (completes && !takeDrillingFluid(operation.drillingFluid(), false)) {
+            idle = IdleReason.NO_FLUID;
+            return;
+        }
+        if (!payTick(level, tier)) {
             return;
         }
         idle = null;
         progress++;
-        operationTicks = tier.ticks(operation.ticks());
-        if (progress >= operationTicks) {
+        operationTicks = ticks;
+        if (completes) {
+            takeDrillingFluid(operation.drillingFluid(), true);
+            work.run();
             progress = 0;
             cursor = operation.nextCursor();
-            // Taken on completion, as the result is paid; only a Held recipe names a fluid, so a Default recipe takes none (#1).
-            if (takeDrillingFluid(operation.drillingFluid())) {
-                work.run();
-            }
         }
         setChanged();
     }
@@ -278,8 +286,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         return held.isEmpty() ? Tank.EMPTY : new Tank(BuiltInRegistries.FLUID.getKey(held.getFluid()).toString(), drillingFluidTank.getAmountAsInt(0));
     }
 
-    /** Takes one operation's Drilling Fluid from the tank, or says it is not there; none to take is taken. */
-    private boolean takeDrillingFluid(Optional<DrillingFluid> need) {
+    /** Takes one operation's Drilling Fluid from the tank, when {@code commit}, or says whether it is there. */
+    private boolean takeDrillingFluid(Optional<DrillingFluid> need, boolean commit) {
         if (need.isEmpty()) {
             return true;
         }
@@ -291,7 +299,9 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             if (drillingFluidTank.extract(0, held, need.get().amount(), taking) != need.get().amount()) {
                 return false;
             }
-            taking.commit();
+            if (commit) {
+                taking.commit();
+            }
             return true;
         }
     }
