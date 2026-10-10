@@ -60,3 +60,19 @@ type = "optional"
 versionRange = "[26.1.11,)"
 ordering = "NONE"
 side = "BOTH"
+
+# Soft: Harvest Recipes show in EMI, and its transfer sets a Harvester's Held recipe.
+[[dependencies.${mod_id}]]
+modId = "emi"
+type = "optional"
+versionRange = "[0,)"
+ordering = "NONE"
+side = "CLIENT"
+
+# Soft: Harvest Recipes show in JEI, and its transfer sets a Harvester's Held recipe.
+[[dependencies.${mod_id}]]
+modId = "jei"
+type = "optional"
+versionRange = "[29.20.0.53,)"
+ordering = "NONE"
+side = "CLIENT"

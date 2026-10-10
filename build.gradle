@@ -26,6 +26,10 @@ tasks.withType(Jar).configureEach {
 def ftbChunks = 'curse.maven:ftb-chunks-314906:8791100'
 def ftbLibrary = 'curse.maven:ftb-library-404465:8574542'
 def jade = 'maven.modrinth:jade:26.1.11+neoforge'
+// No official EMI for 26.1: this unofficial port is what the 5thlayer mods build against.
+def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
+// The last JEI that loads on NeoForge 26.1.2.77; later ones need .81.
+def jei = '29.20.0.53'
 
 def gameTestReport = layout.buildDirectory.file('reports/gametest.xml').get().asFile
 
@@ -33,6 +37,10 @@ neoForge {
     version = neoforge_version
 
     runs {
+        configureEach {
+            // EMI's port still marks classes @OnlyIn, for which NeoForge stops each load at a warning screen.
+            systemProperty 'neoforge.warnings.onlyin.hide', 'true'
+        }
         // The same player every launch, so a dev save keeps its inventory and position.
         client {
             client()
@@ -91,6 +99,11 @@ repositories {
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
     }
+    // JEI, whose Harvest Recipe tab and transfer the Library adds; it loads without it.
+    maven {
+        url = 'https://maven.blamejared.com'
+        content { includeGroup 'mezz.jei' }
+    }
     // Groundworks and libworks-runtime, from the local maven only, where their releases publish them.
     // CI builds their tags there first.
     mavenLocal {
@@ -99,6 +112,12 @@ repositories {
             includeModule 'io.github.5thlayer', 'libworks-runtime'
         }
     }
+}
+
+// Mods on the dev runs that the published jar does not depend on.
+configurations {
+    localRuntime
+    runtimeClasspath.extendsFrom localRuntime
 }
 
 dependencies {
@@ -115,6 +134,17 @@ dependencies {
     compileOnly(ftbChunks) { transitive = false }
     compileOnly(ftbLibrary) { transitive = false }
     compileOnly jade
+
+    // EMI and JEI, both soft: only compat/emi and compat/jei name them, and each viewer loads its plugin only
+    // when it is installed (#10). EMI is on the dev runs; -PwithJEI puts JEI there instead, as a pack ships one.
+    compileOnly emi
+    compileOnly "mezz.jei:jei-26.1.2-common-api:$jei"
+    compileOnly "mezz.jei:jei-26.1.2-neoforge-api:$jei"
+    if (providers.gradleProperty('withJEI').isPresent()) {
+        localRuntime "mezz.jei:jei-26.1.2-neoforge:$jei"
+    } else {
+        localRuntime emi
+    }
 
     // DataFixerUpper and Gson, and nothing of Minecraft: Codec and the frozen data read on a plain JVM.
     testImplementation 'com.mojang:datafixerupper:9.0.19'
