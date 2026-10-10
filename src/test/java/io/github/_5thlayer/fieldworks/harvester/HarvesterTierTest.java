@@ -33,6 +33,17 @@ class HarvesterTierTest {
     }
 
     @Test
+    void theElectricHarvesterShipsRankTwoFeOnlyAtSpeedTwo() throws Exception {
+        HarvesterTier tier = parse(shipped("harvester_2")).getOrThrow();
+
+        assertEquals(2, tier.rank());
+        assertEquals(2.0, tier.speed(), 1e-9);
+        assertFalse(tier.power().fuel());
+        assertEquals(40, tier.power().fePerTick());
+        assertEquals(50_000, tier.feBuffer());
+    }
+
+    @Test
     void aTierThatTakesNoPowerIsRefused() {
         DataResult<HarvesterTier> result = parse(json("""
                 {"rank": 1, "speed": 1.0, "power": {}, "fe_buffer": 0}"""));

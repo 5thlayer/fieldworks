@@ -36,6 +36,8 @@ import net.neoforged.neoforge.transfer.CombinedResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
 import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
@@ -47,8 +49,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * A Harvester at work: each tick it fills the container in its fill slot from the product tank, pushes its
  * output buffer and its crude into the item and fluid handlers at its output face, then, with room for the
- * result and a tick of power, puts a tick into the operation the choice module names. One burn tick buys
- * one tick of work. A full buffer or product tank stops it; nothing is dropped in the world.
+ * result and a tick of power, puts a tick into the operation the choice module names. One burn tick, or one
+ * tick's FE, buys one tick of work. A full buffer or product tank stops it; nothing is dropped in the world.
  */
 public final class HarvesterBlockEntity extends BlockEntity {
 
@@ -62,6 +64,7 @@ public final class HarvesterBlockEntity extends BlockEntity {
     private static final String FILL_KEY = "fill";
     private static final String BUFFER_KEY = "buffer";
     private static final String PRODUCT_KEY = "product";
+    private static final String ENERGY_KEY = "energy";
     private static final String BURN_KEY = "burn_left";
     private static final String PROGRESS_KEY = "progress";
     private static final String CURSOR_KEY = "cursor";
@@ -73,6 +76,10 @@ public final class HarvesterBlockEntity extends BlockEntity {
     private final ResourceHandler<ItemResource> face = new Face(new CombinedResourceHandler<>(fuel, fill, buffer));
     private final FluidStacksResourceHandler product = new ProductTank();
     private final ResourceHandler<FluidResource> fluidFace = new FluidFace(product);
+    private final EnergyBuffer energy = new EnergyBuffer();
+
+    /** Whether the energy capability was last seen exposed, so a reload that re-powers the tier invalidates it. */
+    private boolean exposesEnergy;
 
     /** Burn ticks bought by the last fuel item and not yet worked. */
     private int burnLeft;
@@ -96,10 +103,32 @@ public final class HarvesterBlockEntity extends BlockEntity {
         return fluidFace;
     }
 
+    /**
+     * The energy capability on every face of the footprint, sized by the tier's FE buffer: it takes FE and gives
+     * none back. A tier that takes no FE exposes none (ADR 0005), and neither does one whose file is missing.
+     */
+    @Nullable EnergyHandler energyFace() {
+        HarvesterTier tier = tier();
+        if (tier == null || !tier.power().fe()) {
+            return null;
+        }
+        energy.resize(tier.feBuffer());
+        return energy.face;
+    }
+
+    private TierBlock tierBlock() {
+        return ((HarvesterBlock) getBlockState().getBlock()).tier();
+    }
+
+    private @Nullable HarvesterTier tier() {
+        return HarvesterTiers.get(tierBlock());
+    }
+
     public void serverTick(ServerLevel level) {
         fillContainer();
         pushOutput(level);
-        HarvesterTier tier = HarvesterTiers.get(((HarvesterBlock) getBlockState().getBlock()).tier());
+        HarvesterTier tier = tier();
+        exposeEnergy(level, tier != null && tier.power().fe());
         if (tier == null) {
             return;
         }
@@ -119,7 +148,7 @@ public final class HarvesterBlockEntity extends BlockEntity {
         }
         BlockPos at = layer.get(operation.position());
         Runnable work = level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well) : draw(level, at, operation, recipes);
-        if (work == null || !burnTick(level, tier)) {
+        if (work == null || !payTick(level, tier)) {
             return;
         }
         progress++;
@@ -222,32 +251,71 @@ public final class HarvesterBlockEntity extends BlockEntity {
         }
     }
 
-    /**
-     * Spends one burn tick, lighting the next fuel item when the last is spent. A fuel item's remainder,
-     * the bucket of a lava bucket, goes to the output buffer, so a fuel item whose remainder has no room
-     * there is not lit.
-     */
-    private boolean burnTick(ServerLevel level, HarvesterTier tier) {
-        if (burnLeft == 0 && tier.power().fuel()) {
-            ItemResource item = fuel.getResource(0);
-            int burnTime = item.isEmpty() ? 0 : item.toStack(1).getBurnTime(null, level.fuelValues());
-            if (burnTime > 0) {
-                try (Transaction lighting = Transaction.openRoot()) {
-                    fuel.extract(0, item, 1, lighting);
-                    ItemStackTemplate remainder = item.toStack(1).getCraftingRemainder();
-                    if (remainder == null || ResourceHandlerUtil.insertStacking(buffer,
-                            ItemResource.of(remainder.create()), 1, lighting) == 1) {
-                        lighting.commit();
-                        burnLeft = burnTime;
-                    }
-                }
-            }
+    /** Pays for one tick of work as the tier's power rule says (#7): a burn tick, a tick's FE, or a fuel item lit. */
+    private boolean payTick(ServerLevel level, HarvesterTier tier) {
+        HarvesterTier.Power power = tier.power();
+        if (power.fe()) {
+            energy.resize(tier.feBuffer());
         }
-        if (burnLeft == 0) {
+        return switch (power.payment(burnLeft, energy.getAmountAsInt())) {
+            case BURN -> {
+                burnLeft--;
+                yield true;
+            }
+            case FE -> {
+                try (Transaction paying = Transaction.openRoot()) {
+                    energy.extract(power.fePerTick(), paying);
+                    paying.commit();
+                }
+                yield true;
+            }
+            case LIGHT -> {
+                if (!light(level)) {
+                    yield false;
+                }
+                burnLeft--;
+                yield true;
+            }
+            case NONE -> false;
+        };
+    }
+
+    /**
+     * Lights the fuel item in the fuel slot. A fuel item's remainder, the bucket of a lava bucket, goes to the
+     * output buffer, so a fuel item whose remainder has no room there is not lit.
+     */
+    private boolean light(ServerLevel level) {
+        ItemResource item = fuel.getResource(0);
+        int burnTime = item.isEmpty() ? 0 : item.toStack(1).getBurnTime(null, level.fuelValues());
+        if (burnTime == 0) {
             return false;
         }
-        burnLeft--;
+        try (Transaction lighting = Transaction.openRoot()) {
+            fuel.extract(0, item, 1, lighting);
+            ItemStackTemplate remainder = item.toStack(1).getCraftingRemainder();
+            if (remainder != null && ResourceHandlerUtil.insertStacking(buffer,
+                    ItemResource.of(remainder.create()), 1, lighting) != 1) {
+                return false;
+            }
+            lighting.commit();
+        }
+        burnLeft = burnTime;
         return true;
+    }
+
+    /**
+     * Invalidates the energy capability at every block of the footprint when the tier's power changes whether it
+     * is exposed: NeoForge drops cached lookups only when it is told to.
+     */
+    private void exposeEnergy(ServerLevel level, boolean exposed) {
+        if (exposed == exposesEnergy) {
+            return;
+        }
+        exposesEnergy = exposed;
+        Direction facing = getBlockState().getValue(HarvesterBlock.FACING);
+        for (BlockPos pos : Harvesters.footprint(tierBlock()).positions(worldPosition, facing)) {
+            level.invalidateCapabilities(pos);
+        }
     }
 
     /**
@@ -310,6 +378,7 @@ public final class HarvesterBlockEntity extends BlockEntity {
         fill.serialize(output.child(FILL_KEY));
         buffer.serialize(output.child(BUFFER_KEY));
         product.serialize(output.child(PRODUCT_KEY));
+        energy.serialize(output.child(ENERGY_KEY));
         output.putInt(BURN_KEY, burnLeft);
         output.putInt(PROGRESS_KEY, progress);
         output.putInt(CURSOR_KEY, cursor);
@@ -325,6 +394,7 @@ public final class HarvesterBlockEntity extends BlockEntity {
         fill.deserialize(input.childOrEmpty(FILL_KEY));
         buffer.deserialize(input.childOrEmpty(BUFFER_KEY));
         product.deserialize(input.childOrEmpty(PRODUCT_KEY));
+        energy.deserialize(input.childOrEmpty(ENERGY_KEY));
         burnLeft = input.getIntOr(BURN_KEY, 0);
         progress = input.getIntOr(PROGRESS_KEY, 0);
         cursor = input.getIntOr(CURSOR_KEY, 0);
@@ -357,6 +427,51 @@ public final class HarvesterBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * The FE buffer, sized by the tier on each use since a reload can change it. It is drawn only by the
+     * Harvester's own work; {@link #face} takes FE in and gives none out.
+     */
+    private final class EnergyBuffer extends SimpleEnergyHandler {
+
+        final EnergyHandler face = new EnergyHandler() {
+            @Override
+            public long getAmountAsLong() {
+                return EnergyBuffer.this.getAmountAsLong();
+            }
+
+            @Override
+            public long getCapacityAsLong() {
+                return EnergyBuffer.this.getCapacityAsLong();
+            }
+
+            @Override
+            public int insert(int amount, TransactionContext transaction) {
+                return EnergyBuffer.this.insert(amount, transaction);
+            }
+
+            @Override
+            public int extract(int amount, TransactionContext transaction) {
+                return 0;
+            }
+        };
+
+        EnergyBuffer() {
+            super(0);
+        }
+
+        void resize(int capacity) {
+            this.capacity = capacity;
+            this.maxInsert = capacity;
+            this.maxExtract = capacity;
+            this.energy = Math.min(energy, capacity);
+        }
+
+        @Override
+        protected void onEnergyChanged(int previousAmount) {
+            setChanged();
+        }
+    }
+
     /** The product tank: crude only. */
     private final class ProductTank extends FluidStacksResourceHandler {
 
@@ -376,7 +491,8 @@ public final class HarvesterBlockEntity extends BlockEntity {
     }
 
     /**
-     * Routes items by content (ADR 0004): the fuel slot, index 0, takes anything with burn time, and the fill
+     * Routes items by content (ADR 0004): the fuel slot, index 0, takes anything with burn time while the tier
+     * burns fuel, and nothing on a tier that takes none (ADR 0005), and the fill
      * slot, index 1, empty containers crude can go into; neither gives anything back. The output buffer takes
      * nothing from outside and gives everything. Buffer slots report no room, so a hopper reads the
      * Harvester full once the slot its item goes to is.
@@ -398,10 +514,15 @@ public final class HarvesterBlockEntity extends BlockEntity {
             return level != null && resource.toStack(1).getBurnTime(null, level.fuelValues()) > 0;
         }
 
+        private boolean takesFuel() {
+            HarvesterTier tier = tier();
+            return tier != null && tier.power().fuel();
+        }
+
         @Override
         public boolean isValid(int index, ItemResource resource) {
             return switch (index) {
-                case FUEL_SLOT -> burns(resource);
+                case FUEL_SLOT -> takesFuel() && burns(resource);
                 case FILL_SLOT -> holdsCrude(resource);
                 default -> false;
             };
@@ -409,7 +530,7 @@ public final class HarvesterBlockEntity extends BlockEntity {
 
         @Override
         public long getCapacityAsLong(int index, ItemResource resource) {
-            if (!isInputSlot(index) || !resource.isEmpty() && !isValid(index, resource)) {
+            if (!isInputSlot(index) || index == FUEL_SLOT && !takesFuel() || !resource.isEmpty() && !isValid(index, resource)) {
                 return 0;
             }
             return super.getCapacityAsLong(index, resource);

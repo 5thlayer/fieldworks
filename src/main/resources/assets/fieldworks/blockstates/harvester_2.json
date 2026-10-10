@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "fieldworks:block/harvester_2"
+    },
+    "facing=east": {
+      "model": "fieldworks:block/harvester_2",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "fieldworks:block/harvester_2",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "fieldworks:block/harvester_2",
+      "y": 270
+    }
+  }
+}
