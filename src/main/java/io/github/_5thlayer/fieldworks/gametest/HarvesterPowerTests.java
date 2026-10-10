@@ -59,16 +59,16 @@ final class HarvesterPowerTests {
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
         insert(helper, Items.COAL, 1);
         HarvesterTests.tick(helper, machine(helper), 200);
-        int burnerDraws = initial - HarvesterTests.remaining(helper, ore);
+        int harvester1Draws = initial - HarvesterTests.remaining(helper, ore);
         helper.getLevel().destroyBlock(helper.absolutePos(ORIGIN), false);
 
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_2);
         helper.assertValueEqual(feed(helper, 50_000), 50_000, "FE the Electric Harvester took");
         HarvesterTests.tick(helper, machine(helper), 200);
-        int electricDraws = initial - burnerDraws - HarvesterTests.remaining(helper, ore);
+        int harvester2Draws = initial - harvester1Draws - HarvesterTests.remaining(helper, ore);
 
-        helper.assertValueEqual(burnerDraws, 10, "units the Burner Harvester drew in 200 ticks");
-        helper.assertValueEqual(electricDraws, 20, "units the Electric Harvester drew in 200 ticks");
+        helper.assertValueEqual(harvester1Draws, 10, "units harvester_1 drew in 200 ticks");
+        helper.assertValueEqual(harvester2Draws, 20, "units harvester_2 drew in 200 ticks");
         helper.assertValueEqual((int) energy(helper).getAmountAsLong(), 50_000 - 200 * 40, "FE left after 200 ticks at 40 FE a tick");
         helper.succeed();
     }

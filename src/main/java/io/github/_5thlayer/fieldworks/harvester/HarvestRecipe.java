@@ -18,6 +18,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.YieldCondition;
 import io.github._5thlayer.fieldworks.oil.OilWellBlock;
 import net.minecraft.core.Holder;
@@ -124,7 +125,7 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
 
         /** The fluids that serve, by id: those named that are in {@code #fieldworks:drilling_fluids}. */
         public List<Holder<Fluid>> serving() {
-            return fluids.stream().filter(fluid -> fluid.is(HarvesterBlockEntity.DRILLING_FLUIDS)).toList();
+            return fluids.stream().filter(fluid -> fluid.is(FieldworksTags.DRILLING_FLUIDS)).toList();
         }
     }
 

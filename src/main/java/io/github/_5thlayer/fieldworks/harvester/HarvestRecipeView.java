@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
@@ -72,7 +73,7 @@ public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> so
                     Optional.empty(), List.of(), 0, Optional.empty(),
                     yield.cycle(yield.normal(), yield.normal(), 0).crude(), yield.cycle(yield.minimum(), yield.minimum(), 0).crude()));
         }
-        for (Holder<Block> holder : BuiltInRegistries.BLOCK.getTagOrEmpty(HarvesterBlockEntity.HARVESTABLE)) {
+        for (Holder<Block> holder : BuiltInRegistries.BLOCK.getTagOrEmpty(FieldworksTags.HARVESTABLE)) {
             Block block = holder.value();
             // Ore blocks are in the tag too and are drawn, listed above; the well and a block with no item have nothing to show.
             if (block instanceof OreBlock || block instanceof OilWellBlock || block.asItem() == Items.AIR) {
