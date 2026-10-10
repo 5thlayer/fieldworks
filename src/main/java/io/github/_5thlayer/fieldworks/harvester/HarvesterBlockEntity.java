@@ -5,6 +5,9 @@ package io.github._5thlayer.fieldworks.harvester;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Operation;
@@ -62,6 +65,7 @@ public final class HarvesterBlockEntity extends BlockEntity {
     private static final String BURN_KEY = "burn_left";
     private static final String PROGRESS_KEY = "progress";
     private static final String CURSOR_KEY = "cursor";
+    private static final String HELD_KEY = "held_recipe";
 
     private final ItemStacksResourceHandler fuel = new Slots(1);
     private final ItemStacksResourceHandler fill = new Slots(1);
@@ -74,6 +78,9 @@ public final class HarvesterBlockEntity extends BlockEntity {
     private int burnLeft;
     private int progress;
     private int cursor;
+
+    /** The Held recipe's id, resolved on each tick: a block entity loads before the recipes do. */
+    private @Nullable Identifier held;
 
     public HarvesterBlockEntity(BlockPos pos, BlockState state) {
         super(Harvesters.BLOCK_ENTITY.get(), pos, state);
@@ -96,12 +103,22 @@ public final class HarvesterBlockEntity extends BlockEntity {
         if (tier == null) {
             return;
         }
+        HarvestRecipes.Loaded recipes = HarvestRecipes.loaded(level);
+        Optional<OperationChoice.Recipe> heldChoice = Optional.empty();
+        if (held != null) {
+            HarvestRecipes.Entry entry = recipes.byId().get(held.toString());
+            if (entry == null) {
+                // A Held recipe a reload removed runs nothing; it never falls back to the Default recipes.
+                return;
+            }
+            heldChoice = Optional.of(entry.choice());
+        }
         List<BlockPos> layer = layer();
-        if (!(OperationChoice.choose(sources(level, layer), cursor) instanceof Operation operation)) {
+        if (!(OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, tier.rank()) instanceof Operation operation)) {
             return;
         }
         BlockPos at = layer.get(operation.position());
-        Runnable work = level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well) : draw(level, at);
+        Runnable work = level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well) : draw(level, at, operation, recipes);
         if (work == null || !burnTick(level, tier)) {
             return;
         }
@@ -114,16 +131,22 @@ public final class HarvesterBlockEntity extends BlockEntity {
         setChanged();
     }
 
-    /** One draw of the ore block at {@code at}, or null while the buffer has no room for its item. */
-    private @Nullable Runnable draw(ServerLevel level, BlockPos at) {
+    /**
+     * One draw of the ore block at {@code at}, paying the operation's recipe result or the block's own item,
+     * or null while the buffer has no room for it.
+     */
+    private @Nullable Runnable draw(ServerLevel level, BlockPos at, Operation operation, HarvestRecipes.Loaded recipes) {
         OreBlock ore = (OreBlock) level.getBlockState(at).getBlock();
-        ItemResource result = ItemResource.of(drop(ore));
-        if (!fits(result)) {
+        ItemStack stack = operation.recipe()
+                .map(recipe -> recipes.byId().get(recipe.id()).recipe().result().create())
+                .orElseGet(() -> drop(ore));
+        ItemResource result = ItemResource.of(stack);
+        if (!fits(result, stack.getCount())) {
             return null;
         }
         return () -> {
             if (OreMining.draw(level, ore, at).paid() > 0 && !result.isEmpty()) {
-                ResourceHandlerUtil.insertStacking(buffer, result, 1, null);
+                ResourceHandlerUtil.insertStacking(buffer, result, stack.getCount(), null);
             }
         };
     }
@@ -144,6 +167,16 @@ public final class HarvesterBlockEntity extends BlockEntity {
         };
     }
 
+    /**
+     * Sets the Harvest Recipe this Harvester works, or none: with one it works only the sources the recipe
+     * matches. Progress on the last operation is lost.
+     */
+    public void setHeldRecipe(@Nullable Identifier recipe) {
+        held = recipe;
+        progress = 0;
+        setChanged();
+    }
+
     /** The layer under the footprint, in the fixed order the cursor counts in, whatever way the Harvester faces. */
     private List<BlockPos> layer() {
         List<BlockPos> layer = new ArrayList<>(9);
@@ -162,10 +195,14 @@ public final class HarvesterBlockEntity extends BlockEntity {
             Block block = level.getBlockState(pos).getBlock();
             String id = BuiltInRegistries.BLOCK.getKey(block).toString();
             sources.add(block instanceof OilWellBlock ? Source.well(id)
-                    : block instanceof OreBlock ? Source.oreBlock(id)
+                    : block instanceof OreBlock ? Source.oreBlock(id, tagsOf(block))
                     : Source.NONE);
         }
         return sources;
+    }
+
+    private static Set<String> tagsOf(Block block) {
+        return block.builtInRegistryHolder().tags().map(tag -> tag.location().toString()).collect(Collectors.toUnmodifiableSet());
     }
 
     private static ItemStack drop(OreBlock ore) {
@@ -176,12 +213,12 @@ public final class HarvesterBlockEntity extends BlockEntity {
         return FluidResource.of(CrudeOil.SOURCE.get());
     }
 
-    private boolean fits(ItemResource result) {
+    private boolean fits(ItemResource result, int amount) {
         if (result.isEmpty()) {
             return true;
         }
         try (Transaction simulated = Transaction.openRoot()) {
-            return ResourceHandlerUtil.insertStacking(buffer, result, 1, simulated) == 1;
+            return ResourceHandlerUtil.insertStacking(buffer, result, amount, simulated) == amount;
         }
     }
 
@@ -276,6 +313,9 @@ public final class HarvesterBlockEntity extends BlockEntity {
         output.putInt(BURN_KEY, burnLeft);
         output.putInt(PROGRESS_KEY, progress);
         output.putInt(CURSOR_KEY, cursor);
+        if (held != null) {
+            output.store(HELD_KEY, Identifier.CODEC, held);
+        }
     }
 
     @Override
@@ -288,6 +328,7 @@ public final class HarvesterBlockEntity extends BlockEntity {
         burnLeft = input.getIntOr(BURN_KEY, 0);
         progress = input.getIntOr(PROGRESS_KEY, 0);
         cursor = input.getIntOr(CURSOR_KEY, 0);
+        held = input.read(HELD_KEY, Identifier.CODEC).orElse(null);
     }
 
     /** A broken Harvester drops what it holds, as a furnace does. */

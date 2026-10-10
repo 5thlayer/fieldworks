@@ -1,0 +1,6 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "fieldworks:iron_ore",
+  "result": "minecraft:iron_nugget",
+  "duration": 0
+}

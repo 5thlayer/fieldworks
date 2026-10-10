@@ -183,7 +183,11 @@ final class HarvesterTests {
      * initial amount. The chunk's other draws are kept: tests stand side by side and may share it.
      */
     static int ore(GameTestHelper helper, BlockPos rel, int drawn) {
-        OreBlock ore = FieldworksRegistries.ore(OreResource.IRON).get();
+        return ore(helper, OreResource.IRON, rel, drawn);
+    }
+
+    static int ore(GameTestHelper helper, OreResource resource, BlockPos rel, int drawn) {
+        OreBlock ore = FieldworksRegistries.ore(resource).get();
         helper.setBlock(rel, ore);
         BlockPos pos = helper.absolutePos(rel);
         if (drawn > 0) {
