@@ -1,0 +1,7 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "fieldworks:iron_ore",
+  "result": { "id": "minecraft:iron_nugget", "count": 3 },
+  "duration": 40,
+  "minimum_tier": "fieldworks:harvester_1"
+}

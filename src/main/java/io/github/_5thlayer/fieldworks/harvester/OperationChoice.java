@@ -5,6 +5,9 @@ package io.github._5thlayer.fieldworks.harvester;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
 
 /**
  * The choice of the Harvester's next operation: given the sources in the layer under its footprint, in
@@ -26,11 +29,29 @@ public final class OperationChoice {
      * block turned to stone, leaves the others' places in the round as they were.
      */
     public static Choice choose(List<Source> layer, int cursor) {
+        return choose(layer, cursor, List.of(), Optional.empty(), 0);
+    }
+
+    /**
+     * As {@link #choose(List, int)}, over the Harvest Recipes on offer. With no Held recipe only Default
+     * recipes run, and a source whose Default recipe a recipe in {@code recipes} replaces is skipped.
+     * {@code tierRank} is the rank of the Harvester Tier doing the work.
+     */
+    public static Choice choose(List<Source> layer, int cursor, List<Recipe> recipes, Optional<Recipe> held, int tierRank) {
+        if (held.isPresent() && held.get().minimumRank().isPresent() && tierRank < held.get().minimumRank().getAsInt()) {
+            return new Idle(IdleReason.TIER_TOO_LOW);
+        }
         int size = layer.size();
         for (int step = 0; step < size; step++) {
             int position = Math.floorMod(cursor + step, size);
-            if (layer.get(position).kind() == Kind.ORE_BLOCK) {
-                return new Operation(position, ORE_DRAW_TICKS, (position + 1) % size);
+            Source source = layer.get(position);
+            int next = (position + 1) % size;
+            if (held.isPresent()) {
+                if (held.get().matches(source)) {
+                    return new Operation(position, held.get().duration(), next, held);
+                }
+            } else if (source.kind() == Kind.ORE_BLOCK && recipes.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
+                return new Operation(position, ORE_DRAW_TICKS, next, Optional.empty());
             }
         }
         return new Idle(IdleReason.NOTHING_TO_WORK);
@@ -43,24 +64,55 @@ public final class OperationChoice {
         ORE_BLOCK
     }
 
-    /** One position of the layer under the footprint: what stands there, and its block id. */
-    public record Source(Kind kind, String block) {
+    /** One position of the layer under the footprint: what stands there, its block id and the block tags it is in. */
+    public record Source(Kind kind, String block, Set<String> tags) {
 
-        public static final Source NONE = new Source(Kind.NONE, "");
+        public static final Source NONE = new Source(Kind.NONE, "", Set.of());
 
         public Source {
             Objects.requireNonNull(kind);
             Objects.requireNonNull(block);
+            tags = Set.copyOf(tags);
         }
 
         public static Source oreBlock(String block) {
-            return new Source(Kind.ORE_BLOCK, block);
+            return oreBlock(block, Set.of());
+        }
+
+        public static Source oreBlock(String block, Set<String> tags) {
+            return new Source(Kind.ORE_BLOCK, block, tags);
+        }
+    }
+
+    /**
+     * A Harvest Recipe as the choice reads it: the blocks and block tags it matches, its duration in ticks at
+     * speed ×1, the lowest tier rank that may run it if it names one, and whether it removes its sources'
+     * Default recipes.
+     */
+    public record Recipe(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank,
+            boolean replacesDefault) {
+
+        public Recipe {
+            Objects.requireNonNull(id);
+            blocks = Set.copyOf(blocks);
+            tags = Set.copyOf(tags);
+        }
+
+        boolean matches(Source source) {
+            return source.kind() != Kind.NONE
+                    && (blocks.contains(source.block()) || source.tags().stream().anyMatch(tags::contains));
+        }
+
+        boolean replacesDefaultOf(Source source) {
+            return replacesDefault && matches(source);
         }
     }
 
     /** Why the Harvester has no operation to run. */
     public enum IdleReason {
-        NOTHING_TO_WORK
+        NOTHING_TO_WORK,
+        /** The Held recipe names a minimum tier above the Harvester's rank. */
+        TIER_TOO_LOW
     }
 
     /** What {@link #choose} returns: an operation, or why there is none. */
@@ -69,9 +121,10 @@ public final class OperationChoice {
 
     /**
      * Work the source at {@code position} for {@code ticks} at speed ×1, then save {@code nextCursor}
-     * so the round goes on from the position after it.
+     * so the round goes on from the position after it. {@code recipe} is the Harvest Recipe it runs, empty
+     * for a Default recipe.
      */
-    public record Operation(int position, int ticks, int nextCursor) implements Choice {
+    public record Operation(int position, int ticks, int nextCursor, Optional<Recipe> recipe) implements Choice {
     }
 
     public record Idle(IdleReason reason) implements Choice {

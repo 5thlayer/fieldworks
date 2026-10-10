@@ -79,6 +79,7 @@ public final class Harvesters {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         BLOCK_ENTITIES.register(modBus);
+        HarvestRecipes.register(modBus);
         modBus.addListener(Harvesters::registerCapabilities);
         modBus.addListener(Harvesters::addToCreativeTabs);
         NeoForge.EVENT_BUS.addListener(HarvesterTiers::addListener);
