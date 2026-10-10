@@ -57,3 +57,37 @@ _Avoid_: waypoint, ping
 A patch is found when the chunk holding its centre is first sent to any player. A found patch stays
 found.
 _Avoid_: charted, discovered
+
+### Harvesting
+
+**Draw**:
+Taking one unit from an ore block: a break by hand, or one Harvester operation.
+_Avoid_: mine, deplete (for a single draw)
+
+**Harvestable block**:
+A block with no amount that the Harvester may break for its normal loot, leaving air: anything in `fieldworks:harvestable`.
+_Avoid_: minable, ore (alone)
+
+**Harvester**:
+The machine that works the layer under its footprint: it draws ore blocks, breaks harvestable blocks, or pumps oil wells.
+_Avoid_: drill, rig, miner, pumpjack
+
+**Harvester Tier**:
+One rung of Harvester, with its rank, its speed, and the power it accepts: burn time, FE, or both.
+_Avoid_: level, mark, burner/electric (as tier names)
+
+**Harvest Recipe**:
+What one Harvester operation takes and yields: a source, an optional Drilling Fluid, a result and a duration.
+_Avoid_: mining recipe, drill recipe
+
+**Default recipe**:
+The fluid-free Harvest Recipe every source has without one being written: a draw of an ore block, the loot of a harvestable block, crude from an oil well.
+_Avoid_: base recipe, fallback
+
+**Held recipe**:
+The Harvest Recipe a player has set on a Harvester, which restricts it to the sources that recipe matches.
+_Avoid_: selected recipe, filter
+
+**Drilling Fluid**:
+A fluid in `#fieldworks:drilling_fluids` that a Harvest Recipe consumes.
+_Avoid_: lubricant, mud (for the general case)
