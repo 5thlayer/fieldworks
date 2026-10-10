@@ -182,7 +182,7 @@ final class HarvesterTests {
      * Sets an iron ore block outside any patch, with {@code drawn} units already taken, and returns its
      * initial amount. The chunk's other draws are kept: tests stand side by side and may share it.
      */
-    private static int ore(GameTestHelper helper, BlockPos rel, int drawn) {
+    static int ore(GameTestHelper helper, BlockPos rel, int drawn) {
         return ore(helper, OreResource.IRON, rel, drawn);
     }
 

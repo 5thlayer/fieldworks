@@ -53,6 +53,8 @@ public final class FieldworksGameTests {
         modBus.addListener(FieldworksGameTests::registerTests);
         if (Boolean.getBoolean(GAMETEST_PACK)) {
             modBus.addListener(FieldworksGameTests::addGameTestPack);
+            // The tests' own fluid-handler block, which a player's world never has.
+            TestTank.register(modBus);
         }
     }
 
@@ -76,6 +78,7 @@ public final class FieldworksGameTests {
         HandMiningTests.register(tests);
         HarvesterTests.register(tests);
         HarvestRecipeTests.register(tests);
+        HarvesterWellTests.register(tests);
     }
 
     private static Identifier id(String path) {
