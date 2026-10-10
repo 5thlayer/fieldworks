@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Operation;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
@@ -20,12 +21,16 @@ import io.github._5thlayer.libworks.transfer.GuardedResourceHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -59,6 +64,9 @@ public final class HarvesterBlockEntity extends BlockEntity {
 
     /** A tank's capacity in mB: one fixed figure, not tier data (#1). */
     static final int TANK_CAPACITY = 8_000;
+
+    /** The blocks, besides ore blocks, that a Harvester breaks for their loot; a pack sets them by tag. */
+    static final TagKey<Block> HARVESTABLE = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "harvestable"));
 
     private static final String FUEL_KEY = "fuel";
     private static final String FILL_KEY = "fill";
@@ -147,7 +155,9 @@ public final class HarvesterBlockEntity extends BlockEntity {
             return;
         }
         BlockPos at = layer.get(operation.position());
-        Runnable work = level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well) : draw(level, at, operation, recipes);
+        Runnable work = level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well)
+                : level.getBlockState(at).getBlock() instanceof OreBlock ? draw(level, at, operation, recipes)
+                : breakBlock(level, at, operation, recipes);
         if (work == null || !payTick(level, tier)) {
             return;
         }
@@ -176,6 +186,30 @@ public final class HarvesterBlockEntity extends BlockEntity {
         return () -> {
             if (OreMining.draw(level, ore, at).paid() > 0 && !result.isEmpty()) {
                 ResourceHandlerUtil.insertStacking(buffer, result, stack.getCount(), null);
+            }
+        };
+    }
+
+    /**
+     * The harvestable block at {@code at} broken to air, its loot, or the operation's recipe result in its place,
+     * going to the buffer; or null while the buffer has no room for all of it. The loot table runs against an
+     * unenchanted pick and nothing checks the tool, so a diamond ore breaks for its diamond (#1).
+     */
+    private @Nullable Runnable breakBlock(ServerLevel level, BlockPos at, Operation operation, HarvestRecipes.Loaded recipes) {
+        BlockState state = level.getBlockState(at);
+        List<ItemStack> loot = operation.recipe()
+                .map(recipe -> List.of(recipes.byId().get(recipe.id()).recipe().result().create()))
+                .orElseGet(() -> Block.getDrops(state, level, at, level.getBlockEntity(at), null, new ItemStack(Items.DIAMOND_PICKAXE)));
+        if (!fitsAll(loot)) {
+            return null;
+        }
+        return () -> {
+            // Not removeBlock or destroyBlock: a waterlogged block would leave water, and the spec says air.
+            level.setBlock(at, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            for (ItemStack stack : loot) {
+                if (!stack.isEmpty()) {
+                    ResourceHandlerUtil.insertStacking(buffer, ItemResource.of(stack), stack.getCount(), null);
+                }
             }
         };
     }
@@ -221,10 +255,13 @@ public final class HarvesterBlockEntity extends BlockEntity {
     private static List<Source> sources(ServerLevel level, List<BlockPos> layer) {
         List<Source> sources = new ArrayList<>(layer.size());
         for (BlockPos pos : layer) {
-            Block block = level.getBlockState(pos).getBlock();
+            BlockState state = level.getBlockState(pos);
+            Block block = state.getBlock();
             String id = BuiltInRegistries.BLOCK.getKey(block).toString();
             sources.add(block instanceof OilWellBlock ? Source.well(id)
                     : block instanceof OreBlock ? Source.oreBlock(id, tagsOf(block))
+                    // After the ore blocks: they are in c:ores, so in this tag, and are drawn, never broken (#1).
+                    : state.is(HARVESTABLE) ? Source.harvestable(id, tagsOf(block))
                     : Source.NONE);
         }
         return sources;
@@ -240,6 +277,18 @@ public final class HarvesterBlockEntity extends BlockEntity {
 
     private static FluidResource crudeOil() {
         return FluidResource.of(CrudeOil.SOURCE.get());
+    }
+
+    /** Whether the buffer has room for every stack at once. */
+    private boolean fitsAll(List<ItemStack> stacks) {
+        try (Transaction simulated = Transaction.openRoot()) {
+            for (ItemStack stack : stacks) {
+                if (!stack.isEmpty() && ResourceHandlerUtil.insertStacking(buffer, ItemResource.of(stack), stack.getCount(), simulated) != stack.getCount()) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     private boolean fits(ItemResource result, int amount) {

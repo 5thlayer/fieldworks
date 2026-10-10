@@ -78,6 +78,7 @@ public final class FieldworksGameTests {
         HandMiningTests.register(tests);
         HarvesterTests.register(tests);
         HarvestRecipeTests.register(tests);
+        HarvestableBlockTests.register(tests);
         HarvesterWellTests.register(tests);
         HarvesterPowerTests.register(tests);
     }

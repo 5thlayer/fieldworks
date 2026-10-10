@@ -20,6 +20,9 @@ public final class OperationChoice {
     /** An ore block's Default recipe: one draw, in this many ticks at speed ×1. */
     static final int ORE_DRAW_TICKS = 20;
 
+    /** A harvestable block's Default recipe: one break for its loot, in this many ticks at speed ×1. */
+    static final int BREAK_TICKS = 40;
+
     /** A well's Default recipe: one cycle of its yield and decay, in this many ticks at speed ×1. */
     static final int WELL_PUMP_TICKS = 20;
 
@@ -28,7 +31,8 @@ public final class OperationChoice {
 
     /**
      * The next operation from {@code cursor} round the layer: the first source at or after it that can
-     * be worked, wrapping at the end. While any well is in the layer, only wells can be worked. Positions
+     * be worked, wrapping at the end. Ore blocks and harvestable blocks are worked alike, in turn. While any well
+     * is in the layer, only wells can be worked. Positions
      * are the layer's indices, so a source that goes, an ore block turned to stone, leaves the others'
      * places in the round as they were.
      */
@@ -46,13 +50,13 @@ public final class OperationChoice {
             return new Idle(IdleReason.TIER_TOO_LOW);
         }
         // Any well under the footprint excludes every block source (#1).
-        Kind worked = layer.stream().anyMatch(source -> source.kind() == Kind.WELL) ? Kind.WELL : Kind.ORE_BLOCK;
+        boolean wells = layer.stream().anyMatch(source -> source.kind() == Kind.WELL);
         int size = layer.size();
         for (int step = 0; step < size; step++) {
             int position = Math.floorMod(cursor + step, size);
             Source source = layer.get(position);
             int next = (position + 1) % size;
-            if (source.kind() != worked) {
+            if (wells ? source.kind() != Kind.WELL : source.kind() == Kind.NONE || source.kind() == Kind.WELL) {
                 continue;
             }
             if (held.isPresent()) {
@@ -60,10 +64,18 @@ public final class OperationChoice {
                     return new Operation(position, held.get().duration(), next, held);
                 }
             } else if (recipes.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
-                return new Operation(position, worked == Kind.WELL ? WELL_PUMP_TICKS : ORE_DRAW_TICKS, next, Optional.empty());
+                return new Operation(position, defaultTicks(source.kind()), next, Optional.empty());
             }
         }
         return new Idle(IdleReason.NOTHING_TO_WORK);
+    }
+
+    private static int defaultTicks(Kind kind) {
+        return switch (kind) {
+            case WELL -> WELL_PUMP_TICKS;
+            case HARVESTABLE -> BREAK_TICKS;
+            case ORE_BLOCK, NONE -> ORE_DRAW_TICKS;
+        };
     }
 
     /** What stands at one position of the layer. */
@@ -71,6 +83,8 @@ public final class OperationChoice {
         /** Nothing the Harvester works. */
         NONE,
         ORE_BLOCK,
+        /** A block in {@code fieldworks:harvestable} that is not an ore block: broken for its loot. */
+        HARVESTABLE,
         WELL
     }
 
@@ -91,6 +105,10 @@ public final class OperationChoice {
 
         public static Source oreBlock(String block, Set<String> tags) {
             return new Source(Kind.ORE_BLOCK, block, tags);
+        }
+
+        public static Source harvestable(String block, Set<String> tags) {
+            return new Source(Kind.HARVESTABLE, block, tags);
         }
 
         public static Source well(String block) {

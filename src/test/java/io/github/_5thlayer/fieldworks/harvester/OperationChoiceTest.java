@@ -23,6 +23,8 @@ class OperationChoiceTest {
 
     private static final Source IRON = Source.oreBlock("fieldworks:iron_ore");
     private static final Source COPPER = Source.oreBlock("fieldworks:copper_ore");
+    private static final Source STONE_COAL = Source.harvestable("minecraft:coal_ore", Set.of("c:ores"));
+    private static final Source DIAMOND = Source.harvestable("minecraft:diamond_ore", Set.of("c:ores"));
     private static final Source NONE = Source.NONE;
     private static final Source WELL = Source.well("fieldworks:oil_well");
 
@@ -168,6 +170,49 @@ class OperationChoiceTest {
 
         assertEquals(new OperationChoice.Idle(IdleReason.NOTHING_TO_WORK),
                 OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), 1));
+    }
+
+    @Test
+    void oreBlocksAndHarvestableBlocksAreWorkedInTurn() {
+        List<Source> layer = List.of(IRON, NONE, STONE_COAL, NONE, DIAMOND, NONE, NONE, COPPER, NONE);
+
+        assertEquals(List.of(0, 2, 4, 7, 0), positions(layer, 0, 5));
+    }
+
+    @Test
+    void aBlockInNeitherAnOreBlockNorTheHarvestableTagIsSkipped() {
+        // Source.NONE is what the layer reads for a block that is neither (dirt, a chest, air).
+        List<Source> layer = List.of(NONE, DIAMOND, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(List.of(1, 1), positions(layer, 0, 2));
+    }
+
+    @Test
+    void aHarvestableBlocksDefaultRecipeBreaksItInFortyTicksAtSpeedOne() {
+        List<Source> layer = List.of(DIAMOND, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(40, ((Operation) OperationChoice.choose(layer, 0)).ticks());
+    }
+
+    @Test
+    void aWellUnderTheFootprintExcludesEveryHarvestableBlock() {
+        List<Source> layer = List.of(DIAMOND, STONE_COAL, NONE, NONE, WELL, NONE, NONE, IRON, NONE);
+
+        assertEquals(List.of(4, 4, 4), positions(layer, 0, 3));
+    }
+
+    @Test
+    void aRecipeMatchesAHarvestableBlockByIdAndByTag() {
+        List<Source> layer = List.of(DIAMOND, STONE_COAL, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe byId = new Recipe("test:diamond", Set.of("minecraft:diamond_ore"), Set.of(), 60, OptionalInt.empty(), true);
+        Recipe byTag = new Recipe("test:ores", Set.of(), Set.of("c:ores"), 60, OptionalInt.empty(), false);
+
+        // The id recipe replaces the diamond's Default, so only the coal is left in the round.
+        assertEquals(List.of(1, 1), positions(layer, 0, 2, List.of(byId)));
+        assertEquals(List.of(0, 1, 0), positions(layer, 0, 3, List.of(byTag)));
+        Operation held = (Operation) OperationChoice.choose(layer, 0, List.of(byId), Optional.of(byId), 1);
+        assertEquals(0, held.position());
+        assertEquals(60, held.ticks());
     }
 
     /** The positions of {@code count} operations in a row, each starting from the cursor the last one left. */
