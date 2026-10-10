@@ -28,6 +28,11 @@ wells and crude oil work, ported from FactoryWorks Core at commit `fb05f50`.
   none for coal and stone. A break is cancelled; it takes one unit from the block and pays one item,
   and the last unit's break turns the block into stone. A break with too weak a tool takes nothing.
   A creative break removes the block. The same draw serves a machine.
+- **An ore block no patch placed starts at its resource's `default_amount`**, in `amounts.json`: the
+  amount of a 1000-block patch of size factor 1 at 1600 blocks out (iron 8000, copper and coal 6400,
+  stone 3200, sulfur 2400, uranium 1440). A block placed in creative, by `/setblock` or re-placed
+  would otherwise start at zero and give nothing. Voidworks' displacement produces Enriched ore blocks
+  outside any patch (`docs/spec/enriched-ore.md` in factoryworks), and they need a nonzero start.
 - **A block holds no amount.** It derives from its patch, and the difference from it is a sparse
   chunk attachment. The blockstate carries the stage, recomputed from the amount.
 - **An oil well holds an amount and is never broken.** A cycle yields `10 × amount / 300000` mB
