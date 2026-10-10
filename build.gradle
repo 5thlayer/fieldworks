@@ -23,6 +23,10 @@ tasks.withType(Jar).configureEach {
     archiveVersion = "$minecraft_version-$mod_version"
 }
 
+def ftbChunks = 'curse.maven:ftb-chunks-314906:8791100'
+def ftbLibrary = 'curse.maven:ftb-library-404465:8574542'
+def jade = 'maven.modrinth:jade:26.1.11+neoforge'
+
 def gameTestReport = layout.buildDirectory.file('reports/gametest.xml').get().asFile
 
 neoForge {
@@ -73,7 +77,28 @@ tasks.named('runGameTestServer') {
     }
 }
 
+repositories {
+    // FTB Chunks, which the map markers draw on; the Library loads without it.
+    maven {
+        url = 'https://cursemaven.com'
+        content { includeGroup 'curse.maven' }
+    }
+    // Jade, which shows an ore block's amount; the Library loads without it.
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+}
+
 dependencies {
+    // Both soft: their code is reached only from classes that load when the mod is present.
+    compileOnly(ftbChunks) { transitive = false }
+    compileOnly(ftbLibrary) { transitive = false }
+    compileOnly jade
+
+    // DataFixerUpper and Gson, and nothing of Minecraft: Codec and the frozen data read on a plain JVM.
+    testImplementation 'com.mojang:datafixerupper:9.0.19'
+    testImplementation 'com.google.code.gson:gson:2.13.2'
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
