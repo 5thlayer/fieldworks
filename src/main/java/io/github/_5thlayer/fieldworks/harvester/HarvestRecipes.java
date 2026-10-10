@@ -68,12 +68,8 @@ public final class HarvestRecipes {
         return holder != null && holder.value() instanceof HarvestRecipe recipe ? Optional.of(recipe) : Optional.empty();
     }
 
-    /** A recipe as the choice reads it, with the recipe it came from. */
-    record Entry(HarvestRecipe recipe, OperationChoice.Recipe choice) {
-    }
-
     /** Every Harvest Recipe on the server, as the choice reads them and by id. */
-    record Loaded(List<OperationChoice.Recipe> choices, Map<String, Entry> byId) {
+    record Loaded(List<OperationChoice.Recipe<HarvestRecipe.Result>> choices, Map<Identifier, OperationChoice.Recipe<HarvestRecipe.Result>> byId) {
     }
 
     private record Cache(RecipeManager manager, Map<Identifier, HarvesterTier> tiers, Loaded loaded) {
@@ -90,18 +86,18 @@ public final class HarvestRecipes {
         if (current.manager == manager && current.tiers == tiers) {
             return current.loaded;
         }
-        List<OperationChoice.Recipe> choices = new ArrayList<>();
-        Map<String, Entry> byId = new HashMap<>();
+        List<OperationChoice.Recipe<HarvestRecipe.Result>> choices = new ArrayList<>();
+        Map<Identifier, OperationChoice.Recipe<HarvestRecipe.Result>> byId = new HashMap<>();
         for (RecipeHolder<HarvestRecipe> holder : manager.recipeMap().byType(TYPE.get())) {
             Identifier id = holder.id().identifier();
-            OperationChoice.Recipe choice = holder.value().forChoice(id, tier ->
+            OperationChoice.Recipe<HarvestRecipe.Result> choice = holder.value().forChoice(id, tier ->
                     tiers.containsKey(tier) ? OptionalInt.of(tiers.get(tier).rank()) : OptionalInt.empty());
             if (choice.drillingFluid().filter(fluid -> fluid.fluids().isEmpty()).isPresent()) {
                 // Loaded, but nothing can meet it: only fluids in #fieldworks:drilling_fluids serve (#1).
                 LOGGER.warn("Harvest Recipe {} names no fluid in #fieldworks:drilling_fluids, so it can never run", id);
             }
             choices.add(choice);
-            byId.put(choice.id(), new Entry(holder.value(), choice));
+            byId.put(id, choice);
         }
         Loaded loaded = new Loaded(List.copyOf(choices), Map.copyOf(byId));
         cache = new Cache(manager, tiers, loaded);

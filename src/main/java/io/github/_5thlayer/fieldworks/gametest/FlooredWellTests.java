@@ -184,7 +184,7 @@ final class FlooredWellTests {
         HarvestRecipe mud = HarvestRecipes.find(helper.getLevel(), MUD_CRUDE)
                 .orElseThrow(() -> helper.assertionException("the shipped drilling mud recipe did not load"));
         helper.assertValueEqual(mud.yieldCondition(), Optional.of(YieldCondition.AT_FLOOR), "the shipped recipe's yield condition");
-        helper.assertValueEqual(mud.result().crude(), 10, "the shipped recipe's crude");
+        helper.assertValueEqual(mud.result(), new HarvestRecipe.Result.Crude(10), "the shipped recipe's crude");
         helper.assertValueEqual(mud.drillingFluid().orElseThrow().amount(), 25, "the shipped recipe's mud per operation");
         helper.assertValueEqual(mud.replacesDefault(), false, "whether the shipped recipe replaces the Default");
         HarvestRecipe flat = HarvestRecipes.find(helper.getLevel(), FLAT_CRUDE).orElseThrow();

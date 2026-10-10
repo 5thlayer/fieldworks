@@ -67,32 +67,32 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
         Optional<Identifier> minimumTier, boolean replacesDefault, Optional<FluidInput> drillingFluid,
         Optional<YieldCondition> yieldCondition) implements Recipe<RecipeInput> {
 
-    /**
-     * What one operation yields: an item stack, or crude oil in mB. Exactly one of them: {@code crude} is 0 for an item.
-     */
-    public record Result(Optional<ItemStackTemplate> item, int crude) {
+    /** What one operation yields: an item stack, or crude oil for a well. */
+    public sealed interface Result {
 
         /** Crude is an object, {@code {"crude_oil": 10}}; anything else is read as an item stack. */
-        private static final Codec<Result> CODEC = Codec.either(Codec.INT.fieldOf("crude_oil").codec(), ItemStackTemplate.CODEC).xmap(
-                either -> either.map(Result::crude, Result::of),
-                result -> result.item().isPresent() ? Either.right(result.item().get()) : Either.left(result.crude));
+        Codec<Result> CODEC = Codec.either(Crude.CODEC, ItemStackTemplate.CODEC).xmap(
+                either -> either.map(crude -> crude, Item::new),
+                result -> result instanceof Item item ? Either.right(item.template()) : Either.left((Crude) result));
 
-        private static final StreamCodec<RegistryFriendlyByteBuf, Result> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.optional(ItemStackTemplate.STREAM_CODEC), Result::item,
-                ByteBufCodecs.VAR_INT, Result::crude,
-                Result::new);
-
-        public static Result of(ItemStackTemplate item) {
-            return new Result(Optional.of(item), 0);
-        }
-
-        public static Result crude(int millibuckets) {
-            return new Result(Optional.empty(), millibuckets);
-        }
+        StreamCodec<RegistryFriendlyByteBuf, Result> STREAM_CODEC = ByteBufCodecs.either(Crude.STREAM_CODEC, ItemStackTemplate.STREAM_CODEC).map(
+                either -> either.map(crude -> crude, Item::new),
+                result -> result instanceof Item item ? Either.right(item.template()) : Either.left((Crude) result));
 
         /** The item stack, or an empty stack for crude. */
-        public ItemStack stack() {
-            return item.map(ItemStackTemplate::create).orElse(ItemStack.EMPTY);
+        default ItemStack stack() {
+            return this instanceof Item item ? item.template().create() : ItemStack.EMPTY;
+        }
+
+        record Item(ItemStackTemplate template) implements Result {
+        }
+
+        /** The crude one operation pumps, in mB, in place of the well's own cycle's yield. */
+        record Crude(int millibuckets) implements Result {
+
+            private static final Codec<Crude> CODEC = Codec.INT.fieldOf("crude_oil").codec().xmap(Crude::new, Crude::millibuckets);
+
+            private static final StreamCodec<ByteBuf, Crude> STREAM_CODEC = ByteBufCodecs.VAR_INT.map(Crude::new, Crude::millibuckets);
         }
     }
 
@@ -176,7 +176,7 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
     }
 
     /** The recipe as the choice of operation reads it: plain ids, and the minimum tier as the rank it needs. */
-    OperationChoice.Recipe forChoice(Identifier id, Function<Identifier, OptionalInt> rankOf) {
+    OperationChoice.Recipe<Result> forChoice(Identifier id, Function<Identifier, OptionalInt> rankOf) {
         Set<String> blocks = source.unwrap().map(tag -> Set.<String>of(), holders -> {
             List<String> ids = new ArrayList<>();
             holders.forEach(holder -> holder.unwrapKey().ifPresent(key -> ids.add(key.identifier().toString())));
@@ -189,7 +189,7 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
         Optional<OperationChoice.DrillingFluid> fluid = drillingFluid.map(input -> new OperationChoice.DrillingFluid(
                 input.serving().stream().flatMap(holder -> holder.unwrapKey().stream()).map(key -> key.identifier().toString())
                         .collect(Collectors.toUnmodifiableSet()), input.amount()));
-        return new OperationChoice.Recipe(id.toString(), blocks, tags, duration, minimum, replacesDefault, fluid, yieldCondition);
+        return new OperationChoice.Recipe<>(id.toString(), blocks, tags, duration, minimum, replacesDefault, fluid, yieldCondition, result);
     }
 
     private static DataResult<HarvestRecipe> check(HarvestRecipe recipe) {
@@ -203,17 +203,17 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
             return DataResult.error(() -> "a Harvest Recipe's minimum_tier must be a Harvester block, one of "
                     + Stream.of(TierBlock.values()).map(tier -> tier.id().toString()).toList() + ", not " + recipe.minimumTier.get());
         }
-        if (recipe.result.item().isEmpty() && recipe.result.crude() < 1) {
-            return DataResult.error(() -> "a Harvest Recipe's crude_oil result must be at least 1 mB, not " + recipe.result.crude());
+        if (recipe.result instanceof Result.Crude crude && crude.millibuckets() < 1) {
+            return DataResult.error(() -> "a Harvest Recipe's crude_oil result must be at least 1 mB, not " + crude.millibuckets());
         }
         // A block tag is read after the load, so only a source named block by block can be checked here (#12).
         List<Holder<Block>> named = recipe.source.unwrap().right().orElse(List.of());
         boolean wells = named.stream().anyMatch(block -> block.value() instanceof OilWellBlock);
         boolean others = named.stream().anyMatch(block -> !(block.value() instanceof OilWellBlock));
-        if (recipe.result.item().isEmpty() && others) {
+        if (!(recipe.result instanceof Result.Item) && others) {
             return DataResult.error(() -> "a Harvest Recipe's crude result is for an oil well, and its source names another block");
         }
-        if (recipe.result.item().isPresent() && wells) {
+        if (recipe.result instanceof Result.Item && wells) {
             return DataResult.error(() -> "a Harvest Recipe's source names an oil well, which yields crude_oil, not an item");
         }
         if (recipe.yieldCondition.isPresent() && others) {

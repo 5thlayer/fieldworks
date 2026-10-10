@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
+import io.github._5thlayer.fieldworks.harvester.HarvestRecipe.Result;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Choice;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.DrillingFluid;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Idle;
@@ -163,24 +164,24 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             return;
         }
         HarvestRecipes.Loaded recipes = HarvestRecipes.loaded(level);
-        Optional<OperationChoice.Recipe> heldChoice = Optional.empty();
+        Optional<OperationChoice.Recipe<Result>> heldChoice = Optional.empty();
         if (held != null) {
-            HarvestRecipes.Entry entry = recipes.byId().get(held.toString());
-            if (entry == null) {
+            OperationChoice.Recipe<Result> recipe = recipes.byId().get(held);
+            if (recipe == null) {
                 // A Held recipe a reload removed matches nothing; it never falls back to the Default recipes (#10).
                 idle = IdleReason.NOTHING_MATCHING;
                 return;
             }
-            heldChoice = Optional.of(entry.choice());
+            heldChoice = Optional.of(recipe);
         }
         List<BlockPos> layer = layer();
-        Machine machine = new Machine(tier.rank(), choiceTank(), operation -> work(level, layer, operation, recipes) != null, canPay(level, tier));
-        Choice choice = OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, machine);
-        if (!(choice instanceof Operation operation)) {
-            idle = ((Idle) choice).reason();
+        Machine<Result> machine = new Machine<>(tier.rank(), choiceTank(), operation -> work(level, layer, operation) != null, canPay(level, tier));
+        Choice<Result> choice = OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, machine);
+        if (!(choice instanceof Operation<Result> operation)) {
+            idle = ((Idle<Result>) choice).reason();
             return;
         }
-        Runnable work = work(level, layer, operation, recipes);
+        Runnable work = work(level, layer, operation);
         if (work == null) {
             return;
         }
@@ -207,22 +208,21 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** The operation's work, or null while there is no room for what it yields. */
-    private @Nullable Runnable work(ServerLevel level, List<BlockPos> layer, Operation operation, HarvestRecipes.Loaded recipes) {
+    private @Nullable Runnable work(ServerLevel level, List<BlockPos> layer, Operation<Result> operation) {
         BlockPos at = layer.get(operation.position());
-        return level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well, operation, recipes)
-                : level.getBlockState(at).getBlock() instanceof OreBlock ? draw(level, at, operation, recipes)
-                : breakBlock(level, at, operation, recipes);
+        Optional<Result> result = operation.recipe().map(OperationChoice.Recipe::result);
+        return level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well, result)
+                : level.getBlockState(at).getBlock() instanceof OreBlock ? draw(level, at, result)
+                : breakBlock(level, at, result);
     }
 
     /**
-     * One draw of the ore block at {@code at}, paying the operation's recipe result or the block's own item,
+     * One draw of the ore block at {@code at}, paying the recipe's result or, with none, the block's own item,
      * or null while the buffer has no room for it.
      */
-    private @Nullable Runnable draw(ServerLevel level, BlockPos at, Operation operation, HarvestRecipes.Loaded recipes) {
+    private @Nullable Runnable draw(ServerLevel level, BlockPos at, Optional<Result> recipeResult) {
         OreBlock ore = (OreBlock) level.getBlockState(at).getBlock();
-        ItemStack stack = operation.recipe()
-                .map(recipe -> recipes.byId().get(recipe.id()).recipe().result().stack())
-                .orElseGet(() -> drop(ore));
+        ItemStack stack = recipeResult.map(Result::stack).orElseGet(() -> drop(ore));
         ItemResource result = ItemResource.of(stack);
         if (!fits(result, stack.getCount())) {
             return null;
@@ -235,14 +235,13 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /**
-     * The harvestable block at {@code at} broken to air, its loot, or the operation's recipe result in its place,
+     * The harvestable block at {@code at} broken to air, its loot, or the recipe's result in its place,
      * going to the buffer; or null while the buffer has no room for all of it. The loot table runs against an
      * unenchanted pick and nothing checks the tool, so a diamond ore breaks for its diamond (#1).
      */
-    private @Nullable Runnable breakBlock(ServerLevel level, BlockPos at, Operation operation, HarvestRecipes.Loaded recipes) {
+    private @Nullable Runnable breakBlock(ServerLevel level, BlockPos at, Optional<Result> recipeResult) {
         BlockState state = level.getBlockState(at);
-        List<ItemStack> loot = operation.recipe()
-                .map(recipe -> List.of(recipes.byId().get(recipe.id()).recipe().result().stack()))
+        List<ItemStack> loot = recipeResult.map(result -> List.of(result.stack()))
                 .orElseGet(() -> Block.getDrops(state, level, at, level.getBlockEntity(at), null, new ItemStack(Items.DIAMOND_PICKAXE)));
         if (!fitsAll(loot)) {
             return null;
@@ -264,8 +263,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
      * well, so a well above its floor goes on decaying (#12). A recipe whose result is an item, which only a block tag
      * naming the well could give it, pumps the cycle's own yield.
      */
-    private @Nullable Runnable pump(OilWellBlockEntity well, Operation operation, HarvestRecipes.Loaded recipes) {
-        int recipeCrude = operation.recipe().map(recipe -> recipes.byId().get(recipe.id()).recipe().result().crude()).orElse(0);
+    private @Nullable Runnable pump(OilWellBlockEntity well, Optional<Result> recipeResult) {
+        int recipeCrude = recipeResult.map(result -> result instanceof Result.Crude crude ? crude.millibuckets() : 0).orElse(0);
         if ((recipeCrude > 0 ? recipeCrude : well.nextCycle()) > TANK_CAPACITY - product.getAmountAsInt(0)) {
             return null;
         }

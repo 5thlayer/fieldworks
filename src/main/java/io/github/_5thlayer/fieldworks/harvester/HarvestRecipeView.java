@@ -53,7 +53,7 @@ public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> so
     /** Every Default recipe a recipe in {@code recipes} leaves in place, then every Harvest Recipe in it. */
     public static List<HarvestRecipeView> all(RecipeMap recipes) {
         List<RecipeHolder<HarvestRecipe>> written = List.copyOf(recipes.byType(HarvestRecipes.TYPE.get()));
-        List<OperationChoice.Recipe> choices = written.stream()
+        List<OperationChoice.Recipe<HarvestRecipe.Result>> choices = written.stream()
                 .map(holder -> holder.value().forChoice(holder.id().identifier(), tier -> OptionalInt.empty()))
                 .toList();
         List<HarvestRecipeView> views = new ArrayList<>();
@@ -91,7 +91,7 @@ public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> so
                     recipe.result().stack(), recipe.duration(), recipe.minimumTier(),
                     recipe.drillingFluid().map(input -> servingFluids(input)).orElse(List.of()),
                     recipe.drillingFluid().map(HarvestRecipe.FluidInput::amount).orElse(0), recipe.yieldCondition(),
-                    recipe.result().crude(), 0));
+                    recipe.result() instanceof HarvestRecipe.Result.Crude crude ? crude.millibuckets() : 0, 0));
         }
         return List.copyOf(views);
     }

@@ -37,28 +37,15 @@ public final class OperationChoice {
      * is in the layer, only wells can be worked. Positions
      * are the layer's indices, so a source that goes, an ore block turned to stone, leaves the others'
      * places in the round as they were.
+     *
+     * <p>With no Held recipe only Default recipes run, and a source whose Default recipe a recipe in {@code recipes}
+     * replaces is skipped. A Held recipe works only the sources it matches, and when it cannot run the Harvester
+     * idles with the reason and never falls back to the Default recipes (#10). {@code machine} is the Harvester's
+     * own state.
      */
-    public static Choice choose(List<Source> layer, int cursor) {
-        return choose(layer, cursor, List.of(), Optional.empty(), 0);
-    }
-
-    /**
-     * As {@link #choose(List, int)}, over the Harvest Recipes on offer. With no Held recipe only Default
-     * recipes run, and a source whose Default recipe a recipe in {@code recipes} replaces is skipped.
-     * {@code tierRank} is the rank of the Harvester Tier doing the work.
-     */
-    public static Choice choose(List<Source> layer, int cursor, List<Recipe> recipes, Optional<Recipe> held, int tierRank) {
-        return choose(layer, cursor, recipes, held, Machine.ready(tierRank));
-    }
-
-    /**
-     * As {@link #choose(List, int, List, Optional, int)}, for a Harvester in the state {@code machine} reads. A
-     * Held recipe works only the sources it matches, and when it cannot run the Harvester idles with the reason
-     * and never falls back to the Default recipes (#10).
-     */
-    public static Choice choose(List<Source> layer, int cursor, List<Recipe> recipes, Optional<Recipe> held, Machine machine) {
+    public static <R> Choice<R> choose(List<Source> layer, int cursor, List<Recipe<R>> recipes, Optional<Recipe<R>> held, Machine<R> machine) {
         if (held.isPresent() && held.get().minimumRank().isPresent() && machine.tierRank() < held.get().minimumRank().getAsInt()) {
-            return new Idle(IdleReason.TIER_TOO_LOW);
+            return new Idle<>(IdleReason.TIER_TOO_LOW);
         }
         // Any well under the footprint excludes every block source (#1).
         boolean wells = layer.stream().anyMatch(source -> source.kind() == Kind.WELL);
@@ -73,51 +60,34 @@ public final class OperationChoice {
             if (held.isPresent()) {
                 if (held.get().matches(source)) {
                     if (!held.get().drillingFluid().map(machine.tank()::holds).orElse(true)) {
-                        return new Idle(IdleReason.NO_FLUID);
+                        return new Idle<>(IdleReason.NO_FLUID);
                     }
-                    return machine.run(new Operation(position, held.get().duration(), next, held));
+                    return machine.run(new Operation<>(position, held.get().duration(), next, held));
                 }
             } else if (recipes.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
-                return machine.run(new Operation(position, defaultTicks(source.kind()), next, Optional.empty()));
+                return machine.run(new Operation<>(position, defaultTicks(source.kind()), next, Optional.empty()));
             }
         }
-        return new Idle(held.isPresent() ? IdleReason.NOTHING_MATCHING : IdleReason.NOTHING_TO_WORK);
+        return new Idle<>(held.isPresent() ? IdleReason.NOTHING_MATCHING : IdleReason.NOTHING_TO_WORK);
     }
 
     /**
      * What the choice reads of the Harvester itself: its tier's rank, its Drilling Fluid tank, whether its output
      * buffer has room for an operation's result, and whether it has a tick of power to spend.
      */
-    public record Machine(int tierRank, Tank tank, Predicate<Operation> fits, boolean powered) {
+    public record Machine<R>(int tierRank, Tank tank, Predicate<Operation<R>> fits, boolean powered) {
 
         public Machine {
             Objects.requireNonNull(tank);
             Objects.requireNonNull(fits);
         }
 
-        /** A powered Harvester of this rank with an empty tank and room for anything. */
-        public static Machine ready(int tierRank) {
-            return new Machine(tierRank, Tank.EMPTY, operation -> true, true);
-        }
-
-        public Machine withTank(Tank tank) {
-            return new Machine(tierRank, tank, fits, powered);
-        }
-
-        public Machine withFits(Predicate<Operation> fits) {
-            return new Machine(tierRank, tank, fits, powered);
-        }
-
-        public Machine withPower(boolean powered) {
-            return new Machine(tierRank, tank, fits, powered);
-        }
-
         /** The operation, or why the Harvester cannot run it now: a result with nowhere to go comes before power. */
-        Choice run(Operation operation) {
+        Choice<R> run(Operation<R> operation) {
             if (!fits.test(operation)) {
-                return new Idle(IdleReason.OUTPUT_FULL);
+                return new Idle<>(IdleReason.OUTPUT_FULL);
             }
-            return powered ? operation : new Idle(IdleReason.NO_POWER);
+            return powered ? operation : new Idle<>(IdleReason.NO_POWER);
         }
     }
 
@@ -167,7 +137,7 @@ public final class OperationChoice {
      */
     public record Source(Kind kind, String block, Set<String> tags, boolean atFloor) {
 
-        public static final Source NONE = new Source(Kind.NONE, "", Set.of());
+        public static final Source NONE = new Source(Kind.NONE, "", Set.of(), false);
 
         public Source {
             Objects.requireNonNull(kind);
@@ -175,21 +145,12 @@ public final class OperationChoice {
             tags = Set.copyOf(tags);
         }
 
-        /** A source that is no well, or a well above its floor. */
-        public Source(Kind kind, String block, Set<String> tags) {
-            this(kind, block, tags, false);
-        }
-
-        public static Source oreBlock(String block) {
-            return oreBlock(block, Set.of());
-        }
-
         public static Source oreBlock(String block, Set<String> tags) {
-            return new Source(Kind.ORE_BLOCK, block, tags);
+            return new Source(Kind.ORE_BLOCK, block, tags, false);
         }
 
         public static Source harvestable(String block, Set<String> tags) {
-            return new Source(Kind.HARVESTABLE, block, tags);
+            return new Source(Kind.HARVESTABLE, block, tags, false);
         }
 
         /** A well above its floor. */
@@ -207,9 +168,10 @@ public final class OperationChoice {
      * A Harvest Recipe as the choice reads it: the blocks and block tags it matches, its duration in ticks at
      * speed ×1, the lowest tier rank that may run it if it names one, whether it removes its sources'
      * Default recipes, the Drilling Fluid it consumes, if any, and for a well the floor state it needs, if any.
+     * {@code result} is what it yields, which the choice carries to the operation and never reads.
      */
-    public record Recipe(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank,
-            boolean replacesDefault, Optional<DrillingFluid> drillingFluid, Optional<YieldCondition> yieldCondition) {
+    public record Recipe<R>(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank,
+            boolean replacesDefault, Optional<DrillingFluid> drillingFluid, Optional<YieldCondition> yieldCondition, R result) {
 
         public Recipe {
             Objects.requireNonNull(id);
@@ -217,17 +179,7 @@ public final class OperationChoice {
             tags = Set.copyOf(tags);
             Objects.requireNonNull(drillingFluid);
             Objects.requireNonNull(yieldCondition);
-        }
-
-        /** A recipe that takes no Drilling Fluid and has no yield condition. */
-        public Recipe(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank, boolean replacesDefault) {
-            this(id, blocks, tags, duration, minimumRank, replacesDefault, Optional.empty());
-        }
-
-        /** A recipe with no yield condition. */
-        public Recipe(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank,
-                boolean replacesDefault, Optional<DrillingFluid> drillingFluid) {
-            this(id, blocks, tags, duration, minimumRank, replacesDefault, drillingFluid, Optional.empty());
+            Objects.requireNonNull(result);
         }
 
         boolean matches(Source source) {
@@ -287,7 +239,7 @@ public final class OperationChoice {
     }
 
     /** What {@link #choose} returns: an operation, or why there is none. */
-    public sealed interface Choice permits Operation, Idle {
+    public sealed interface Choice<R> permits Operation, Idle {
     }
 
     /**
@@ -295,7 +247,7 @@ public final class OperationChoice {
      * so the round goes on from the position after it. {@code recipe} is the Harvest Recipe it runs, empty
      * for a Default recipe.
      */
-    public record Operation(int position, int ticks, int nextCursor, Optional<Recipe> recipe) implements Choice {
+    public record Operation<R>(int position, int ticks, int nextCursor, Optional<Recipe<R>> recipe) implements Choice<R> {
 
         /** The Drilling Fluid the operation consumes when it completes: only a Held recipe's, never a Default's (#11). */
         public Optional<DrillingFluid> drillingFluid() {
@@ -303,6 +255,6 @@ public final class OperationChoice {
         }
     }
 
-    public record Idle(IdleReason reason) implements Choice {
+    public record Idle<R>(IdleReason reason) implements Choice<R> {
     }
 }
