@@ -22,7 +22,7 @@ wells and crude oil work, ported from FactoryWorks Core at commit `fb05f50`.
   spacing and spots per square kilometre, with a density and spot size of its own. They are tunable
   data like the rest.
 - **Each resource has a generation switch** in `fieldworks-common.toml`, read when a patch is
-  generated. Oil fields have none.
+  generated, and oil fields have one of their own (`generate.oil_field`).
 - **Patch ore is mined by hand** with vanilla pickaxes at vanilla hardness (3.0, stone 1.5) and
   vanilla tiers, set by the `needs_*_tool` tags: stone for iron, copper and sulfur, iron for uranium,
   none for coal and stone. A break is cancelled; it takes one unit from the block and pays one item,
@@ -38,7 +38,11 @@ wells and crude oil work, ported from FactoryWorks Core at commit `fb05f50`.
   amount is `(cone / 0.0208 + 220000) × max((1000 + d) / 2600, 1)` for the column's distance `d`, with no
   cap, so a far well starts above 100%.
 - **Crude oil is a fluid with a block and no bucket**, in `c:crude_oil`. The Harvester that pumps a
-  well is a later ticket.
+  well is a later ticket (#1).
+- **A well exposes no fluid capability until the Harvester.** The yield per cycle and the decay step
+  are the Harvester's to drive, and a capability now would let any other mod's pump or pipe drain a
+  well at a rate and tier nothing here has decided. The capability arrives with the Harvester that
+  defines how a cycle is taken.
 
 **Considered: starting patches.** The Showcase's spawn area carried them. A Library cannot assume a
 spawn area, and a disc past 150 blocks gives the same play without one.

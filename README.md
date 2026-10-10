@@ -5,7 +5,7 @@ coal, stone, uranium and sulfur generate beside vanilla ores, each behind a gene
 wells yield crude oil that decays to a floor and never runs dry. Patch ore is mined by hand with
 vanilla pickaxes, or by the Harvester, in a burner tier and an FE tier.
 
-Fieldworks plays alone in vanilla and requires only Groundworks. It began as FactoryWorks Core in
+Fieldworks plays alone in vanilla. It began as FactoryWorks Core in
 [5thlayer/factoryworks](https://github.com/5thlayer/factoryworks), whose Showcase pack consumes it
 (FactoryWorks ADR-0127).
 

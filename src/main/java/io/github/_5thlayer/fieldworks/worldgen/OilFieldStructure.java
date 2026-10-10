@@ -5,6 +5,7 @@ package io.github._5thlayer.fieldworks.worldgen;
 
 import com.mojang.serialization.MapCodec;
 import io.github._5thlayer.fieldworks.Fieldworks;
+import io.github._5thlayer.fieldworks.config.FieldworksConfig;
 import io.github._5thlayer.fieldworks.oil.OilField;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,9 @@ public final class OilFieldStructure extends Structure {
 
     @Override
     protected Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
+        if (!FieldworksConfig.generatesOilFields()) {
+            return Optional.empty();
+        }
         ChunkPos chunk = context.chunkPos();
         int x = chunk.getMiddleBlockX();
         int z = chunk.getMiddleBlockZ();

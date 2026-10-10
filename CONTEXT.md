@@ -21,8 +21,9 @@ _Avoid_: client (collides with the game's client side), dependent, integration
 
 **Patch**:
 A disc of ore blocks of one resource, generated in new land beyond the spawn area. It holds a total
-that its blocks share equally, and it is found, marked and mined as a whole.
-_Avoid_: deposit, vein, field (an oil field is a different thing)
+that its blocks share equally, and it is found, marked and mined as a whole. Its size law and ragged
+edge are shared with the oil field, which lays its wells over the same kind of disc.
+_Avoid_: deposit, vein, outfield, field (an oil field is a different thing)
 
 **Ore block**:
 One block of a patch. It holds an amount, shows it as one of eight stages, and gives up one unit per

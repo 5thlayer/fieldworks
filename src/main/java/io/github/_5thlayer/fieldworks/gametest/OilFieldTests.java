@@ -6,6 +6,7 @@ package io.github._5thlayer.fieldworks.gametest;
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
+import io.github._5thlayer.fieldworks.config.FieldworksConfig;
 import io.github._5thlayer.fieldworks.oil.OilField;
 import io.github._5thlayer.fieldworks.oil.OilFieldSource;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
@@ -56,6 +57,7 @@ final class OilFieldTests {
         tests.test("oil_field_skips_ore_columns", 20, OilFieldTests::fieldSkipsOre);
         tests.test("oil_field_nothing_in_the_hole", 20, OilFieldTests::nothingInTheHole);
         tests.test("oil_field_nothing_off_the_land", 20, OilFieldTests::nothingOffTheLand);
+        tests.test("oil_field_switched_off_generates_nothing", 20, OilFieldTests::switchedOff);
     }
 
     private static void fieldPlaces(GameTestHelper helper) {
@@ -166,6 +168,29 @@ final class OilFieldTests {
                     return;
                 }
             }
+        }
+        helper.succeed();
+    }
+
+    /** A switch off stops oil fields generating where they otherwise would. */
+    private static void switchedOff(GameTestHelper helper) {
+        Holder<Structure> structure = resolve(helper);
+        if (structure == null) {
+            return;
+        }
+        var generate = FieldworksConfig.generateOilFieldsSwitch();
+        generate.set(false);
+        try {
+            if (PatchDiscTests.generate(helper.getLevel(), structure, FAR).isValid()) {
+                helper.fail("an oil field generated with its switch off");
+                return;
+            }
+        } finally {
+            generate.set(true);
+        }
+        if (!PatchDiscTests.generate(helper.getLevel(), structure, FAR).isValid()) {
+            helper.fail("no oil field generated with its switch back on");
+            return;
         }
         helper.succeed();
     }
