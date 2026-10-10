@@ -17,20 +17,25 @@ public final class OperationChoice {
     /** An ore block's Default recipe: one draw, in this many ticks at speed ×1. */
     static final int ORE_DRAW_TICKS = 20;
 
+    /** A well's Default recipe: one cycle of its yield and decay, in this many ticks at speed ×1. */
+    static final int WELL_PUMP_TICKS = 20;
+
     private OperationChoice() {
     }
 
     /**
      * The next operation from {@code cursor} round the layer: the first source at or after it that can
-     * be worked, wrapping at the end. Positions are the layer's indices, so a source that goes, an ore
+     * be worked, wrapping at the end. While any well is in the layer, only wells can be worked. Positions are the layer's indices, so a source that goes, an ore
      * block turned to stone, leaves the others' places in the round as they were.
      */
     public static Choice choose(List<Source> layer, int cursor) {
+        // Any well under the footprint excludes every block source (#1).
+        Kind worked = layer.stream().anyMatch(source -> source.kind() == Kind.WELL) ? Kind.WELL : Kind.ORE_BLOCK;
         int size = layer.size();
         for (int step = 0; step < size; step++) {
             int position = Math.floorMod(cursor + step, size);
-            if (layer.get(position).kind() == Kind.ORE_BLOCK) {
-                return new Operation(position, ORE_DRAW_TICKS, (position + 1) % size);
+            if (layer.get(position).kind() == worked) {
+                return new Operation(position, worked == Kind.WELL ? WELL_PUMP_TICKS : ORE_DRAW_TICKS, (position + 1) % size);
             }
         }
         return new Idle(IdleReason.NOTHING_TO_WORK);
@@ -40,7 +45,8 @@ public final class OperationChoice {
     public enum Kind {
         /** Nothing the Harvester works. */
         NONE,
-        ORE_BLOCK
+        ORE_BLOCK,
+        WELL
     }
 
     /** One position of the layer under the footprint: what stands there, and its block id. */
@@ -55,6 +61,10 @@ public final class OperationChoice {
 
         public static Source oreBlock(String block) {
             return new Source(Kind.ORE_BLOCK, block);
+        }
+
+        public static Source well(String block) {
+            return new Source(Kind.WELL, block);
         }
     }
 

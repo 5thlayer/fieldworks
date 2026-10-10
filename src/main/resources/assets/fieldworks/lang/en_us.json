@@ -10,6 +10,7 @@
   "block.fieldworks.harvester_1_part": "Burner Harvester",
   "block.fieldworks.crude_oil": "Crude Oil",
   "fluid_type.fieldworks.crude_oil": "Crude Oil",
+  "item.fieldworks.crude_oil_bucket": "Crude Oil Bucket",
   "item.fieldworks.raw_uranium": "Raw Uranium",
   "item.fieldworks.sulfur": "Sulfur",
   "item.fieldworks.uranium_ingot": "Uranium Ingot",

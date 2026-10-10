@@ -20,6 +20,7 @@ class OperationChoiceTest {
     private static final Source IRON = Source.oreBlock("fieldworks:iron_ore");
     private static final Source COPPER = Source.oreBlock("fieldworks:copper_ore");
     private static final Source NONE = Source.NONE;
+    private static final Source WELL = Source.well("fieldworks:oil_well");
 
     @Test
     void oreBlocksAreWorkedInTurnInTheLayersOrder() {
@@ -68,6 +69,27 @@ class OperationChoiceTest {
     @Test
     void anOreBlocksDefaultRecipeDrawsInTwentyTicksAtSpeedOne() {
         List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(20, ((Operation) OperationChoice.choose(layer, 0)).ticks());
+    }
+
+    @Test
+    void aWellUnderTheFootprintExcludesEveryOreBlock() {
+        List<Source> layer = List.of(IRON, IRON, NONE, NONE, WELL, NONE, NONE, COPPER, NONE);
+
+        assertEquals(List.of(4, 4, 4), positions(layer, 0, 3));
+    }
+
+    @Test
+    void wellsAreWorkedInTurn() {
+        List<Source> layer = List.of(WELL, IRON, NONE, NONE, NONE, NONE, IRON, NONE, WELL);
+
+        assertEquals(List.of(0, 8, 0, 8), positions(layer, 0, 4));
+    }
+
+    @Test
+    void aWellsDefaultRecipePumpsOneCycleInTwentyTicksAtSpeedOne() {
+        List<Source> layer = List.of(NONE, NONE, NONE, NONE, WELL, NONE, NONE, NONE, NONE);
 
         assertEquals(20, ((Operation) OperationChoice.choose(layer, 0)).ticks());
     }

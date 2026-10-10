@@ -5,6 +5,9 @@ package io.github._5thlayer.fieldworks.fluid;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
@@ -14,15 +17,17 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
- * Crude oil: the fluid type, still and flowing fluids and a liquid block. It has no bucket and no
- * item of its own; it is tagged {@code c:crude_oil}, which is how other mods find it.
+ * Crude oil: the fluid type, still and flowing fluids, a liquid block and a bucket. It is tagged
+ * {@code c:crude_oil}, which is how other mods find it.
  */
 public final class CrudeOil {
 
@@ -30,6 +35,7 @@ public final class CrudeOil {
             DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, Fieldworks.MOD_ID);
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(Registries.FLUID, Fieldworks.MOD_ID);
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Fieldworks.MOD_ID);
+    private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Fieldworks.MOD_ID);
 
     public static final DeferredHolder<FluidType, FluidType> TYPE = FLUID_TYPES.register(
             "crude_oil",
@@ -49,11 +55,19 @@ public final class CrudeOil {
     public static final DeferredHolder<Block, LiquidBlock> BLOCK = BLOCKS.registerBlock("crude_oil",
             props -> new LiquidBlock(SOURCE.get(), liquidProperties(props)));
 
+    /**
+     * A plain {@link BucketItem}, not a subclass: NeoForge gives the fluid item capability only to that exact
+     * class, and the Harvester's fill slot fills buckets through it (ADR 0004).
+     */
+    public static final DeferredItem<BucketItem> BUCKET = ITEMS.registerItem("crude_oil_bucket",
+            props -> new BucketItem(SOURCE.get(), props),
+            props -> props.craftRemainder(Items.BUCKET).stacksTo(1));
+
     private CrudeOil() {
     }
 
     private static BaseFlowingFluid.Properties properties() {
-        return new BaseFlowingFluid.Properties(TYPE, SOURCE, FLOWING).block(BLOCK);
+        return new BaseFlowingFluid.Properties(TYPE, SOURCE, FLOWING).block(BLOCK).bucket(BUCKET);
     }
 
     /** Takes the properties rather than making them: a block's registry id rides on them. */
@@ -73,5 +87,13 @@ public final class CrudeOil {
         FLUID_TYPES.register(modBus);
         FLUIDS.register(modBus);
         BLOCKS.register(modBus);
+        ITEMS.register(modBus);
+        modBus.addListener(CrudeOil::addToCreativeTabs);
+    }
+
+    private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(BUCKET.get());
+        }
     }
 }

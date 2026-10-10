@@ -28,8 +28,8 @@ import net.neoforged.neoforge.common.NeoForge;
  */
 public final class FtbMapMarkers implements MapMarkerRenderer {
 
-    /** Crude oil is a fluid with no item of its own, so a bucket stands in for it on the map. */
-    private static final String OIL_ICON = "minecraft:bucket";
+    /** Crude oil is a fluid, so its bucket stands in for it on the map. */
+    private static final String OIL_ICON = "fieldworks:crude_oil_bucket";
 
     private FtbMapMarkers() {
     }

@@ -28,6 +28,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  */
 public final class FieldworksGameTests {
 
+    /** Set only by the {@code gameTestServer} run, which turns on what the tests alone stand on. */
+    private static final String GAMETEST_PACK = "fieldworks.gametestPack";
+
     private static final Identifier PLATFORM = id("gametest/platform");
 
     private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
@@ -44,6 +47,10 @@ public final class FieldworksGameTests {
         TEST_TYPES.register(modBus);
         // Posted only when game tests are enabled, so a production server never registers the tests.
         modBus.addListener(FieldworksGameTests::registerTests);
+        if (Boolean.getBoolean(GAMETEST_PACK)) {
+            // The tests' own fluid-handler block, which a player's world never has.
+            TestTank.register(modBus);
+        }
     }
 
     private static void registerTests(RegisterGameTestsEvent event) {
@@ -56,6 +63,7 @@ public final class FieldworksGameTests {
         OilFieldTests.register(tests);
         HandMiningTests.register(tests);
         HarvesterTests.register(tests);
+        HarvesterWellTests.register(tests);
     }
 
     private static Identifier id(String path) {
