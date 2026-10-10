@@ -14,6 +14,7 @@ import com.mojang.serialization.JsonOps;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
+import io.github._5thlayer.fieldworks.compat.HarvestRecipeLines;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.fluid.DrillingMud;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipe;
@@ -26,6 +27,7 @@ import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -243,6 +245,7 @@ final class FlooredWellTests {
 
         helper.assertValueEqual(diamond.duration(), 40, "diamond ore's Default duration");
         helper.assertTrue(diamond.breaksForLoot(), "diamond ore's Default does not break for its loot");
+        helper.assertValueEqual(HarvestRecipeLines.detail(diamond), Component.empty(), "the line under diamond ore's Default");
         helper.assertValueEqual(diamond.sourceIcons().stream().map(ItemStack::getItem).toList(), List.of(Items.DIAMOND_ORE),
                 "diamond ore's icon");
         helper.assertValueEqual(diamond.minimumTier(), Optional.empty(), "diamond ore's Default minimum tier");

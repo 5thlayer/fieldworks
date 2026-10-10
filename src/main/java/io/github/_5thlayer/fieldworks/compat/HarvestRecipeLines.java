@@ -41,15 +41,12 @@ public final class HarvestRecipeLines {
     }
 
     /**
-     * A third line for what the first two do not say (#12): a well Default's crude falling to its floor, a harvestable
-     * block breaking for its loot, or the floor state a well recipe needs. Empty for any other recipe.
+     * A third line for what the first two do not say (#12): a well Default's crude falling to its floor, or the floor
+     * state a well recipe needs. Empty for any other recipe.
      */
     public static Component detail(HarvestRecipeView view) {
         if (view.crudeAtFloor() > 0) {
             return Component.translatable("fieldworks.harvesting.falls_to", view.crudeAtFloor());
-        }
-        if (view.breaksForLoot()) {
-            return Component.translatable("fieldworks.harvesting.loot");
         }
         return view.yieldCondition().map(condition -> (Component) Component.translatable("fieldworks.harvesting." + condition.id()))
                 .orElse(Component.empty());
