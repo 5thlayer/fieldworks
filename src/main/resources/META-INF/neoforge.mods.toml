@@ -35,3 +35,11 @@ type = "optional"
 versionRange = "[26.1.2.8,)"
 ordering = "NONE"
 side = "CLIENT"
+
+# Soft: an ore block's amount shows in Jade.
+[[dependencies.${mod_id}]]
+modId = "jade"
+type = "optional"
+versionRange = "[26.1.11,)"
+ordering = "NONE"
+side = "BOTH"
