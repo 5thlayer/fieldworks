@@ -92,6 +92,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     private static final String DRILLING_KEY = "drilling_fluid";
     private static final String ENERGY_KEY = "energy";
     private static final String BURN_KEY = "burn_left";
+    private static final String BURN_TOTAL_KEY = "burn_total";
     private static final String PROGRESS_KEY = "progress";
     private static final String CURSOR_KEY = "cursor";
     private static final String HELD_KEY = "held_recipe";
@@ -112,7 +113,11 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
 
     /** Burn ticks bought by the last fuel item and not yet worked. */
     private int burnLeft;
+    /** The burn the last fuel item bought, so the menu can draw {@link #burnLeft} against it (#13). */
+    private int burnTotal;
     private int progress;
+    /** Ticks the operation under way takes on this tier, for the menu's progress bar; not saved, set as it works (#13). */
+    private int operationTicks;
     private int cursor;
 
     /** The Held recipe's id, resolved on each tick: a block entity loads before the recipes do. */
@@ -191,7 +196,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         }
         idle = null;
         progress++;
-        if (progress >= tier.ticks(operation.ticks())) {
+        operationTicks = tier.ticks(operation.ticks());
+        if (progress >= operationTicks) {
             progress = 0;
             cursor = operation.nextCursor();
             // Taken on completion, as the result is paid; only a Held recipe names a fluid, so a Default recipe takes none (#1).
@@ -319,6 +325,52 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     /** Why the Harvester did no work on its last tick, or empty if it worked (#13 shows it). */
     public Optional<IdleReason> idleReason() {
         return Optional.ofNullable(idle);
+    }
+
+    /**
+     * What the menu and Jade show of this Harvester (#13): power only for the kinds the tier declares, both tanks,
+     * progress, and the idle reason the choice last returned.
+     */
+    public HarvesterStatus status() {
+        HarvesterTier tier = tier();
+        boolean takesFuel = tier != null && tier.power().fuel();
+        boolean takesEnergy = tier != null && tier.power().fe();
+        if (takesEnergy) {
+            energy.resize(tier.feBuffer());
+        }
+        FluidResource mud = drilling.getResource(0);
+        FluidResource crude = product.getResource(0);
+        return new HarvesterStatus(takesFuel, takesEnergy, takesFuel ? burnLeft : 0, takesFuel ? burnTotal : 0,
+                takesEnergy ? energy.getAmountAsInt() : 0, takesEnergy ? tier.feBuffer() : 0, progress, operationTicks,
+                idleReason(), mud.getFluid(), drilling.getAmountAsInt(0), crude.getFluid(), product.getAmountAsInt(0), TANK_CAPACITY);
+    }
+
+    /** The Held recipe with what it makes, for a menu or tooltip to name; empty with none held. */
+    public Optional<HeldRecipeView> heldView(ServerLevel level) {
+        return heldRecipe().map(id -> new HeldRecipeView(id, HarvestRecipes.find(level, id)
+                .map(recipe -> recipe.result().stack()).orElse(ItemStack.EMPTY)));
+    }
+
+    /** Drops the Held recipe, which returns the Harvester to its Default recipes (#13). */
+    public void clearHeldRecipe() {
+        setHeldRecipe(null);
+    }
+
+    /** The raw slots a menu stands over, ahead of the item capability's rules (#13). */
+    ItemStacksResourceHandler fuelSlots() {
+        return fuel;
+    }
+
+    ItemStacksResourceHandler fillSlots() {
+        return fill;
+    }
+
+    ItemStacksResourceHandler drainSlots() {
+        return drain;
+    }
+
+    ItemStacksResourceHandler bufferSlots() {
+        return buffer;
     }
 
     @Override
@@ -458,6 +510,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             lighting.commit();
         }
         burnLeft = burnTime;
+        burnTotal = burnTime;
         return true;
     }
 
@@ -528,7 +581,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** An empty container crude can go into: one that holds no fluid and has room for crude. */
-    private static boolean holdsCrude(ItemResource resource) {
+    static boolean holdsCrude(ItemResource resource) {
         if (resource.isEmpty()) {
             return false;
         }
@@ -545,7 +598,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** A filled container of a Drilling Fluid: one that holds a fluid in {@code #fieldworks:drilling_fluids}. */
-    private static boolean holdsDrillingFluid(ItemResource resource) {
+    static boolean holdsDrillingFluid(ItemResource resource) {
         if (resource.isEmpty()) {
             return false;
         }
@@ -573,6 +626,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         drilling.serialize(output.child(DRILLING_KEY));
         energy.serialize(output.child(ENERGY_KEY));
         output.putInt(BURN_KEY, burnLeft);
+        output.putInt(BURN_TOTAL_KEY, burnTotal);
         output.putInt(PROGRESS_KEY, progress);
         output.putInt(CURSOR_KEY, cursor);
         if (held != null) {
@@ -591,6 +645,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         drilling.deserialize(input.childOrEmpty(DRILLING_KEY));
         energy.deserialize(input.childOrEmpty(ENERGY_KEY));
         burnLeft = input.getIntOr(BURN_KEY, 0);
+        burnTotal = input.getIntOr(BURN_TOTAL_KEY, 0);
         progress = input.getIntOr(PROGRESS_KEY, 0);
         cursor = input.getIntOr(CURSOR_KEY, 0);
         held = input.read(HELD_KEY, Identifier.CODEC).orElse(null);

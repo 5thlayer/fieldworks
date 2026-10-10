@@ -13,6 +13,8 @@ import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.client.HarvesterClient;
 import io.github._5thlayer.fieldworks.marker.MarkerEvents;
 import io.github._5thlayer.fieldworks.marker.client.PatchMapClient;
+import io.github._5thlayer.fieldworks.network.ClearHeldRecipePacket;
+import io.github._5thlayer.fieldworks.network.HeldRecipeSyncPacket;
 import io.github._5thlayer.fieldworks.network.HoldRecipePacket;
 import io.github._5thlayer.fieldworks.network.PatchMarkersPacket;
 import io.github._5thlayer.fieldworks.ore.OreMining;
@@ -58,6 +60,8 @@ public final class Fieldworks {
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
         event.registrar(NETWORK_VERSION)
                 .playToClient(PatchMarkersPacket.TYPE, PatchMarkersPacket.STREAM_CODEC, PatchMarkersPacket::handle)
-                .playToServer(HoldRecipePacket.TYPE, HoldRecipePacket.STREAM_CODEC, HoldRecipePacket::handle);
+                .playToServer(HoldRecipePacket.TYPE, HoldRecipePacket.STREAM_CODEC, HoldRecipePacket::handle)
+                .playToServer(ClearHeldRecipePacket.TYPE, ClearHeldRecipePacket.STREAM_CODEC, ClearHeldRecipePacket::handle)
+                .playToClient(HeldRecipeSyncPacket.TYPE, HeldRecipeSyncPacket.STREAM_CODEC, HeldRecipeSyncPacket::handle);
     }
 }

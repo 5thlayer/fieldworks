@@ -382,6 +382,35 @@ class OperationChoiceTest {
         assertEquals(Optional.empty(), operation.drillingFluid());
     }
 
+    @Test
+    void aWellWhoseCycleHasNoRoomInTheProductTankIdlesWithProductTankFullNotOutputFull() {
+        List<Source> layer = List.of(WELL, IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe pump = new Recipe("test:pump", Set.of("fieldworks:oil_well"), Set.of(), 40, OptionalInt.empty(), false);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.PRODUCT_TANK_FULL),
+                OperationChoice.choose(layer, 0, List.of(), Optional.empty(), Machine.ready(1).withFits(operation -> false)));
+        assertEquals(new OperationChoice.Idle(IdleReason.PRODUCT_TANK_FULL),
+                OperationChoice.choose(layer, 0, List.of(pump), Optional.of(pump), Machine.ready(1).withFits(operation -> false)));
+    }
+
+    @Test
+    void aFullProductTankIsTheReasonGivenOverNoPowerForAWell() {
+        List<Source> layer = List.of(WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.PRODUCT_TANK_FULL), OperationChoice.choose(layer, 0, List.of(), Optional.empty(),
+                Machine.ready(1).withFits(operation -> false).withPower(false)));
+        assertEquals(new OperationChoice.Idle(IdleReason.NO_POWER),
+                OperationChoice.choose(layer, 0, List.of(), Optional.empty(), Machine.ready(1).withPower(false)));
+    }
+
+    @Test
+    void aFullOutputBufferStillIdlesWithOutputFullForABlockSource() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(new OperationChoice.Idle(IdleReason.OUTPUT_FULL),
+                OperationChoice.choose(layer, 0, List.of(), Optional.empty(), Machine.ready(1).withFits(operation -> false)));
+    }
+
     private static Recipe wellRecipe(Optional<YieldCondition> condition, boolean replacesDefault) {
         return new Recipe("test:crude", Set.of("fieldworks:oil_well"), Set.of(), 20, OptionalInt.empty(), replacesDefault,
                 Optional.empty(), condition);
