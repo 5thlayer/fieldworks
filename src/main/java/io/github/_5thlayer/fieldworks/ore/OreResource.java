@@ -3,30 +3,26 @@
 
 package io.github._5thlayer.fieldworks.ore;
 
-/** The six resources a patch holds, and the item one draw pays out. */
+/**
+ * The six resources a patch holds, the item one draw pays out and the block's vanilla hardness. The
+ * pickaxe tier each needs is in the {@code needs_*_tool} tags.
+ */
 public enum OreResource {
-    IRON("iron", "minecraft:raw_iron", 3.0f, Tier.STONE),
-    COPPER("copper", "minecraft:raw_copper", 3.0f, Tier.STONE),
-    COAL("coal", "minecraft:coal", 3.0f, Tier.WOOD),
-    STONE("stone", "minecraft:cobblestone", 1.5f, Tier.WOOD),
-    URANIUM("uranium", "fieldworks:raw_uranium", 3.0f, Tier.IRON),
-    SULFUR("sulfur", "fieldworks:sulfur", 3.0f, Tier.STONE);
-
-    /** The lowest pickaxe that mines the ore, in vanilla's tiers. */
-    public enum Tier {
-        WOOD, STONE, IRON
-    }
+    IRON("iron", "minecraft:raw_iron", 3.0f),
+    COPPER("copper", "minecraft:raw_copper", 3.0f),
+    COAL("coal", "minecraft:coal", 3.0f),
+    STONE("stone", "minecraft:cobblestone", 1.5f),
+    URANIUM("uranium", "fieldworks:raw_uranium", 3.0f),
+    SULFUR("sulfur", "fieldworks:sulfur", 3.0f);
 
     private final String key;
     private final String drop;
     private final float hardness;
-    private final Tier tier;
 
-    OreResource(String key, String drop, float hardness, Tier tier) {
+    OreResource(String key, String drop, float hardness) {
         this.key = key;
         this.drop = drop;
         this.hardness = hardness;
-        this.tier = tier;
     }
 
     /** The data key and the block-id stem: {@code iron} gives {@code fieldworks:iron_ore}. */
@@ -45,10 +41,6 @@ public enum OreResource {
 
     public float hardness() {
         return hardness;
-    }
-
-    public Tier tier() {
-        return tier;
     }
 
     public OreCorpus.Resource corpus() {

@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "fieldworks:crude_oil",
+    "fieldworks:flowing_crude_oil"
+  ]
+}

@@ -1,0 +1,36 @@
+Third-party material committed to this repository
+==================================================
+
+Each entry names the files, their author, where they came from and the licence they are under. A
+file listed here is NOT covered by the licence this repository states for its own work; its own
+licence governs it. Which licence covers which file is REUSE.toml's to say; this list is the
+credits for what was copied in.
+
+Ore sprites
+-----------
+
+Files:   data/art/ore_slade_coal.png
+         data/art/ore_stone_copper_2.png
+         data/art/ore_slade_iron.png
+         data/art/ore_stone_soul.png
+         src/main/resources/assets/fieldworks/textures/block/ore/{coal,copper,iron,uranium}_stage{0..7}.png
+Author:  Malcolm Riley
+Source:  https://github.com/malcolmriley/unused-textures
+         blocks/ore_slade_coal.png, ore_stone_copper_2.png, ore_slade_iron.png and ore_stone_soul.png
+         at commit c89604ea49c0fc5470c5849f39cd5df1d497b0fb. The files under data/art/ are the
+         unmodified copies. The stage sprites are derived from them by scripts/build-textures.py,
+         which removes ore pixels per stage.
+Licence: Creative Commons Attribution 4.0 International
+         https://creativecommons.org/licenses/by/4.0/
+
+Crude oil sprite
+----------------
+
+Files:   src/main/resources/assets/fieldworks/textures/block/fluid/crude_oil.png
+         src/main/resources/assets/fieldworks/textures/block/fluid/crude_oil.png.mcmeta
+Author:  Malcolm Riley
+Source:  https://github.com/malcolmriley/unused-textures
+         fluids/fluid_gas_dark.png and its .mcmeta at commit c89604ea49c0fc5470c5849f39cd5df1d497b0fb,
+         copied unmodified and renamed. The game tints it.
+Licence: Creative Commons Attribution 4.0 International
+         https://creativecommons.org/licenses/by/4.0/

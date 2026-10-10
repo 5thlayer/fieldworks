@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "fieldworks:iron_ore",
+    "fieldworks:copper_ore",
+    "fieldworks:sulfur_ore"
+  ]
+}

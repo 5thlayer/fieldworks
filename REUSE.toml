@@ -15,7 +15,11 @@ path = [
     "src/main/resources/**/*.json",
     "src/main/resources/**/*.nbt",
     "LICENSE",
+    "NOTICE",
     ".github/**",
+    "src/main/resources/assets/fieldworks/textures/block/ore/stone_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/sulfur_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/item/*.png",
 ]
 SPDX-FileCopyrightText = "2026 5thlayer"
 SPDX-License-Identifier = "MIT"
@@ -26,3 +30,18 @@ path = ["gradlew", "gradlew.bat", "gradle/wrapper/**"]
 precedence = "override"
 SPDX-FileCopyrightText = "Gradle"
 SPDX-License-Identifier = "Apache-2.0"
+
+# Malcolm Riley's unused textures: the coal, copper, iron and uranium ore sprites and the crude
+# oil sprite, with the unmodified copies the ore sprites are derived from (NOTICE).
+[[annotations]]
+path = [
+    "data/art/ore_*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/coal_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/copper_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/iron_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/uranium_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/fluid/crude_oil.png",
+    "src/main/resources/assets/fieldworks/textures/block/fluid/crude_oil.png.mcmeta",
+]
+SPDX-FileCopyrightText = ["Malcolm Riley", "2026 5thlayer"]
+SPDX-License-Identifier = "CC-BY-4.0"

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "group": "uranium_ingot",
+  "ingredient": "fieldworks:raw_uranium",
+  "result": {
+    "id": "fieldworks:uranium_ingot"
+  },
+  "experience": 0.7,
+  "cookingtime": 200
+}
