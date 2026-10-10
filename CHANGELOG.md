@@ -4,6 +4,9 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Groundworks is now required, from 0.5.5 up to but not including 0.6, and is not nested: a player installs it beside Fieldworks. libworks-runtime 0.1.0 (mod id `libworks`) rides inside the jar by jar-in-jar (#5).
+- The Burner Harvester, `fieldworks:harvester_1`, a 3×3×3 Groundworks footprint, draws the ore blocks in the layer under it one unit per operation, in turn, as a hand break does. It burns any fuel a hopper feeds it, one burn tick per tick of work, and pushes what it draws into the item handler at its front; with nowhere to put it, it stops and drops nothing. Its rank, speed and power come from `data/fieldworks/harvester_tier/harvester_1.json`, which a datapack can override; a missing or invalid file leaves it idle and the load logs why (#5).
+
 ## 0.1.0
 
 - Ore patches of iron, copper, coal, stone, uranium and sulfur generate in the overworld's land beyond 150 blocks of the origin, each behind a switch in `fieldworks-common.toml`. Their ore blocks, `fieldworks:<resource>_ore`, are in `c:ores` and are mined by hand, one unit per break (#2).
