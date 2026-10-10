@@ -39,6 +39,11 @@ public class OilWellBlockEntity extends BlockEntity {
         return initial;
     }
 
+    /** Whether the well has decayed to its floor, where its yield stays (ADR-0002). */
+    public boolean atFloor() {
+        return amount <= YIELD.floor(initial);
+    }
+
     public double yield() {
         return YIELD.yield(amount);
     }

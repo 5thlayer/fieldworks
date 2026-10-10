@@ -205,7 +205,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     /** The operation's work, or null while there is no room for what it yields. */
     private @Nullable Runnable work(ServerLevel level, List<BlockPos> layer, Operation operation, HarvestRecipes.Loaded recipes) {
         BlockPos at = layer.get(operation.position());
-        return level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well)
+        return level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well, operation, recipes)
                 : level.getBlockState(at).getBlock() instanceof OreBlock ? draw(level, at, operation, recipes)
                 : breakBlock(level, at, operation, recipes);
     }
@@ -217,7 +217,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     private @Nullable Runnable draw(ServerLevel level, BlockPos at, Operation operation, HarvestRecipes.Loaded recipes) {
         OreBlock ore = (OreBlock) level.getBlockState(at).getBlock();
         ItemStack stack = operation.recipe()
-                .map(recipe -> recipes.byId().get(recipe.id()).recipe().result().create())
+                .map(recipe -> recipes.byId().get(recipe.id()).recipe().result().stack())
                 .orElseGet(() -> drop(ore));
         ItemResource result = ItemResource.of(stack);
         if (!fits(result, stack.getCount())) {
@@ -238,7 +238,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     private @Nullable Runnable breakBlock(ServerLevel level, BlockPos at, Operation operation, HarvestRecipes.Loaded recipes) {
         BlockState state = level.getBlockState(at);
         List<ItemStack> loot = operation.recipe()
-                .map(recipe -> List.of(recipes.byId().get(recipe.id()).recipe().result().create()))
+                .map(recipe -> List.of(recipes.byId().get(recipe.id()).recipe().result().stack()))
                 .orElseGet(() -> Block.getDrops(state, level, at, level.getBlockEntity(at), null, new ItemStack(Items.DIAMOND_PICKAXE)));
         if (!fitsAll(loot)) {
             return null;
@@ -254,13 +254,20 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         };
     }
 
-    /** One cycle of the well's yield and decay (ADR 0002), or null while the product tank has no room for it. */
-    private @Nullable Runnable pump(OilWellBlockEntity well) {
-        if (well.nextCycle() > TANK_CAPACITY - product.getAmountAsInt(0)) {
+    /**
+     * One cycle of the well's yield and decay (ADR 0002), or null while the product tank has no room for it. A recipe
+     * with a crude result pumps that many mB in place of the cycle's yield; the cycle still takes its step off the
+     * well, so a well above its floor goes on decaying (#12). A recipe whose result is an item, which only a block tag
+     * naming the well could give it, pumps the cycle's own yield.
+     */
+    private @Nullable Runnable pump(OilWellBlockEntity well, Operation operation, HarvestRecipes.Loaded recipes) {
+        int recipeCrude = operation.recipe().map(recipe -> recipes.byId().get(recipe.id()).recipe().result().crude()).orElse(0);
+        if ((recipeCrude > 0 ? recipeCrude : well.nextCycle()) > TANK_CAPACITY - product.getAmountAsInt(0)) {
             return null;
         }
         return () -> {
-            int crude = well.cycle();
+            int cycled = well.cycle();
+            int crude = recipeCrude > 0 ? recipeCrude : cycled;
             if (crude > 0) {
                 try (Transaction pumping = Transaction.openRoot()) {
                     product.insert(0, crudeOil(), crude, pumping);
@@ -342,7 +349,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             BlockState state = level.getBlockState(pos);
             Block block = state.getBlock();
             String id = BuiltInRegistries.BLOCK.getKey(block).toString();
-            sources.add(block instanceof OilWellBlock ? Source.well(id)
+            sources.add(block instanceof OilWellBlock ? level.getBlockEntity(pos) instanceof OilWellBlockEntity well && well.atFloor()
+                            ? Source.flooredWell(id) : Source.well(id)
                     : block instanceof OreBlock ? Source.oreBlock(id, tagsOf(block))
                     // After the ore blocks: they are in c:ores, so in this tag, and are drawn, never broken (#1).
                     : state.is(HARVESTABLE) ? Source.harvestable(id, tagsOf(block))
