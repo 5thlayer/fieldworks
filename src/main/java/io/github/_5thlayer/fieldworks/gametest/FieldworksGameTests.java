@@ -83,6 +83,7 @@ public final class FieldworksGameTests {
         HarvesterPowerTests.register(tests);
         HeldRecipeTests.register(tests);
         DrillingMudTests.register(tests);
+        DrillingFluidTests.register(tests);
     }
 
     private static Identifier id(String path) {

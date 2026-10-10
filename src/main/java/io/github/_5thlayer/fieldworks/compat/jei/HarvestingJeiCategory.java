@@ -8,6 +8,7 @@ import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -59,14 +60,20 @@ final class HarvestingJeiCategory implements IRecipeCategory<HarvestRecipeView> 
         builder.addSlot(RecipeIngredientRole.INPUT, 1, 5)
                 .setStandardSlotBackground()
                 .addItemStacks(view.sources().stream().map(ItemStack::new).toList());
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 55, 5)
+        int shift = HarvestRecipeLines.shift(view);
+        if (!view.fluids().isEmpty()) {
+            IRecipeSlotBuilder fluid = builder.addSlot(RecipeIngredientRole.INPUT, 1 + HarvestRecipeLines.FLUID_SHIFT, 5)
+                    .setStandardSlotBackground();
+            view.fluids().forEach(each -> fluid.addFluidStack(each, view.fluidAmount()));
+        }
+        builder.addSlot(RecipeIngredientRole.OUTPUT, 55 + shift, 5)
                 .setOutputSlotBackground()
                 .add(view.result());
     }
 
     @Override
     public void createRecipeExtras(IRecipeExtrasBuilder builder, HarvestRecipeView view, IFocusGroup focuses) {
-        builder.addAnimatedRecipeArrow(Math.max(view.duration(), 1)).setPosition(24, 5);
+        builder.addAnimatedRecipeArrow(Math.max(view.duration(), 1)).setPosition(24 + HarvestRecipeLines.shift(view), 5);
         builder.addText(HarvestRecipeLines.seconds(view), getWidth(), 10).setPosition(0, 24).setColor(0xFF808080);
         builder.addText(HarvestRecipeLines.note(view), getWidth(), 10).setPosition(0, 34).setColor(0xFF808080);
     }

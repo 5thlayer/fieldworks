@@ -9,12 +9,14 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryCodecs;
 import net.minecraft.core.registries.Registries;
@@ -33,11 +35,15 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * A Harvest Recipe as the recipe manager holds it: the {@code fieldworks:harvesting} type (GLOSSARY.md). It
  * draws one unit from a source block, or from any block of a block tag, and yields {@code result} in
  * {@code duration} ticks at speed x1, which a tier's speed divides.
+ *
+ * <p>{@code drilling_fluid}, optional, is a fluid, fluid tag or list of fluids and the mB an operation takes of it
+ * from the Harvester's Drilling Fluid tank; only a Held recipe takes it (#11).
  *
  * <p>{@code minimum_tier} names a Harvester block, compared by the tier's rank (ADR 0005), and
  * {@code replaces_default}, false when omitted, removes its sources' Default recipes (a fluid-only resource).
@@ -48,7 +54,40 @@ import net.minecraft.world.level.block.Block;
  * <p>{@link #matches} is false: nothing looks one up by its inputs. A Harvester reads them by id.
  */
 public record HarvestRecipe(HolderSet<Block> source, ItemStackTemplate result, int duration,
-        Optional<Identifier> minimumTier, boolean replacesDefault) implements Recipe<RecipeInput> {
+        Optional<Identifier> minimumTier, boolean replacesDefault, Optional<FluidInput> drillingFluid) implements Recipe<RecipeInput> {
+
+    /**
+     * The Drilling Fluid a recipe consumes: a fluid, a fluid tag or a list of fluids, and the mB one operation
+     * takes. Only the fluids that are in {@code #fieldworks:drilling_fluids} serve; the tag is read when the recipe
+     * is used, since a recipe loads before the tags it names are bound, so one naming none of them never runs.
+     */
+    public record FluidInput(HolderSet<Fluid> fluids, int amount) {
+
+        static final Codec<FluidInput> CODEC = RecordCodecBuilder.<FluidInput>create(instance -> instance.group(
+                RegistryCodecs.homogeneousList(Registries.FLUID).fieldOf("fluid").forGetter(FluidInput::fluids),
+                Codec.INT.fieldOf("amount").forGetter(FluidInput::amount)
+        ).apply(instance, FluidInput::new)).validate(FluidInput::check);
+
+        static final StreamCodec<RegistryFriendlyByteBuf, FluidInput> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.holderSet(Registries.FLUID), FluidInput::fluids,
+                ByteBufCodecs.VAR_INT, FluidInput::amount,
+                FluidInput::new);
+
+        private static DataResult<FluidInput> check(FluidInput input) {
+            if (input.amount < 1) {
+                return DataResult.error(() -> "a Harvest Recipe's drilling_fluid amount must be at least 1 mB, not " + input.amount);
+            }
+            if (input.fluids.unwrap().right().filter(List::isEmpty).isPresent()) {
+                return DataResult.error(() -> "a Harvest Recipe's drilling_fluid must name at least one fluid");
+            }
+            return DataResult.success(input);
+        }
+
+        /** The fluids that serve, by id: those named that are in {@code #fieldworks:drilling_fluids}. */
+        public List<Holder<Fluid>> serving() {
+            return fluids.stream().filter(fluid -> fluid.is(HarvesterBlockEntity.DRILLING_FLUIDS)).toList();
+        }
+    }
 
     @Override
     public boolean matches(RecipeInput input, Level level) {
@@ -107,7 +146,10 @@ public record HarvestRecipe(HolderSet<Block> source, ItemStackTemplate result, i
         // A minimum tier whose file is missing can be met by no rank, so its recipe never runs.
         OptionalInt minimum = minimumTier.map(tier -> OptionalInt.of(rankOf.apply(tier).orElse(Integer.MAX_VALUE)))
                 .orElse(OptionalInt.empty());
-        return new OperationChoice.Recipe(id.toString(), blocks, tags, duration, minimum, replacesDefault);
+        Optional<OperationChoice.DrillingFluid> fluid = drillingFluid.map(input -> new OperationChoice.DrillingFluid(
+                input.serving().stream().flatMap(holder -> holder.unwrapKey().stream()).map(key -> key.identifier().toString())
+                        .collect(Collectors.toUnmodifiableSet()), input.amount()));
+        return new OperationChoice.Recipe(id.toString(), blocks, tags, duration, minimum, replacesDefault, fluid);
     }
 
     private static DataResult<HarvestRecipe> check(HarvestRecipe recipe) {
@@ -129,7 +171,8 @@ public record HarvestRecipe(HolderSet<Block> source, ItemStackTemplate result, i
             ItemStackTemplate.CODEC.fieldOf("result").forGetter(HarvestRecipe::result),
             Codec.INT.fieldOf("duration").forGetter(HarvestRecipe::duration),
             Identifier.CODEC.optionalFieldOf("minimum_tier").forGetter(HarvestRecipe::minimumTier),
-            Codec.BOOL.optionalFieldOf("replaces_default", false).forGetter(HarvestRecipe::replacesDefault)
+            Codec.BOOL.optionalFieldOf("replaces_default", false).forGetter(HarvestRecipe::replacesDefault),
+            FluidInput.CODEC.optionalFieldOf("drilling_fluid").forGetter(HarvestRecipe::drillingFluid)
     ).apply(instance, HarvestRecipe::new)).flatXmap(HarvestRecipe::check, HarvestRecipe::check);
 
     static final StreamCodec<RegistryFriendlyByteBuf, HarvestRecipe> STREAM_CODEC = StreamCodec.composite(
@@ -138,6 +181,7 @@ public record HarvestRecipe(HolderSet<Block> source, ItemStackTemplate result, i
             ByteBufCodecs.VAR_INT, HarvestRecipe::duration,
             ByteBufCodecs.optional(Identifier.STREAM_CODEC), HarvestRecipe::minimumTier,
             ByteBufCodecs.BOOL, HarvestRecipe::replacesDefault,
+            ByteBufCodecs.optional(FluidInput.STREAM_CODEC), HarvestRecipe::drillingFluid,
             HarvestRecipe::new);
 
     static RecipeSerializer<HarvestRecipe> serializer() {
