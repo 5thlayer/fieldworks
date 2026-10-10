@@ -1,0 +1,6 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": ["fieldworks:iron_ore", "fieldworks:copper_ore"],
+  "result": "minecraft:raw_iron",
+  "duration": 40
+}

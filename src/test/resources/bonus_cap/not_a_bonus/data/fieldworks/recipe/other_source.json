@@ -1,0 +1,6 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "minecraft:stone",
+  "result": { "id": "minecraft:cobblestone", "count": 5 },
+  "duration": 40
+}
