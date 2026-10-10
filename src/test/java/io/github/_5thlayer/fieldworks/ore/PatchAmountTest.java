@@ -8,14 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-/** An outfield disc's per-block amount. */
-class OutfieldAmountTest {
+/** An patch disc's per-block amount. */
+class PatchAmountTest {
 
-    private static final OutfieldLaw IRON = OutfieldLaw.of(OreResource.IRON);
+    private static final PatchLaw IRON = PatchLaw.of(OreResource.IRON);
 
     @Test
     void theDiscsBlocksShareOneAmountThatAddsUpToTheDiscsTotal() {
-        OutfieldDisc disc = new OutfieldDisc(OreResource.IRON, 1.5, 1200, 3000, 400);
+        PatchDisc disc = new PatchDisc(OreResource.IRON, 1.5, 1200, 3000, 400);
         double total = IRON.quantity(1.5, disc.distance()) * IRON.richness(disc.distance());
 
         long dealt = (long) disc.amountPerBlock() * disc.blockCount();
@@ -26,8 +26,8 @@ class OutfieldAmountTest {
 
     @Test
     void theAmountIsReadAtTheDiscCentresDistanceFromOrigin() {
-        OutfieldDisc east = new OutfieldDisc(OreResource.IRON, 1.0, 1000, 5000, 0);
-        OutfieldDisc diagonal = new OutfieldDisc(OreResource.IRON, 1.0, 1000, 3000, 4000);
+        PatchDisc east = new PatchDisc(OreResource.IRON, 1.0, 1000, 5000, 0);
+        PatchDisc diagonal = new PatchDisc(OreResource.IRON, 1.0, 1000, 3000, 4000);
 
         assertEquals(5000, diagonal.distance(), 1e-9);
         assertEquals(east.amountPerBlock(), diagonal.amountPerBlock());
@@ -44,8 +44,8 @@ class OutfieldAmountTest {
         assertEquals(1.0, IRON.richness(1600), 1e-9);
         assertEquals((1000 + 1_000_000) / 2600.0, IRON.richness(1_000_000), 1e-9);
 
-        OutfieldDisc near = new OutfieldDisc(OreResource.IRON, 1.0, 1000, 10_000, 0);
-        OutfieldDisc far = new OutfieldDisc(OreResource.IRON, 1.0, 1000, 1_000_000, 0);
+        PatchDisc near = new PatchDisc(OreResource.IRON, 1.0, 1000, 10_000, 0);
+        PatchDisc far = new PatchDisc(OreResource.IRON, 1.0, 1000, 1_000_000, 0);
         assertTrue(far.amountPerBlock() > 90 * near.amountPerBlock(),
                 "richness is linear in distance forever");
     }
@@ -58,10 +58,10 @@ class OutfieldAmountTest {
 
     @Test
     void uraniumTakesItsOwnLaw() {
-        OutfieldLaw uranium = OutfieldLaw.of(OreResource.URANIUM);
+        PatchLaw uranium = PatchLaw.of(OreResource.URANIUM);
 
         // 1e6 / 1.25 × 0.9 × 2
         assertEquals(1_440_000, uranium.quantity(1.0, 1600), 1e-6);
-        assertEquals(1_440, new OutfieldDisc(OreResource.URANIUM, 1.0, 1000, 1600, 0).amountPerBlock());
+        assertEquals(1_440, new PatchDisc(OreResource.URANIUM, 1.0, 1000, 1600, 0).amountPerBlock());
     }
 }

@@ -12,7 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import io.github._5thlayer.fieldworks.ore.OreCorpus;
-import io.github._5thlayer.fieldworks.ore.OutfieldLaw;
+import io.github._5thlayer.fieldworks.ore.PatchLaw;
 
 /** Crude oil's frozen numbers from {@code fieldworks/oil/crude.json}, beside the law it shares with the ores. */
 public final class OilCorpus {
@@ -29,9 +29,9 @@ public final class OilCorpus {
     private final double richnessDivisor;
     private final double additionalRichness;
     private final double collisionWidth;
-    private final OutfieldLaw law;
+    private final PatchLaw law;
 
-    private OilCorpus(JsonObject crude, OutfieldLaw law) {
+    private OilCorpus(JsonObject crude, PatchLaw law) {
         this.amountPerCycle = crude.get("amount_per_cycle").getAsInt();
         this.normal = crude.get("normal").getAsLong();
         this.minimum = crude.get("minimum").getAsLong();
@@ -55,7 +55,7 @@ public final class OilCorpus {
             JsonObject crude = new Gson().fromJson(
                     new InputStreamReader(stream, StandardCharsets.UTF_8), JsonObject.class);
             OreCorpus ores = OreCorpus.get();
-            OutfieldLaw law = new OutfieldLaw(OreCorpus.outfield(crude.getAsJsonObject("outfield")),
+            PatchLaw law = new PatchLaw(OreCorpus.patch(crude.getAsJsonObject("patch")),
                     ores.densityLaw(), ores.distanceLaw(), ores.edge());
             return new OilCorpus(crude, law);
         } catch (IOException broken) {
@@ -100,7 +100,7 @@ public final class OilCorpus {
         return collisionWidth;
     }
 
-    public OutfieldLaw law() {
+    public PatchLaw law() {
         return law;
     }
 }

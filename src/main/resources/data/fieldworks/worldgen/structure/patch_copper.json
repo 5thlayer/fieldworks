@@ -1,5 +1,5 @@
 {
-  "type": "fieldworks:outfield_disc",
+  "type": "fieldworks:patch_disc",
   "resource": "copper",
   "biomes": "#fieldworks:patch_land",
   "step": "top_layer_modification",

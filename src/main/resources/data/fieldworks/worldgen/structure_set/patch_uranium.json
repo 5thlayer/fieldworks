@@ -1,7 +1,7 @@
 {
   "structures": [
     {
-      "structure": "fieldworks:outfield_sulfur",
+      "structure": "fieldworks:patch_uranium",
       "weight": 1
     }
   ],
@@ -9,6 +9,6 @@
     "type": "minecraft:random_spread",
     "spacing": 97,
     "separation": 3,
-    "salt": 1203845771
+    "salt": 1841562623
   }
 }

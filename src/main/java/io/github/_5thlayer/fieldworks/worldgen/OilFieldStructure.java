@@ -17,7 +17,7 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.synth.ImprovedNoise;
 
-/** A crude-oil field: crude's outfield shape, with a well on the columns its draw passes. */
+/** A crude-oil field: crude's disc shape, with a well on the columns its draw passes. */
 public final class OilFieldStructure extends Structure {
 
     public static final MapCodec<OilFieldStructure> CODEC = simpleCodec(OilFieldStructure::new);
@@ -34,9 +34,9 @@ public final class OilFieldStructure extends Structure {
         int y = context.chunkGenerator().getFirstOccupiedHeight(
                 x, z, Heightmap.Types.WORLD_SURFACE_WG, context.heightAccessor(), context.randomState());
         ImprovedNoise noise = new ImprovedNoise(new XoroshiroRandomSource(context.seed()).forkPositional()
-                .fromHashOf(Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "outfield/crude_oil")));
+                .fromHashOf(Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch/crude_oil")));
         OilField field = OilField.of(x, z, (scaledX, scaledZ) -> noise.noise(scaledX, 0, scaledZ),
-                OutfieldDiscStructure.land(context, y));
+                PatchDiscStructure.land(context, y));
         if (field.shape().isEmpty()) {
             return Optional.empty();
         }

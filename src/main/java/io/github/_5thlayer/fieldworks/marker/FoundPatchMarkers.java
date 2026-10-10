@@ -8,7 +8,7 @@ import java.util.List;
 
 import io.github._5thlayer.fieldworks.oil.OilField;
 import io.github._5thlayer.fieldworks.oil.OilFieldSource;
-import io.github._5thlayer.fieldworks.ore.OutfieldDisc;
+import io.github._5thlayer.fieldworks.ore.PatchDisc;
 import io.github._5thlayer.fieldworks.worldgen.OilFieldPiece;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -17,9 +17,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 
 /** Reads a patch's marker off the structure start its centre chunk keeps. */
-public final class PatchDiscovery {
+public final class FoundPatchMarkers {
 
-    private PatchDiscovery() {
+    private FoundPatchMarkers() {
     }
 
     /**
@@ -38,8 +38,8 @@ public final class PatchDiscovery {
                     found.add(new PatchMarker(PatchMarker.CRUDE_OIL, field.centreX(), surface(level, field.centreX(), field.centreZ()),
                             field.centreZ(), total));
                 }
-                if (piece instanceof OutfieldDisc.Source source) {
-                    OutfieldDisc disc = source.disc();
+                if (piece instanceof PatchDisc.Source source) {
+                    PatchDisc disc = source.disc();
                     if (centred(pos, disc.centreX(), disc.centreZ())) {
                         found.add(new PatchMarker(disc.resource().key(), disc.centreX(),
                                 surface(level, disc.centreX(), disc.centreZ()), disc.centreZ(), disc.total()));

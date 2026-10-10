@@ -1,6 +1,6 @@
 {
-  "type": "fieldworks:outfield_disc",
-  "resource": "coal",
+  "type": "fieldworks:patch_disc",
+  "resource": "uranium",
   "biomes": "#fieldworks:patch_land",
   "step": "top_layer_modification",
   "spawn_overrides": {},

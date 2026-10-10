@@ -9,12 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-/** An outfield disc's footprint: the spot's cone plus a ragged edge. */
-class OutfieldShapeTest {
+/** An patch disc's footprint: the spot's cone plus a ragged edge. */
+class PatchShapeTest {
 
-    private static final OutfieldLaw IRON = OutfieldLaw.of(OreResource.IRON);
-    private static final OutfieldShape.Noise FLAT = (x, z) -> 0;
-    private static final OutfieldShape.Land LAND = (x, z) -> true;
+    private static final PatchLaw IRON = PatchLaw.of(OreResource.IRON);
+    private static final PatchShape.Noise FLAT = (x, z) -> 0;
+    private static final PatchShape.Land LAND = (x, z) -> true;
 
     @Test
     void theRadiusIsCappedAt32() {
@@ -31,7 +31,7 @@ class OutfieldShapeTest {
     @Test
     void aFlatEdgeIsTheConeLessTheOffsetTimesTheAmplitude() {
         double distance = 3000;
-        OutfieldShape shape = OutfieldShape.of(IRON, 1.0, 3000, 0, FLAT, LAND);
+        PatchShape shape = PatchShape.of(IRON, 1.0, 3000, 0, FLAT, LAND);
         double radius = IRON.radius(1.0, distance);
         double height = IRON.height(1.0, distance);
         // cone h(1 - r/R) meets (0 - 1/3) × amplitude
@@ -51,7 +51,7 @@ class OutfieldShapeTest {
 
     @Test
     void theBlockCountIsTheColumnsTheShapeContains() {
-        OutfieldShape shape = OutfieldShape.of(IRON, 1.0, 3000, 0, FLAT, LAND);
+        PatchShape shape = PatchShape.of(IRON, 1.0, 3000, 0, FLAT, LAND);
         int counted = 0;
         for (int x = 3000 - shape.reach(); x <= 3000 + shape.reach(); x++) {
             for (int z = -shape.reach(); z <= shape.reach(); z++) {
@@ -68,9 +68,9 @@ class OutfieldShapeTest {
         // Each octave sampled at its own scale: a noise that is 1 only where it is read at the
         // coarsest scale's coordinates pushes the edge out by that octave's weight alone.
         OreCorpus.Octave coarse = OreCorpus.get().edge().octaves().getLast();
-        OutfieldShape.Noise coarseOnly = (x, z) -> Math.abs(x - 3000 * coarse.inputScale()) < 1 ? 1 : 0;
-        OutfieldShape flat = OutfieldShape.of(IRON, 1.0, 3000, 0, FLAT, LAND);
-        OutfieldShape raised = OutfieldShape.of(IRON, 1.0, 3000, 0, coarseOnly, LAND);
+        PatchShape.Noise coarseOnly = (x, z) -> Math.abs(x - 3000 * coarse.inputScale()) < 1 ? 1 : 0;
+        PatchShape flat = PatchShape.of(IRON, 1.0, 3000, 0, FLAT, LAND);
+        PatchShape raised = PatchShape.of(IRON, 1.0, 3000, 0, coarseOnly, LAND);
 
         double distance = 3000;
         double pushed = IRON.radius(1.0, distance) * (1 + (coarse.outputScale() - 1.0 / 3)
@@ -83,8 +83,8 @@ class OutfieldShapeTest {
 
     @Test
     void noColumnOffTheLandHoldsOre() {
-        OutfieldShape everywhere = OutfieldShape.of(IRON, 1.0, 3000, 0, FLAT, LAND);
-        OutfieldShape westOnly = OutfieldShape.of(IRON, 1.0, 3000, 0, FLAT, (x, z) -> x < 3000);
+        PatchShape everywhere = PatchShape.of(IRON, 1.0, 3000, 0, FLAT, LAND);
+        PatchShape westOnly = PatchShape.of(IRON, 1.0, 3000, 0, FLAT, (x, z) -> x < 3000);
 
         assertTrue(everywhere.contains(3005, 0));
         assertFalse(westOnly.contains(3005, 0));
@@ -94,9 +94,9 @@ class OutfieldShapeTest {
 
     @Test
     void theSavedMaskReadsBackTheSameColumns() {
-        OutfieldShape.Noise ragged = (x, z) -> Math.sin(x * 7) * Math.cos(z * 5);
-        OutfieldShape shape = OutfieldShape.of(IRON, 1.0, 3000, 0, ragged, LAND);
-        OutfieldShape read = OutfieldShape.of(3000, 0, shape.reach(), shape.mask());
+        PatchShape.Noise ragged = (x, z) -> Math.sin(x * 7) * Math.cos(z * 5);
+        PatchShape shape = PatchShape.of(IRON, 1.0, 3000, 0, ragged, LAND);
+        PatchShape read = PatchShape.of(3000, 0, shape.reach(), shape.mask());
 
         assertEquals(shape.blockCount(), read.blockCount());
         for (int x = 3000 - shape.reach() - 1; x <= 3000 + shape.reach() + 1; x++) {
@@ -109,15 +109,15 @@ class OutfieldShapeTest {
     @Test
     void nothingGeneratesInsideThePlacementRadius() {
         for (double factor : new double[] {0.25, 1, 2}) {
-            assertTrue(OutfieldShape.of(IRON, factor, 150, 0, FLAT, LAND).isEmpty());
-            assertTrue(OutfieldShape.of(IRON, factor, 0, 0, FLAT, LAND).isEmpty());
-            assertTrue(OutfieldShape.of(IRON, factor, 100, 100, FLAT, LAND).isEmpty());
+            assertTrue(PatchShape.of(IRON, factor, 150, 0, FLAT, LAND).isEmpty());
+            assertTrue(PatchShape.of(IRON, factor, 0, 0, FLAT, LAND).isEmpty());
+            assertTrue(PatchShape.of(IRON, factor, 100, 100, FLAT, LAND).isEmpty());
         }
     }
 
     @Test
     void aDiscIsSmallUntil450() {
-        assertTrue(OutfieldShape.of(IRON, 0.25, 150, 1, FLAT, LAND).isEmpty(),
+        assertTrue(PatchShape.of(IRON, 0.25, 150, 1, FLAT, LAND).isEmpty(),
                 "a radius that rounds below one block does not generate");
         assertTrue(IRON.radius(1, 300) < IRON.radius(1, 450));
         assertTrue(IRON.radius(1, 450) < IRON.radius(1, 1600));

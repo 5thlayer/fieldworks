@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github._5thlayer.fieldworks.ore.OutfieldShape;
+import io.github._5thlayer.fieldworks.ore.PatchShape;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
@@ -15,8 +15,8 @@ import org.junit.jupiter.api.Test;
 /** A crude-oil field: which columns of its mask carry a well, and how much each holds. */
 class OilFieldTest {
 
-    private static final OutfieldShape.Noise FLAT = (x, z) -> 0;
-    private static final OutfieldShape.Land LAND = (x, z) -> true;
+    private static final PatchShape.Noise FLAT = (x, z) -> 0;
+    private static final PatchShape.Land LAND = (x, z) -> true;
     private static final int X = 2300;
     private static final int Z = 0;
 
@@ -31,9 +31,9 @@ class OilFieldTest {
     }
 
     @Test
-    void theFieldIsTheOutfieldShapeOfCrudesLaw() {
+    void theFieldIsThePatchShapeOfCrudesLaw() {
         OilField field = field();
-        OutfieldShape shape = OutfieldShape.of(OilCorpus.get().law(), 1.0, X, Z, FLAT, LAND);
+        PatchShape shape = PatchShape.of(OilCorpus.get().law(), 1.0, X, Z, FLAT, LAND);
         assertEquals(shape.blockCount(), field.shape().blockCount());
         assertTrue(field.shape().blockCount() > 1_000, "a field 2,300 out spans about 21 blocks' radius");
     }

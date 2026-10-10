@@ -1,7 +1,7 @@
 {
   "structures": [
     {
-      "structure": "fieldworks:outfield_copper",
+      "structure": "fieldworks:patch_copper",
       "weight": 1
     }
   ],

@@ -3,14 +3,14 @@
 
 package io.github._5thlayer.fieldworks.oil;
 
-import io.github._5thlayer.fieldworks.ore.OutfieldLaw;
-import io.github._5thlayer.fieldworks.ore.OutfieldShape;
+import io.github._5thlayer.fieldworks.ore.PatchLaw;
+import io.github._5thlayer.fieldworks.ore.PatchShape;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.DoubleSupplier;
 
 /**
- * A crude-oil field: the outfield shape of crude's law, the wells a draw deals over it, and the
+ * A crude-oil field: the disc shape of crude's law, the wells a draw deals over it, and the
  * amount each starts with (ADR-0002).
  */
 public final class OilField {
@@ -29,16 +29,16 @@ public final class OilField {
 
     private final int centreX;
     private final int centreZ;
-    private final OutfieldShape shape;
+    private final PatchShape shape;
 
-    private OilField(int centreX, int centreZ, OutfieldShape shape) {
+    private OilField(int centreX, int centreZ, PatchShape shape) {
         this.centreX = centreX;
         this.centreZ = centreZ;
         this.shape = shape;
     }
 
-    public static OilField of(int centreX, int centreZ, OutfieldShape.Noise noise, OutfieldShape.Land land) {
-        return new OilField(centreX, centreZ, OutfieldShape.of(law(), SIZE_FACTOR, centreX, centreZ, noise, land));
+    public static OilField of(int centreX, int centreZ, PatchShape.Noise noise, PatchShape.Land land) {
+        return new OilField(centreX, centreZ, PatchShape.of(law(), SIZE_FACTOR, centreX, centreZ, noise, land));
     }
 
     /**
@@ -54,7 +54,7 @@ public final class OilField {
         return (int) Math.ceil(OilCorpus.get().collisionWidth());
     }
 
-    public OutfieldShape shape() {
+    public PatchShape shape() {
         return shape;
     }
 
@@ -87,7 +87,7 @@ public final class OilField {
      * patch value being the spot's cone alone and {@code d} the column's own distance.
      */
     public long amountAt(int x, int z) {
-        OutfieldLaw law = law();
+        PatchLaw law = law();
         OilCorpus corpus = OilCorpus.get();
         double centreDistance = Math.hypot(centreX, centreZ);
         double radius = law.radius(SIZE_FACTOR, centreDistance);
@@ -104,7 +104,7 @@ public final class OilField {
         return wells.stream().mapToLong(Well::amount).sum();
     }
 
-    private static OutfieldLaw law() {
+    private static PatchLaw law() {
         return OilCorpus.get().law();
     }
 }

@@ -8,12 +8,12 @@ package io.github._5thlayer.fieldworks.ore;
  * distance from world origin. The quantity stops growing at 1600 blocks because density does;
  * richness has no cap.
  */
-public record OutfieldLaw(OreCorpus.Outfield spot, OreCorpus.DensityLaw density,
+public record PatchLaw(OreCorpus.Patch spot, OreCorpus.DensityLaw density,
         OreCorpus.DistanceLaw richnessLaw, OreCorpus.Edge edge) {
 
-    public static OutfieldLaw of(OreResource resource) {
+    public static PatchLaw of(OreResource resource) {
         OreCorpus corpus = OreCorpus.get();
-        return new OutfieldLaw(resource.corpus().outfield(), corpus.densityLaw(), corpus.distanceLaw(),
+        return new PatchLaw(resource.corpus().patch(), corpus.densityLaw(), corpus.distanceLaw(),
                 corpus.edge());
     }
 

@@ -10,7 +10,7 @@ import java.util.BitSet;
  * is above zero. Computed once at generation and saved with the piece, so placement reads the mask
  * rather than recomputing it.
  */
-public final class OutfieldShape {
+public final class PatchShape {
 
     /** One basis noise, read at already-scaled coordinates. */
     @FunctionalInterface
@@ -33,7 +33,7 @@ public final class OutfieldShape {
     private final int reach;
     private final BitSet columns;
 
-    private OutfieldShape(int centreX, int centreZ, double radius, int reach, BitSet columns) {
+    private PatchShape(int centreX, int centreZ, double radius, int reach, BitSet columns) {
         this.centreX = centreX;
         this.centreZ = centreZ;
         this.radius = radius;
@@ -41,12 +41,12 @@ public final class OutfieldShape {
         this.columns = columns;
     }
 
-    public static OutfieldShape of(OutfieldLaw law, double sizeFactor, int centreX, int centreZ, Noise noise,
+    public static PatchShape of(PatchLaw law, double sizeFactor, int centreX, int centreZ, Noise noise,
             Land land) {
         double distance = Math.sqrt((double) centreX * centreX + (double) centreZ * centreZ);
         double radius = law.radius(sizeFactor, distance);
         if (Math.round(radius) < 1) {
-            return new OutfieldShape(centreX, centreZ, radius, 0, new BitSet());
+            return new PatchShape(centreX, centreZ, radius, 0, new BitSet());
         }
         double height = law.height(sizeFactor, distance);
         double amplitude = law.blobAmplitude(distance);
@@ -69,12 +69,12 @@ public final class OutfieldShape {
                 }
             }
         }
-        return new OutfieldShape(centreX, centreZ, radius, reach, columns);
+        return new PatchShape(centreX, centreZ, radius, reach, columns);
     }
 
     /** A shape read back from its piece's saved mask. */
-    public static OutfieldShape of(int centreX, int centreZ, int reach, long[] mask) {
-        return new OutfieldShape(centreX, centreZ, 0, reach, BitSet.valueOf(mask));
+    public static PatchShape of(int centreX, int centreZ, int reach, long[] mask) {
+        return new PatchShape(centreX, centreZ, 0, reach, BitSet.valueOf(mask));
     }
 
     public long[] mask() {

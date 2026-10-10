@@ -8,7 +8,7 @@ import java.util.List;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.ore.OreResource;
-import io.github._5thlayer.fieldworks.ore.OutfieldDisc;
+import io.github._5thlayer.fieldworks.ore.PatchDisc;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -50,19 +50,19 @@ final class HandMiningTests {
     /** Breaks the patch's first block once with {@code tool} and expects {@code units} drawn and paid. */
     private static void mine(GameTestHelper helper, OreResource resource, ChunkPos chunk, Item tool, int units) {
         ServerLevel level = helper.getLevel();
-        Holder<Structure> structure = OutfieldDiscTests.resolve(helper, resource);
+        Holder<Structure> structure = PatchDiscTests.resolve(helper, resource);
         if (structure == null) {
             return;
         }
-        StructureStart start = OutfieldDiscTests.generate(level, structure, chunk);
-        if (!start.isValid() || !(start.getPieces().getFirst() instanceof OutfieldDisc.Source source)) {
+        StructureStart start = PatchDiscTests.generate(level, structure, chunk);
+        if (!start.isValid() || !(start.getPieces().getFirst() instanceof PatchDisc.Source source)) {
             helper.fail(resource.key() + " generated no disc at " + chunk);
             return;
         }
         BoundingBox box = start.getBoundingBox();
-        OutfieldDiscTests.loadChunks(level, box);
-        OutfieldDiscTests.place(level, structure.value(), start, chunk, box);
-        List<BlockPos> ores = OutfieldDiscTests.oresIn(level, box);
+        PatchDiscTests.loadChunks(level, box);
+        PatchDiscTests.place(level, structure.value(), start, chunk, box);
+        List<BlockPos> ores = PatchDiscTests.oresIn(level, box);
         if (ores.isEmpty()) {
             helper.fail(resource.key() + "'s disc placed nothing");
             return;

@@ -5,8 +5,8 @@ package io.github._5thlayer.fieldworks.worldgen;
 
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.ore.OreResource;
-import io.github._5thlayer.fieldworks.ore.OutfieldDisc;
-import io.github._5thlayer.fieldworks.ore.OutfieldShape;
+import io.github._5thlayer.fieldworks.ore.PatchDisc;
+import io.github._5thlayer.fieldworks.ore.PatchShape;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
@@ -26,33 +26,33 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSeriali
  * world's full height, because each column lands wherever the ground is and {@code OreMining} finds
  * the disc by testing the box against the broken block.
  */
-public final class OutfieldDiscPiece extends StructurePiece implements OutfieldDisc.Source {
+public final class PatchDiscPiece extends StructurePiece implements PatchDisc.Source {
 
-    private final OutfieldDisc disc;
-    private final OutfieldShape shape;
+    private final PatchDisc disc;
+    private final PatchShape shape;
 
-    OutfieldDiscPiece(OutfieldDisc disc, OutfieldShape shape, LevelHeightAccessor height) {
-        super(FieldworksWorldgen.OUTFIELD_DISC_PIECE.get(), 0, new BoundingBox(
+    PatchDiscPiece(PatchDisc disc, PatchShape shape, LevelHeightAccessor height) {
+        super(FieldworksWorldgen.PATCH_DISC_PIECE.get(), 0, new BoundingBox(
                 disc.centreX() - shape.reach(), height.getMinY(), disc.centreZ() - shape.reach(),
                 disc.centreX() + shape.reach(), height.getMaxY(), disc.centreZ() + shape.reach()));
         this.disc = disc;
         this.shape = shape;
     }
 
-    public OutfieldDiscPiece(CompoundTag tag) {
-        super(FieldworksWorldgen.OUTFIELD_DISC_PIECE.get(), tag);
-        this.disc = new OutfieldDisc(
+    public PatchDiscPiece(CompoundTag tag) {
+        super(FieldworksWorldgen.PATCH_DISC_PIECE.get(), tag);
+        this.disc = new PatchDisc(
                 OreResource.of(tag.getStringOr("resource", "")),
                 tag.getDoubleOr("size_factor", 0),
                 tag.getIntOr("block_count", 0),
                 tag.getIntOr("centre_x", 0),
                 tag.getIntOr("centre_z", 0));
-        this.shape = OutfieldShape.of(disc.centreX(), disc.centreZ(), tag.getIntOr("reach", 0),
+        this.shape = PatchShape.of(disc.centreX(), disc.centreZ(), tag.getIntOr("reach", 0),
                 tag.getLongArray("columns").orElse(new long[0]));
     }
 
     @Override
-    public OutfieldDisc disc() {
+    public PatchDisc disc() {
         return disc;
     }
 

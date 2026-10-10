@@ -8,7 +8,7 @@
     "regular_patch_fade_in_distance": 300.0,
     "double_density_distance": 1300.0
   },
-  "outfield_edge": {
+  "patch_edge": {
     "radius_cap": 32.0,
     "octaves": [
       {
@@ -38,7 +38,7 @@
         0.01,
         0.005333333333333333
       ],
-      "outfield": {
+      "patch": {
         "base_density": 10.0,
         "base_spots_per_km2": 2.5,
         "random_spot_size_minimum": 0.25,
@@ -59,7 +59,7 @@
         0.01,
         0.005333333333333333
       ],
-      "outfield": {
+      "patch": {
         "base_density": 8.0,
         "base_spots_per_km2": 2.5,
         "random_spot_size_minimum": 0.25,
@@ -80,7 +80,7 @@
         0.01,
         0.005333333333333333
       ],
-      "outfield": {
+      "patch": {
         "base_density": 8.0,
         "base_spots_per_km2": 2.5,
         "random_spot_size_minimum": 0.25,
@@ -101,7 +101,7 @@
         0.01,
         0.005333333333333333
       ],
-      "outfield": {
+      "patch": {
         "base_density": 4.0,
         "base_spots_per_km2": 2.5,
         "random_spot_size_minimum": 0.25,
@@ -122,7 +122,7 @@
         0.01,
         0.005
       ],
-      "outfield": {
+      "patch": {
         "base_density": 0.9,
         "base_spots_per_km2": 1.25,
         "random_spot_size_minimum": 2.0,
@@ -143,7 +143,7 @@
         0.01,
         0.005
       ],
-      "outfield": {
+      "patch": {
         "base_density": 1.5,
         "base_spots_per_km2": 1.25,
         "random_spot_size_minimum": 1.0,

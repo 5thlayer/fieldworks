@@ -35,7 +35,7 @@ public final class MarkerEvents {
             return;
         }
         ServerLevel level = event.getLevel();
-        List<PatchMarker> found = PatchDiscovery.centredIn(level, event.getChunk());
+        List<PatchMarker> found = FoundPatchMarkers.centredIn(level, event.getChunk());
         if (!found.isEmpty()) {
             PatchMarkerData.get(level.getServer()).found(level.dimension().identifier().toString(), found);
         }

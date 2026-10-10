@@ -7,12 +7,12 @@ package io.github._5thlayer.fieldworks.ore;
  * One generated patch, as its structure piece records it: the size factor it drew, the blocks it
  * placed and its centre column. Every block holds the amount at the centre's distance from origin.
  */
-public record OutfieldDisc(OreResource resource, double sizeFactor, int blockCount, int centreX,
+public record PatchDisc(OreResource resource, double sizeFactor, int blockCount, int centreX,
         int centreZ) {
 
     /** Implemented by the structure piece that places a disc. */
     public interface Source {
-        OutfieldDisc disc();
+        PatchDisc disc();
 
         /** Whether the disc placed ore in this column; its box is a square around a ragged disc. */
         boolean covers(int x, int z);
@@ -28,7 +28,7 @@ public record OutfieldDisc(OreResource resource, double sizeFactor, int blockCou
     }
 
     public int amountPerBlock() {
-        long total = OutfieldLaw.of(resource).total(sizeFactor, distance());
+        long total = PatchLaw.of(resource).total(sizeFactor, distance());
         return new OreField(resource.key(), total, blockCount).amountPerBlock();
     }
 }

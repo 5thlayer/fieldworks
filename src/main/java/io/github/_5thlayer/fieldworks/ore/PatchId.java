@@ -16,7 +16,7 @@ public record PatchId(String dimension, String resource, int x, int z) {
             Codec.INT.fieldOf("z").forGetter(PatchId::z))
             .apply(instance, PatchId::new));
 
-    public static PatchId of(String dimension, OutfieldDisc disc) {
+    public static PatchId of(String dimension, PatchDisc disc) {
         return new PatchId(dimension, disc.resource().key(), disc.centreX(), disc.centreZ());
     }
 }

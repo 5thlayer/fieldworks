@@ -17,8 +17,8 @@ public final class FieldworksWorldgen {
     private static final DeferredRegister<StructureType<?>> STRUCTURE_TYPES =
             DeferredRegister.create(Registries.STRUCTURE_TYPE, Fieldworks.MOD_ID);
 
-    static final DeferredHolder<StructureType<?>, StructureType<OutfieldDiscStructure>> OUTFIELD_DISC =
-            STRUCTURE_TYPES.register("outfield_disc", () -> () -> OutfieldDiscStructure.CODEC);
+    static final DeferredHolder<StructureType<?>, StructureType<PatchDiscStructure>> PATCH_DISC =
+            STRUCTURE_TYPES.register("patch_disc", () -> () -> PatchDiscStructure.CODEC);
 
     static final DeferredHolder<StructureType<?>, StructureType<OilFieldStructure>> OIL_FIELD =
             STRUCTURE_TYPES.register("oil_field", () -> () -> OilFieldStructure.CODEC);
@@ -26,8 +26,8 @@ public final class FieldworksWorldgen {
     private static final DeferredRegister<StructurePieceType> PIECES =
             DeferredRegister.create(Registries.STRUCTURE_PIECE, Fieldworks.MOD_ID);
 
-    static final DeferredHolder<StructurePieceType, StructurePieceType> OUTFIELD_DISC_PIECE =
-            PIECES.register("outfield_disc", () -> (StructurePieceType.ContextlessType) OutfieldDiscPiece::new);
+    static final DeferredHolder<StructurePieceType, StructurePieceType> PATCH_DISC_PIECE =
+            PIECES.register("patch_disc", () -> (StructurePieceType.ContextlessType) PatchDiscPiece::new);
 
     static final DeferredHolder<StructurePieceType, StructurePieceType> OIL_FIELD_PIECE =
             PIECES.register("oil_field", () -> (StructurePieceType.ContextlessType) OilFieldPiece::new);

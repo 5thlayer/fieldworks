@@ -52,7 +52,7 @@ public final class FieldworksGameTests {
         var tests = new Registrar(event, environment);
         LoadTests.register(tests);
         DataTests.register(tests);
-        OutfieldDiscTests.register(tests);
+        PatchDiscTests.register(tests);
         OilFieldTests.register(tests);
         HandMiningTests.register(tests);
     }

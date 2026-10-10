@@ -14,16 +14,16 @@ import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.config.FieldworksConfig;
 import io.github._5thlayer.fieldworks.marker.MarkerDelivery;
 import io.github._5thlayer.fieldworks.marker.MarkerEvents;
-import io.github._5thlayer.fieldworks.marker.PatchDiscovery;
+import io.github._5thlayer.fieldworks.marker.FoundPatchMarkers;
 import io.github._5thlayer.fieldworks.marker.PatchMarker;
 import io.github._5thlayer.fieldworks.marker.PatchMarkerData;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreDelta;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.ore.OreResource;
-import io.github._5thlayer.fieldworks.ore.OutfieldDisc;
-import io.github._5thlayer.fieldworks.ore.OutfieldLaw;
-import io.github._5thlayer.fieldworks.worldgen.OutfieldDiscStructure;
+import io.github._5thlayer.fieldworks.ore.PatchDisc;
+import io.github._5thlayer.fieldworks.ore.PatchLaw;
+import io.github._5thlayer.fieldworks.worldgen.PatchDiscStructure;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
@@ -54,7 +54,7 @@ import org.slf4j.Logger;
  * {@code /place} skips and worldgen does not, so a broken block reads its amount through the same
  * structure manager a real world would.
  */
-final class OutfieldDiscTests {
+final class PatchDiscTests {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -63,7 +63,7 @@ final class OutfieldDiscTests {
 
     private static final int HOLE = 150;
 
-    private OutfieldDiscTests() {
+    private PatchDiscTests() {
     }
 
     static void register(FieldworksGameTests.Registrar tests) {
@@ -71,15 +71,15 @@ final class OutfieldDiscTests {
         for (int i = 0; i < resources.length; i++) {
             OreResource resource = resources[i];
             ChunkPos far = new ChunkPos(100 + 8 * i, 100);
-            tests.test("outfield_" + resource.key() + "_disc_places", 20, helper -> discPlaces(helper, resource, far));
-            tests.test("outfield_" + resource.key() + "_nothing_in_the_hole", 20,
+            tests.test("patch_" + resource.key() + "_disc_places", 20, helper -> discPlaces(helper, resource, far));
+            tests.test("patch_" + resource.key() + "_nothing_in_the_hole", 20,
                     helper -> nothingInTheHole(helper, resource));
-            tests.test("outfield_" + resource.key() + "_nothing_off_the_land", 20,
+            tests.test("patch_" + resource.key() + "_nothing_off_the_land", 20,
                     helper -> nothingOffTheLand(helper, resource, far));
-            tests.test("outfield_" + resource.key() + "_switched_off_generates_nothing", 20,
+            tests.test("patch_" + resource.key() + "_switched_off_generates_nothing", 20,
                     helper -> switchedOff(helper, resource, far));
         }
-        tests.test("outfield_marker_is_found_once_and_removed_when_the_last_block_goes", 20,
+        tests.test("patch_marker_is_found_once_and_removed_when_the_last_block_goes", 20,
                 helper -> markerFollowsThePatch(helper, OreResource.IRON, new ChunkPos(100, 140)));
     }
 
@@ -97,11 +97,11 @@ final class OutfieldDiscTests {
             return;
         }
         StructureStart start = generate(level, structure, chunk);
-        if (!start.isValid() || !(start.getPieces().getFirst() instanceof OutfieldDisc.Source source)) {
+        if (!start.isValid() || !(start.getPieces().getFirst() instanceof PatchDisc.Source source)) {
             helper.fail(resource.key() + " generated no disc at " + chunk);
             return;
         }
-        OutfieldDisc disc = source.disc();
+        PatchDisc disc = source.disc();
         BoundingBox box = start.getBoundingBox();
         loadChunks(level, box);
         place(level, structure.value(), start, chunk, box);
@@ -120,11 +120,11 @@ final class OutfieldDiscTests {
     }
 
     private static void markerFollowsThePatch(GameTestHelper helper, ServerLevel level, PatchMarkerData data,
-            UUID player, ChunkPos chunk, OutfieldDisc disc, List<BlockPos> ores) {
+            UUID player, ChunkPos chunk, PatchDisc disc, List<BlockPos> ores) {
         String dimension = level.dimension().identifier().toString();
         MarkerDelivery.Amounts amounts = MarkerEvents.amounts(level.getServer());
         data.observe(player, dimension);
-        List<PatchMarker> found = PatchDiscovery.centredIn(level, level.getChunk(chunk.x(), chunk.z()));
+        List<PatchMarker> found = FoundPatchMarkers.centredIn(level, level.getChunk(chunk.x(), chunk.z()));
         data.found(dimension, found);
         data.found(dimension, found);
         List<MarkerDelivery.Update> sent = data.takeMarkers(player, amounts);
@@ -178,11 +178,11 @@ final class OutfieldDiscTests {
             return;
         }
         StructureStart start = generate(level, structure, chunk);
-        if (!start.isValid() || !(start.getPieces().getFirst() instanceof OutfieldDisc.Source source)) {
+        if (!start.isValid() || !(start.getPieces().getFirst() instanceof PatchDisc.Source source)) {
             helper.fail(resource.key() + " generated no disc at " + chunk + ", " + distance(chunk) + " from origin");
             return;
         }
-        OutfieldDisc disc = source.disc();
+        PatchDisc disc = source.disc();
         BoundingBox box = start.getBoundingBox();
         loadChunks(level, box);
 
@@ -243,7 +243,7 @@ final class OutfieldDiscTests {
             return;
         }
 
-        double radius = OutfieldLaw.of(resource).radius(disc.sizeFactor(), disc.distance());
+        double radius = PatchLaw.of(resource).radius(disc.sizeFactor(), disc.distance());
         if (farthest < 0.5 * radius || farthest > 1.8 * radius) {
             helper.fail(resource.key() + "'s disc reaches " + farthest + " for a law radius of " + radius
                     + " at size " + disc.sizeFactor() + ", " + disc.distance() + " from origin");
@@ -350,7 +350,7 @@ final class OutfieldDiscTests {
     }
 
     static Holder<Structure> resolve(GameTestHelper helper, OreResource resource) {
-        Identifier id = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "outfield_" + resource.key());
+        Identifier id = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_" + resource.key());
         var set = helper.getLevel().registryAccess().lookupOrThrow(Registries.STRUCTURE_SET)
                 .get(ResourceKey.create(Registries.STRUCTURE_SET, id));
         if (set.isEmpty()) {
@@ -363,7 +363,7 @@ final class OutfieldDiscTests {
             return null;
         }
         Holder<Structure> structure = value.structures().getFirst().structure();
-        if (!(structure.value() instanceof OutfieldDiscStructure disc) || disc.resource() != resource) {
+        if (!(structure.value() instanceof PatchDiscStructure disc) || disc.resource() != resource) {
             helper.fail(id + " holds " + structure.value() + ", not " + resource.key() + "'s disc");
             return null;
         }

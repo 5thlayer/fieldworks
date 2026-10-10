@@ -1,7 +1,7 @@
 {
   "structures": [
     {
-      "structure": "fieldworks:outfield_stone",
+      "structure": "fieldworks:patch_iron",
       "weight": 1
     }
   ],
@@ -9,6 +9,6 @@
     "type": "minecraft:random_spread",
     "spacing": 42,
     "separation": 3,
-    "salt": 282129289
+    "salt": 1538106117
   }
 }

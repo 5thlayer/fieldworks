@@ -57,11 +57,11 @@ public final class OreCorpus {
                 JsonObject entry = entries.getAsJsonObject(name);
                 List<Double> ratios = new ArrayList<>();
                 entry.getAsJsonArray("stage_ratios").forEach(value -> ratios.add(value.getAsDouble()));
-                resources.put(name, new Resource(name, List.copyOf(ratios), outfield(entry.getAsJsonObject("outfield"))));
+                resources.put(name, new Resource(name, List.copyOf(ratios), patch(entry.getAsJsonObject("patch"))));
             }
             JsonObject distance = root.getAsJsonObject("distance_law");
             JsonObject density = root.getAsJsonObject("density_law");
-            JsonObject edge = root.getAsJsonObject("outfield_edge");
+            JsonObject edge = root.getAsJsonObject("patch_edge");
             List<Octave> octaves = new ArrayList<>();
             edge.getAsJsonArray("octaves").forEach(value -> octaves.add(new Octave(
                     value.getAsJsonObject().get("input_scale").getAsDouble(),
@@ -81,8 +81,8 @@ public final class OreCorpus {
     }
 
     /** A spot's arguments as a JSON object holds them; oil's law is read the same way. */
-    public static Outfield outfield(JsonObject spot) {
-        return new Outfield(
+    public static Patch patch(JsonObject spot) {
+        return new Patch(
                 spot.get("base_density").getAsDouble(),
                 spot.get("base_spots_per_km2").getAsDouble(),
                 spot.get("random_spot_size_minimum").getAsDouble(),
@@ -127,11 +127,11 @@ public final class OreCorpus {
     /**
      * @param stageRatios fractions of a block's own initial amount at which each stage begins, richest first
      */
-    public record Resource(String name, List<Double> stageRatios, Outfield outfield) {
+    public record Resource(String name, List<Double> stageRatios, Patch patch) {
     }
 
     /** A resource's autoplace arguments, and the range a spot's size factor is drawn from. */
-    public record Outfield(double baseDensity, double baseSpotsPerKm2, double spotSizeMinimum,
+    public record Patch(double baseDensity, double baseSpotsPerKm2, double spotSizeMinimum,
             double spotSizeMaximum, double rqFactor, double blobAmplitudeMultiplier,
             double blobAmplitudeMaximumDistance) {
 

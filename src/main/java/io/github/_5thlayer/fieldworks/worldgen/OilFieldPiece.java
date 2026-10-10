@@ -7,7 +7,7 @@ import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.oil.OilField;
 import io.github._5thlayer.fieldworks.oil.OilFieldSource;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
-import io.github._5thlayer.fieldworks.ore.OutfieldDisc;
+import io.github._5thlayer.fieldworks.ore.PatchDisc;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -69,12 +69,12 @@ public final class OilFieldPiece extends StructurePiece implements OilFieldSourc
         return wells;
     }
 
-    /** Whether an outfield disc covers the column, whichever of the two structures places first. */
+    /** Whether a patch disc covers the column, whichever of the two structures places first. */
     public static boolean oreAt(StructureManager structures, int x, int z) {
         for (StructureStart start : structures.startsForStructure(
-                new ChunkPos(x >> 4, z >> 4), structure -> structure instanceof OutfieldDiscStructure)) {
+                new ChunkPos(x >> 4, z >> 4), structure -> structure instanceof PatchDiscStructure)) {
             for (StructurePiece piece : start.getPieces()) {
-                if (piece instanceof OutfieldDisc.Source disc && disc.covers(x, z)) {
+                if (piece instanceof PatchDisc.Source disc && disc.covers(x, z)) {
                     return true;
                 }
             }

@@ -10,7 +10,7 @@ import io.github._5thlayer.fieldworks.oil.OilField;
 import io.github._5thlayer.fieldworks.oil.OilFieldSource;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import io.github._5thlayer.fieldworks.ore.OreResource;
-import io.github._5thlayer.fieldworks.ore.OutfieldDisc;
+import io.github._5thlayer.fieldworks.ore.PatchDisc;
 import io.github._5thlayer.fieldworks.worldgen.OilFieldStructure;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,7 @@ import org.slf4j.Logger;
 
 /**
  * Crude-oil fields, resolved out of the server's registry and placed the way
- * {@link OutfieldDiscTests} places a disc: wells spaced by the collision box, each holding its
+ * {@link PatchDiscTests} places a disc: wells spaced by the collision box, each holding its
  * drawn amount, flush with the ground, never on an ore column, never near origin, never off the land.
  */
 final class OilFieldTests {
@@ -44,7 +44,7 @@ final class OilFieldTests {
 
     private static final Identifier SET = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "oil_field");
     private static final int HOLE = 150;
-    /** About 2,300 blocks out, clear of the outfield disc tests' chunks. */
+    /** About 2,300 blocks out, clear of the patch disc tests' chunks. */
     private static final ChunkPos FAR = new ChunkPos(144, 20);
     private static final ChunkPos UNDER_IRON = new ChunkPos(144, 60);
 
@@ -64,14 +64,14 @@ final class OilFieldTests {
         if (structure == null) {
             return;
         }
-        StructureStart start = OutfieldDiscTests.generate(level, structure, FAR);
+        StructureStart start = PatchDiscTests.generate(level, structure, FAR);
         if (!start.isValid() || !(start.getPieces().getFirst() instanceof OilFieldSource field)) {
-            helper.fail("no oil field generated at " + FAR + ", " + OutfieldDiscTests.distance(FAR) + " from origin");
+            helper.fail("no oil field generated at " + FAR + ", " + PatchDiscTests.distance(FAR) + " from origin");
             return;
         }
         BoundingBox box = start.getBoundingBox();
-        OutfieldDiscTests.loadChunks(level, box);
-        OutfieldDiscTests.place(level, structure.value(), start, FAR, box);
+        PatchDiscTests.loadChunks(level, box);
+        PatchDiscTests.place(level, structure.value(), start, FAR, box);
         int ground = level.getHeight(Heightmap.Types.WORLD_SURFACE, box.minX(), box.minZ()) - 1;
 
         List<BlockPos> placed = wellsIn(level, box, ground, helper);
@@ -107,25 +107,25 @@ final class OilFieldTests {
     private static void fieldSkipsOre(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Holder<Structure> structure = resolve(helper);
-        Holder<Structure> iron = OutfieldDiscTests.resolve(helper, OreResource.IRON);
+        Holder<Structure> iron = PatchDiscTests.resolve(helper, OreResource.IRON);
         if (structure == null || iron == null) {
             return;
         }
-        StructureStart disc = OutfieldDiscTests.generate(level, iron, UNDER_IRON);
-        StructureStart start = OutfieldDiscTests.generate(level, structure, UNDER_IRON);
+        StructureStart disc = PatchDiscTests.generate(level, iron, UNDER_IRON);
+        StructureStart start = PatchDiscTests.generate(level, structure, UNDER_IRON);
         if (!disc.isValid() || !start.isValid()
-                || !(disc.getPieces().getFirst() instanceof OutfieldDisc.Source ore)
+                || !(disc.getPieces().getFirst() instanceof PatchDisc.Source ore)
                 || !(start.getPieces().getFirst() instanceof OilFieldSource field)) {
             helper.fail("no iron disc and oil field generated together at " + UNDER_IRON);
             return;
         }
         BoundingBox box = start.getBoundingBox();
-        OutfieldDiscTests.loadChunks(level, disc.getBoundingBox());
-        OutfieldDiscTests.loadChunks(level, box);
+        PatchDiscTests.loadChunks(level, disc.getBoundingBox());
+        PatchDiscTests.loadChunks(level, box);
         // The disc first: a well that ignored it would then replace its ore, where one placed first
         // would be overwritten by it and pass unseen.
-        OutfieldDiscTests.place(level, iron.value(), disc, UNDER_IRON, disc.getBoundingBox());
-        OutfieldDiscTests.place(level, structure.value(), start, UNDER_IRON, box);
+        PatchDiscTests.place(level, iron.value(), disc, UNDER_IRON, disc.getBoundingBox());
+        PatchDiscTests.place(level, structure.value(), start, UNDER_IRON, box);
         int ground = level.getHeight(Heightmap.Types.WORLD_SURFACE, box.minX(), box.minZ()) - 1;
 
         List<OilField.Well> turnedAway = field.wells().stream().filter(w -> ore.covers(w.x(), w.z())).toList();
@@ -160,9 +160,9 @@ final class OilFieldTests {
         for (int x = -reach; x <= reach; x++) {
             for (int z = -reach; z <= reach; z++) {
                 ChunkPos chunk = new ChunkPos(x, z);
-                if (OutfieldDiscTests.distance(chunk) <= HOLE
-                        && OutfieldDiscTests.generate(helper.getLevel(), structure, chunk).isValid()) {
-                    helper.fail("an oil field generated at " + chunk + ", " + OutfieldDiscTests.distance(chunk));
+                if (PatchDiscTests.distance(chunk) <= HOLE
+                        && PatchDiscTests.generate(helper.getLevel(), structure, chunk).isValid()) {
+                    helper.fail("an oil field generated at " + chunk + ", " + PatchDiscTests.distance(chunk));
                     return;
                 }
             }
@@ -176,12 +176,12 @@ final class OilFieldTests {
         if (structure == null) {
             return;
         }
-        String wet = OutfieldDiscTests.wetBiomeInLand(helper.getLevel(), structure.value());
+        String wet = PatchDiscTests.wetBiomeInLand(helper.getLevel(), structure.value());
         if (wet != null) {
             helper.fail("an oil field may generate in " + wet);
             return;
         }
-        if (OutfieldDiscTests.generate(helper.getLevel(), structure, FAR, biome -> biome.is(Biomes.OCEAN)).isValid()) {
+        if (PatchDiscTests.generate(helper.getLevel(), structure, FAR, biome -> biome.is(Biomes.OCEAN)).isValid()) {
             helper.fail("an oil field generated where its biome was not valid");
             return;
         }
@@ -226,7 +226,7 @@ final class OilFieldTests {
             helper.fail(SET + " holds " + structure.value() + ", not an oil field");
             return null;
         }
-        if (!structure.value().biomes().unwrapKey().map(OutfieldDiscTests.LAND::equals).orElse(false)) {
+        if (!structure.value().biomes().unwrapKey().map(PatchDiscTests.LAND::equals).orElse(false)) {
             helper.fail(SET + " is confined to " + structure.value().biomes() + ", not the land tag");
             return null;
         }

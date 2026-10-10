@@ -11,7 +11,7 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import org.junit.jupiter.api.Test;
 
-/** What is left in each outfield patch, and when it is gone. */
+/** What is left in each patch, and when it is gone. */
 class PatchLedgerTest {
 
     private static final PatchId IRON = new PatchId("minecraft:overworld", "iron", 2008, -1016);

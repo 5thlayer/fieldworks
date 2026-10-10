@@ -73,7 +73,7 @@ public final class OreMining {
      * caller decides where the unit goes.
      */
     public static OreDelta.Draw draw(ServerLevel level, OreBlock ore, BlockPos pos) {
-        @Nullable OutfieldDisc disc = discOf(level, ore, pos);
+        @Nullable PatchDisc disc = discOf(level, ore, pos);
         int initial = disc != null ? disc.amountPerBlock() : 0;
         OreDelta delta = deltaOf(level, pos);
         OreDelta.Draw draw = delta.draw(pos.asLong(), initial);
@@ -110,15 +110,15 @@ public final class OreMining {
 
     /** The block's initial amount: its patch's quotient, or {@code 0} for a block no patch placed. */
     public static int initialAmount(ServerLevel level, OreBlock ore, BlockPos pos) {
-        OutfieldDisc disc = discOf(level, ore, pos);
+        PatchDisc disc = discOf(level, ore, pos);
         return disc != null ? disc.amountPerBlock() : 0;
     }
 
     /** The disc a block belongs to, or null for a block no patch placed. */
-    private static @Nullable OutfieldDisc discOf(ServerLevel level, OreBlock ore, BlockPos pos) {
+    private static @Nullable PatchDisc discOf(ServerLevel level, OreBlock ore, BlockPos pos) {
         for (StructureStart start : level.structureManager().startsForStructure(ChunkPos.containing(pos), structure -> true)) {
             for (StructurePiece piece : start.getPieces()) {
-                if (piece instanceof OutfieldDisc.Source source
+                if (piece instanceof PatchDisc.Source source
                         && source.disc().resource() == ore.resource()
                         && piece.getBoundingBox().isInside(pos)
                         && source.covers(pos.getX(), pos.getZ())) {
@@ -129,7 +129,7 @@ public final class OreMining {
         return null;
     }
 
-    private static void blockGone(ServerLevel level, OutfieldDisc disc, int unitsLost) {
+    private static void blockGone(ServerLevel level, PatchDisc disc, int unitsLost) {
         PatchLedgerData.get(level.getServer()).blockGone(PatchId.of(dimension(level), disc), unitsLost, disc.blockCount());
     }
 
@@ -145,7 +145,7 @@ public final class OreMining {
         if (level instanceof ServerLevel server) {
             OreDelta delta = deltaOf(server, pos);
             if (!pos.equals(depleting)) {
-                OutfieldDisc disc = discOf(server, ore, pos);
+                PatchDisc disc = discOf(server, ore, pos);
                 if (disc != null) {
                     blockGone(server, disc, delta.remaining(pos.asLong(), disc.amountPerBlock()));
                 }
