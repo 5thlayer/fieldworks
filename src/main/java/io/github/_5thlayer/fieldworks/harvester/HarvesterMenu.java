@@ -110,8 +110,8 @@ public final class HarvesterMenu extends AbstractContainerMenu {
         this.data = data;
         this.player = inventory.player;
         addSlot(new FuelSlot(fuel));
-        addSlot(new ContainerSlot(fill, FILL_X, FILL_Y, HarvesterBlockEntity::acceptsCrude));
-        addSlot(new ContainerSlot(drain, DRAIN_X, DRAIN_Y, HarvesterBlockEntity::holdsDrillingFluid));
+        addSlot(new ContainerSlot(fill, FILL_X, FILL_Y, HarvesterFluids::acceptsCrude));
+        addSlot(new ContainerSlot(drain, DRAIN_X, DRAIN_Y, HarvesterFluids::holdsDrillingFluid));
         IndexModifier<ItemResource> modifier = buffer::set;
         for (int index = 0; index < HarvesterBlockEntity.BUFFER_SLOTS; index++) {
             addSlot(new OutputSlot(buffer, modifier, index, BUFFER_X + index % 3 * 18, BUFFER_Y + index / 3 * 18));
