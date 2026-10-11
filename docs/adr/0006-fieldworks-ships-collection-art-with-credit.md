@@ -10,10 +10,11 @@ unused-textures (CC BY 4.0) for the ores, crude oil, sulfur and the uranium item
 fits, `scripts/build-textures.py` generates the sprite. Art taken from another mod, and art under a
 non-commercial licence, stays out.
 
-This departs from the suite's rule that FactoryWorks ships only art it made
-([5thlayer/factoryworks ADR-0122](https://github.com/5thlayer/factoryworks/blob/main/docs/adr/0122-factoryworks-ships-only-art-it-made.md)).
-Fieldworks is a Library released on its own, and art drawn for reuse, credited, reads better than a
-generated stand-in.
+This is stricter than the suite's rule, which allows third-party art under any open licence that
+permits redistribution, from an art collection or another mod
+([5thlayer/factoryworks ADR-0130](https://github.com/5thlayer/factoryworks/blob/main/docs/adr/0130-the-suite-ships-third-party-art-under-open-licences-with-credit.md),
+superseding ADR-0122). Fieldworks is a Library released on its own: art drawn for reuse, credited,
+reads better than a generated stand-in, and art lifted from another mod reads as taken from it.
 
 ## Considered Options
 
