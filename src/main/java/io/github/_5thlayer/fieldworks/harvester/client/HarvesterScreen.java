@@ -62,6 +62,7 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     private static final int PROGRESS_Y = 92;
     private static final int PROGRESS_WIDTH = 160;
     private static final int HELD_Y = 108;
+    private static final int CLEAR_X = 134;
     private static final int STATE_Y = 126;
 
     private Button clear;
@@ -76,7 +77,7 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         super.init();
         clear = addRenderableWidget(Button.builder(Component.translatable("fieldworks.harvester.clear"),
                         button -> ClientPacketDistributor.sendToServer(ClearHeldRecipePacket.INSTANCE))
-                .bounds(leftPos + 134, topPos + HELD_Y - 2, 34, 18)
+                .bounds(leftPos + CLEAR_X, topPos + HELD_Y - 2, 34, 18)
                 .tooltip(Tooltip.create(Component.translatable("fieldworks.harvester.clear.tooltip")))
                 .build());
     }
@@ -84,7 +85,7 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     @Override
     protected void containerTick() {
         super.containerTick();
-        clear.active = menu.held().isPresent();
+        clear.visible = menu.held().isPresent();
     }
 
     @Override
@@ -117,8 +118,10 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         HarvesterStatus status = menu.status();
         Optional<HeldRecipeView> held = menu.held();
         held.ifPresent(view -> graphics.item(view.result(), 8, HELD_Y));
-        graphics.text(font, Component.translatable("fieldworks.harvester.held", HarvesterStatusLines.heldName(held)),
-                held.map(view -> view.result().isEmpty()).orElse(true) ? 8 : 28, HELD_Y + 4, TEXT, false);
+        int x = held.map(view -> view.result().isEmpty()).orElse(true) ? 8 : 28;
+        int right = held.isPresent() ? CLEAR_X - 4 : imageWidth - 8;
+        Component line = Component.translatable("fieldworks.harvester.held", HarvesterStatusLines.heldName(held));
+        graphics.text(font, font.split(line, right - x).getFirst(), x, HELD_Y + 4, TEXT, false);
         graphics.text(font, HarvesterStatusLines.state(status.idle()), 8, STATE_Y, TEXT, false);
     }
 

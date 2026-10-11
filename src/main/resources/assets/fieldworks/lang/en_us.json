@@ -45,7 +45,7 @@
   "fieldworks.harvester.tank.product": "Product: %s, %s / %s mB",
   "fieldworks.harvester.progress": "Progress: %s%%",
   "fieldworks.harvester.held": "Held recipe: %s",
-  "fieldworks.harvester.no_held_recipe": "none (Default recipes)",
+  "fieldworks.harvester.no_held_recipe": "none",
   "fieldworks.harvester.clear": "Clear",
   "fieldworks.harvester.clear.tooltip": "Clear the Held recipe: the Harvester runs its Default recipes again",
   "map.fieldworks.patch.iron": "Iron ore",

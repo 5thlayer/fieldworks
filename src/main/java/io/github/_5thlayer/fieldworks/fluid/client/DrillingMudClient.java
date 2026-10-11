@@ -3,7 +3,6 @@
 
 package io.github._5thlayer.fieldworks.fluid.client;
 
-import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.fluid.DrillingMud;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.resources.model.sprite.Material;
@@ -12,13 +11,14 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.RegisterFluidModelsEvent;
 import net.neoforged.neoforge.client.fluid.FluidTintSources;
 
-/** How drilling mud draws in the world, a tank or a pipe: crude oil's placeholder sprite under a brown tint. */
+/** How drilling mud draws in the world, a tank or a pipe: vanilla water's sprites under a clay-brown tint. */
 public final class DrillingMudClient {
 
-    private static final Material SPRITE =
-            new Material(Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "block/fluid/crude_oil"));
+    // Water's sprites are drawn to be tinted; crude oil's is near black, so mud on it read as crude.
+    private static final Material STILL = new Material(Identifier.withDefaultNamespace("block/water_still"));
+    private static final Material FLOWING = new Material(Identifier.withDefaultNamespace("block/water_flow"));
 
-    private static final int TINT = 0xFF805A30;
+    private static final int TINT = 0xFFB08A5C;
 
     private DrillingMudClient() {
     }
@@ -28,7 +28,7 @@ public final class DrillingMudClient {
     }
 
     private static void registerFluidModels(RegisterFluidModelsEvent event) {
-        event.register(new FluidModel.Unbaked(SPRITE, SPRITE, null, FluidTintSources.constant(TINT)),
+        event.register(new FluidModel.Unbaked(STILL, FLOWING, null, FluidTintSources.constant(TINT)),
                 DrillingMud.SOURCE, DrillingMud.FLOWING);
     }
 }
