@@ -9,8 +9,11 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -23,10 +26,16 @@ import io.github._5thlayer.fieldworks.ore.OreResource;
 /**
  * The bonus cap over the Harvest Recipes a data root holds, read as plain JSON so it runs on a plain JVM.
  *
- * <p>A <em>bonus</em> is a Harvest Recipe that does not replace its source's Default recipe and yields the
- * same item the Default does, with a higher count. Counts are per operation: a Default draw of an ore block
- * yields one of the ore's drop. Only Fieldworks' ore blocks have a Default known here; a recipe whose source
- * is anything else is not judged. Block tags are read from the root's own tag files.
+ * <p>A <em>bonus</em> is a Harvest Recipe that spends a Drilling Fluid on a source that keeps its Default recipe and
+ * yields more of the item the Default does: it may yield up to {@link #CAP} times the Default. A recipe that spends no
+ * fluid may yield no more than the Default. Counts are per operation: a Default draw of an ore block yields one
+ * of the ore's drop. Only Fieldworks' ore blocks have a Default known here; a source whose Default any recipe in the
+ * root replaces is not judged, and neither is a harvestable block, whose Default is its loot, which only a loot table
+ * evaluated in game could tell. Block tags are read from the root's own tag files.
+ *
+ * <p>A well recipe is crude's floor role, not a bonus: a crude result that restores a share of the well's starting
+ * yield may restore at most the whole of it, and one in fixed mB is not judged, a well's Default yield depending on
+ * the well.
  */
 final class BonusCap {
 
@@ -41,28 +50,46 @@ final class BonusCap {
     private BonusCap() {
     }
 
-    /** One line per bonus recipe under {@code root/data} that yields more than {@link #CAP} times its Default. */
+    /** One line per recipe under {@code root/data} that yields more than its cap allows. */
     static List<String> violations(Path root) {
         Path recipes = root.resolve("data/fieldworks/recipe");
         List<String> violations = new ArrayList<>();
-        try (Stream<Path> files = Files.walk(recipes)) {
-            for (Path file : files.filter(path -> path.toString().endsWith(".json")).sorted().toList()) {
-                JsonObject recipe = read(file);
-                if (!"fieldworks:harvesting".equals(recipe.get("type").getAsString())
-                        || (recipe.has("replaces_default") && recipe.get("replaces_default").getAsBoolean())) {
-                    continue;
+        try {
+            Map<Path, JsonObject> harvesting = new LinkedHashMap<>();
+            try (Stream<Path> files = Files.walk(recipes)) {
+                for (Path file : files.filter(path -> path.toString().endsWith(".json")).sorted().toList()) {
+                    JsonObject recipe = read(file);
+                    if ("fieldworks:harvesting".equals(recipe.get("type").getAsString())) {
+                        harvesting.put(file, recipe);
+                    }
                 }
-                if (recipe.get("result").isJsonObject() && !recipe.get("result").getAsJsonObject().has("id")) {
-                    // Crude in mB for a well (#12): a well's Default yield depends on the well, so there is none to judge it by.
+            }
+            Set<String> replaced = new HashSet<>();
+            for (JsonObject recipe : harvesting.values()) {
+                if (recipe.has("replaces_default") && recipe.get("replaces_default").getAsBoolean()) {
+                    replaced.addAll(blocks(root, recipe.get("source")));
+                }
+            }
+            for (Map.Entry<Path, JsonObject> entry : harvesting.entrySet()) {
+                String file = root.relativize(entry.getKey()).toString();
+                JsonObject recipe = entry.getValue();
+                JsonElement crude = recipe.get("result").isJsonObject() ? recipe.get("result").getAsJsonObject().get("crude_oil") : null;
+                if (crude != null) {
+                    if (crude.isJsonObject() && crude.getAsJsonObject().get("restores").getAsDouble() > 1) {
+                        violations.add(file + " restores " + crude.getAsJsonObject().get("restores").getAsDouble()
+                                + " of its well's starting yield, over the whole of it");
+                    }
                     continue;
                 }
                 String item = itemOf(recipe.get("result"));
                 int count = countOf(recipe.get("result"));
+                int cap = recipe.has("drilling_fluid") ? CAP : 1;
                 for (String block : blocks(root, recipe.get("source"))) {
                     OreResource ore = oreOf(block);
-                    if (ore != null && ore.drop().equals(item) && count > CAP * DEFAULT_DRAW) {
-                        violations.add(root.relativize(file) + " yields " + count + " " + item + " per operation from "
-                                + block + ", over " + CAP + " times its Default recipe's " + DEFAULT_DRAW);
+                    if (ore != null && !replaced.contains(block) && ore.drop().equals(item) && count > cap * DEFAULT_DRAW) {
+                        violations.add(file + " yields " + count + " " + item + " per operation from " + block + ", over "
+                                + cap + " times its Default recipe's " + DEFAULT_DRAW
+                                + (recipe.has("drilling_fluid") ? "" : " with no Drilling Fluid spent"));
                     }
                 }
             }

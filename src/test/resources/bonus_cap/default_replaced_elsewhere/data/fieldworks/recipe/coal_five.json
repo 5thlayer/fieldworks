@@ -1,0 +1,9 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "fieldworks:coal_ore",
+  "result": {
+    "id": "minecraft:coal",
+    "count": 5
+  },
+  "duration": 20
+}

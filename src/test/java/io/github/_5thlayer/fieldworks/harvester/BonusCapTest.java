@@ -12,7 +12,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-/** That no bonus Harvest Recipe Fieldworks ships yields more than the cap times its source's Default recipe. */
+/** That no Harvest Recipe Fieldworks ships yields more than its cap allows over its source's Default recipe. */
 class BonusCapTest {
 
     private static Path fixture(String name) {
@@ -20,16 +20,24 @@ class BonusCapTest {
     }
 
     @Test
-    void aBonusAboveTheCapIsReported() {
-        List<String> violations = BonusCap.violations(fixture("above_cap"));
+    void aBonusSpendingADrillingFluidAboveTwiceItsDefaultIsReported() {
+        List<String> violations = BonusCap.violations(fixture("fluid_above_cap"));
 
         assertEquals(1, violations.size(), violations.toString());
         assertTrue(violations.get(0).contains("raw_iron_thrice"), violations.get(0));
     }
 
     @Test
-    void aBonusWithinTheCapPasses() {
-        assertEquals(List.of(), BonusCap.violations(fixture("within_cap")));
+    void aBonusSpendingADrillingFluidAtTwiceItsDefaultPasses() {
+        assertEquals(List.of(), BonusCap.violations(fixture("fluid_within_cap")));
+    }
+
+    @Test
+    void aRecipeSpendingNoFluidThatYieldsMoreThanItsDefaultIsReported() {
+        List<String> violations = BonusCap.violations(fixture("fluid_free_above_default"));
+
+        assertEquals(1, violations.size(), violations.toString());
+        assertTrue(violations.get(0).contains("raw_iron_twice_dry"), violations.get(0));
     }
 
     @Test
@@ -41,9 +49,22 @@ class BonusCapTest {
     }
 
     @Test
+    void aWellRecipeRestoringMoreThanTheWellsStartingYieldIsReported() {
+        List<String> violations = BonusCap.violations(fixture("well_restores_above_whole"));
+
+        assertEquals(1, violations.size(), violations.toString());
+        assertTrue(violations.get(0).contains("crude_restored_and_a_half"), violations.get(0));
+    }
+
+    @Test
+    void aSourceWhoseDefaultAnotherRecipeReplacesIsNotJudged() {
+        assertEquals(List.of(), BonusCap.violations(fixture("default_replaced_elsewhere")));
+    }
+
+    @Test
     void recipesThatAreNotBonusesAreLeftAlone() {
-        // Replaces the Default, yields another item, has a source with no known Default, yields one,
-        // or is no Harvest Recipe at all.
+        // Replaces the Default, yields another item, has a source with no known Default, yields one with no fluid,
+        // pumps crude in fixed mB, restores the whole of a well's starting yield, or is no Harvest Recipe at all.
         assertEquals(List.of(), BonusCap.violations(fixture("not_a_bonus")));
     }
 
