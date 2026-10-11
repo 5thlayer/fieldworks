@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "fieldworks:block/harvester_1_part"
+      }
+    }
+  ]
+}

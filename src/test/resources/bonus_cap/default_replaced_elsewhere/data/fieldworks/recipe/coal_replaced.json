@@ -1,0 +1,7 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "fieldworks:coal_ore",
+  "result": "minecraft:charcoal",
+  "duration": 20,
+  "replaces_default": true
+}

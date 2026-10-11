@@ -5,10 +5,17 @@ package io.github._5thlayer.fieldworks;
 
 import io.github._5thlayer.fieldworks.config.FieldworksConfig;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
+import io.github._5thlayer.fieldworks.fluid.DrillingMud;
 import io.github._5thlayer.fieldworks.fluid.client.CrudeOilClient;
+import io.github._5thlayer.fieldworks.fluid.client.DrillingMudClient;
 import io.github._5thlayer.fieldworks.gametest.FieldworksGameTests;
+import io.github._5thlayer.fieldworks.harvester.Harvesters;
+import io.github._5thlayer.fieldworks.harvester.client.HarvesterClient;
 import io.github._5thlayer.fieldworks.marker.MarkerEvents;
 import io.github._5thlayer.fieldworks.marker.client.PatchMapClient;
+import io.github._5thlayer.fieldworks.network.ClearHeldRecipePacket;
+import io.github._5thlayer.fieldworks.network.HeldRecipeSyncPacket;
+import io.github._5thlayer.fieldworks.network.HoldRecipePacket;
 import io.github._5thlayer.fieldworks.network.PatchMarkersPacket;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.worldgen.FieldworksWorldgen;
@@ -20,7 +27,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
-/** The Library's entry point: ore patches, oil wells and crude oil, and their map markers. */
+/** The Library's entry point: ore patches, oil wells and crude oil, their map markers, and the Harvester. */
 @Mod(Fieldworks.MOD_ID)
 public final class Fieldworks {
 
@@ -33,6 +40,8 @@ public final class Fieldworks {
         FieldworksConfig.register(container);
         FieldworksRegistries.register(modBus);
         CrudeOil.register(modBus);
+        DrillingMud.register(modBus);
+        Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);
         modBus.addListener(Fieldworks::registerPayloads);
         NeoForge.EVENT_BUS.addListener(OreMining::onBreak);
@@ -41,6 +50,8 @@ public final class Fieldworks {
         NeoForge.EVENT_BUS.addListener(MarkerEvents::onLogout);
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
             CrudeOilClient.register(modBus);
+            DrillingMudClient.register(modBus);
+            HarvesterClient.register(modBus);
             PatchMapClient.register();
         }
         FieldworksGameTests.register(modBus);
@@ -48,6 +59,9 @@ public final class Fieldworks {
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
         event.registrar(NETWORK_VERSION)
-                .playToClient(PatchMarkersPacket.TYPE, PatchMarkersPacket.STREAM_CODEC, PatchMarkersPacket::handle);
+                .playToClient(PatchMarkersPacket.TYPE, PatchMarkersPacket.STREAM_CODEC, PatchMarkersPacket::handle)
+                .playToServer(HoldRecipePacket.TYPE, HoldRecipePacket.STREAM_CODEC, HoldRecipePacket::handle)
+                .playToServer(ClearHeldRecipePacket.TYPE, ClearHeldRecipePacket.STREAM_CODEC, ClearHeldRecipePacket::handle)
+                .playToClient(HeldRecipeSyncPacket.TYPE, HeldRecipeSyncPacket.STREAM_CODEC, HeldRecipeSyncPacket::handle);
     }
 }

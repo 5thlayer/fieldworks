@@ -14,6 +14,10 @@ description = '''
 ${mod_description}
 '''
 
+# Superflat worlds place the patches and oil fields too.
+[[mixins]]
+config = "${mod_id}.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
@@ -25,6 +29,23 @@ side = "BOTH"
 modId = "minecraft"
 type = "required"
 versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+# Required, and never nested: the Harvester is a Groundworks footprint. Capped below the next minor,
+# which may move Footprint.
+[[dependencies.${mod_id}]]
+modId = "groundworks"
+type = "required"
+versionRange = "[${groundworks_version},0.6)"
+ordering = "NONE"
+side = "BOTH"
+
+# libworks-runtime, nested by jar-in-jar: the Harvester's item handler routes through its guarded face.
+[[dependencies.${mod_id}]]
+modId = "libworks"
+type = "required"
+versionRange = "[${libworks_runtime_version},1.0)"
 ordering = "NONE"
 side = "BOTH"
 
@@ -43,3 +64,19 @@ type = "optional"
 versionRange = "[26.1.11,)"
 ordering = "NONE"
 side = "BOTH"
+
+# Soft: Harvest Recipes show in EMI, and its transfer sets a Harvester's Held recipe.
+[[dependencies.${mod_id}]]
+modId = "emi"
+type = "optional"
+versionRange = "[0,)"
+ordering = "NONE"
+side = "CLIENT"
+
+# Soft: Harvest Recipes show in JEI, and its transfer sets a Harvester's Held recipe.
+[[dependencies.${mod_id}]]
+modId = "jei"
+type = "optional"
+versionRange = "[29.20.0.53,)"
+ordering = "NONE"
+side = "CLIENT"

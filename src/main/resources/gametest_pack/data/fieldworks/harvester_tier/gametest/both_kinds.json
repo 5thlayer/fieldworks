@@ -1,0 +1,9 @@
+{
+  "rank": 2,
+  "speed": 1.0,
+  "power": {
+    "fuel": true,
+    "fe_per_tick": 40
+  },
+  "fe_buffer": 400
+}

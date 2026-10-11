@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "io.github._5thlayer.fieldworks.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "FlatLevelSourceMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "fieldworks:oil_well",
+  "yield_condition": "at_floor",
+  "result": {
+    "crude_oil": 5000
+  },
+  "duration": 20
+}

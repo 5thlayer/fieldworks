@@ -24,6 +24,32 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      # Groundworks and libworks-runtime are taken from ~/.m2, which a runner starts without, so the
+      # versions gradle.properties names are built from their tags and published there, as their
+      # releases do on a maintainer's machine.
+      - id: versions
+        run: |
+          echo "groundworks=$(sed -n 's/^groundworks_version *= *//p' gradle.properties)" >> "$GITHUB_OUTPUT"
+          echo "libworks_runtime=$(sed -n 's/^libworks_runtime_version *= *//p' gradle.properties)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          repository: 5thlayer/groundworks
+          ref: v${{ steps.versions.outputs.groundworks }}
+          path: .groundworks
+
+      - run: ./gradlew publishToMavenLocal
+        working-directory: .groundworks
+
+      - uses: actions/checkout@v7
+        with:
+          repository: 5thlayer/libworks
+          ref: runtime-v${{ steps.versions.outputs.libworks_runtime }}
+          path: .libworks
+
+      - run: ./gradlew :runtime:publishToMavenLocal
+        working-directory: .libworks
+
       # The build, with the JUnit tests.
       - run: ./gradlew build
 

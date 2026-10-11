@@ -15,6 +15,8 @@ path = [
     "**/*.md",
     "src/main/resources/**/*.json",
     "src/main/resources/**/*.nbt",
+    "src/main/resources/gametest_pack/pack.mcmeta",
+    "src/test/resources/**/*.json",
     "LICENSE",
     "NOTICE",
     "publish/summary.txt",

@@ -34,4 +34,4 @@ miss. An icon is rebuilt from the client's own markers on each refresh, so remov
 
 - A patch is unmarked until someone's client is sent its centre chunk, so a player who has not
   explored near it learns of it only from another's finding.
-- `PatchMarker.CRUDE_OIL` stands for an oil field. It draws as a bucket, since crude has no item.
+- `PatchMarker.CRUDE_OIL` stands for an oil field. It draws as `fieldworks:crude_oil_bucket`, since crude is a fluid (ADR 0004).

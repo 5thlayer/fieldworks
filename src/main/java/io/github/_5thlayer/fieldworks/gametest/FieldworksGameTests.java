@@ -14,9 +14,14 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInstance;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -27,6 +32,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * what it needs itself, so the setup is in the diff.
  */
 public final class FieldworksGameTests {
+
+    private static final String GAMETEST_PACK = "fieldworks.gametestPack";
 
     private static final Identifier PLATFORM = id("gametest/platform");
 
@@ -44,6 +51,20 @@ public final class FieldworksGameTests {
         TEST_TYPES.register(modBus);
         // Posted only when game tests are enabled, so a production server never registers the tests.
         modBus.addListener(FieldworksGameTests::registerTests);
+        if (Boolean.getBoolean(GAMETEST_PACK)) {
+            modBus.addListener(FieldworksGameTests::addGameTestPack);
+            // The tests' own fluid-handler block, which a player's world never has.
+            TestTank.register(modBus);
+        }
+    }
+
+    /**
+     * The recipes only the game tests read, in {@code gametest_pack/} in the jar. Only the
+     * {@code gameTestServer} run sets {@value #GAMETEST_PACK}, so no dev or player world sees them.
+     */
+    private static void addGameTestPack(AddPackFindersEvent event) {
+        event.addPackFinders(id("gametest_pack"), PackType.SERVER_DATA, Component.literal("Fieldworks game tests"),
+                PackSource.BUILT_IN, true, Pack.Position.TOP);
     }
 
     private static void registerTests(RegisterGameTestsEvent event) {
@@ -55,6 +76,17 @@ public final class FieldworksGameTests {
         PatchDiscTests.register(tests);
         OilFieldTests.register(tests);
         HandMiningTests.register(tests);
+        HarvesterTests.register(tests);
+        HarvestRecipeTests.register(tests);
+        HarvestableBlockTests.register(tests);
+        HarvesterWellTests.register(tests);
+        HarvesterPowerTests.register(tests);
+        HeldRecipeTests.register(tests);
+        DrillingMudTests.register(tests);
+        DrillingFluidTests.register(tests);
+        HarvesterMenuTests.register(tests);
+        FlooredWellTests.register(tests);
+        FlatWorldTests.register(tests);
     }
 
     private static Identifier id(String path) {

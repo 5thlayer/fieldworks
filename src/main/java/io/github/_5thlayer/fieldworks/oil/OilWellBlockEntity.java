@@ -39,6 +39,11 @@ public class OilWellBlockEntity extends BlockEntity {
         return initial;
     }
 
+    /** Whether the well has decayed to its floor, where its yield stays (ADR-0002). */
+    public boolean atFloor() {
+        return amount <= YIELD.floor(initial);
+    }
+
     public double yield() {
         return YIELD.yield(amount);
     }
@@ -46,6 +51,11 @@ public class OilWellBlockEntity extends BlockEntity {
     /** The crude the next cycle would yield, without running it. */
     public int nextCycle() {
         return YIELD.cycle(amount, initial, carry).crude();
+    }
+
+    /** The crude of a cycle at {@code fraction} of the yield the well had at its starting amount. */
+    public int restored(double fraction) {
+        return YIELD.restored(initial, fraction);
     }
 
     /** Runs one cycle: the crude it yields, the well depleted by it. */

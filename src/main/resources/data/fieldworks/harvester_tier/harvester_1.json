@@ -1,0 +1,9 @@
+{
+  "rank": 1,
+  "speed": 1.0,
+  "power": {
+    "fuel": true,
+    "burn_per_operation": 200
+  },
+  "fe_buffer": 0
+}
