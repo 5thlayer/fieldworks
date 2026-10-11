@@ -47,9 +47,8 @@ neoForge {
         }
         gameTestServer {
             sourceSet = sourceSets.solo
-            // What only the game tests stand on, which only this run turns on: a datapack of recipes in
-            // the jar, and a fluid-handler block.
-            systemProperty 'fieldworks.gametestPack', 'true'
+            // Marks this run as the Library's own, which is when it registers its test fluid-handler block.
+            systemProperty 'fieldworks.gametest', 'true'
         }
     }
 

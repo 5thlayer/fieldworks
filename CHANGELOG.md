@@ -4,6 +4,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- The game tests' datapack, `gametest_pack/`, no longer ships in the jar, so `-Dfieldworks.gametestPack` no longer turns its recipes on in a Consumer's game; it was only ever for Fieldworks' own game tests (libworks ADR 0004).
 - The Harvester's fuel, fill and drain slots veil their faded item in the suite's grey, the same as the other mods' machines: a touch darker and less opaque than before. The nested libworks-runtime is now 0.1.1 up to but not including 0.2 (#25).
 - Sulfur ore blocks and the sulfur, raw uranium and uranium ingot items wear Malcolm Riley's unused textures (CC BY 4.0) in place of their generated stand-ins (#3).
 - The nested libworks-runtime's range ends before 0.2, in place of 1.0: its next minor may break, as ADR 0001 sets. The jar also carries `NOTICE` and every licence text under `LICENSES/` (#17).
