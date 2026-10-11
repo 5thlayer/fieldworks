@@ -4,10 +4,7 @@
 package io.github._5thlayer.fieldworks.harvester.client;
 
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import io.github._5thlayer.fieldworks.harvester.HarvesterMenu;
@@ -15,6 +12,9 @@ import io.github._5thlayer.fieldworks.harvester.HarvesterStatus;
 import io.github._5thlayer.fieldworks.harvester.HarvesterStatusLines;
 import io.github._5thlayer.fieldworks.harvester.HeldRecipeView;
 import io.github._5thlayer.fieldworks.network.ClearHeldRecipePacket;
+import io.github._5thlayer.libworks.ghost.Ghost;
+import io.github._5thlayer.libworks.ghost.Ghosts;
+import io.github._5thlayer.libworks.ghost.client.GhostDraw;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -23,7 +23,6 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.block.FluidModel;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -31,7 +30,6 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.fluids.FluidStack;
 
@@ -78,16 +76,18 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     private static final int HELD_TEXT_X = 28;
     private static final int CLEAR_X = 134;
     private static final int STATE_Y = 108;
-    private static final int GHOST = 0x99A0A0A0;
     private static final FormattedText ELLIPSIS = FormattedText.of("…");
 
     private Button clear;
-    /** What each input slot takes, by slot index, worked out the first time its ghost is drawn. */
-    private final Map<Integer, List<ItemStack>> taken = new HashMap<>();
+    /** What the empty fuel, fill and drain slots show, and what EMI's and JEI's shortcuts ask of. */
+    private final Ghosts ghosts = new Ghosts(() -> leftPos, () -> topPos);
 
     public HarvesterScreen(HarvesterMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, 176, HarvesterMenu.INVENTORY_Y + 82);
         inventoryLabelY = HarvesterMenu.INVENTORY_Y - 11;
+        for (int index : List.of(HarvesterMenu.FUEL_SLOT, HarvesterMenu.FILL_SLOT, HarvesterMenu.DRAIN_SLOT)) {
+            ghosts.add(menu.slots.get(index));
+        }
     }
 
     @Override
@@ -117,6 +117,10 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         }
         HarvesterStatus status = menu.status();
         Font font = Minecraft.getInstance().font;
+        // The slots' ghosts, over their recesses and under the real stacks and tooltips drawn after.
+        for (Ghost ghost : ghosts.shown(Util.getMillis())) {
+            GhostDraw.draw(graphics, font, ghost);
+        }
         if (status.takesFuel()) {
             bar(graphics, font, BURN_X, BURN_Y, burnWidth(status), status.burnFraction(), BURN, HarvesterStatusLines.burn(status));
         }
@@ -134,51 +138,14 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         super.extractLabels(graphics, mouseX, mouseY);
         HarvesterStatus status = menu.status();
         Optional<HeldRecipeView> held = menu.held();
-        for (Ghost ghost : ghosts()) {
-            int x = ghost.x() - leftPos;
-            int y = ghost.y() - topPos;
-            graphics.fakeItem(ghost.stack(), x, y);
-            graphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, GHOST);
-        }
         held.ifPresent(view -> graphics.item(view.result(), MARGIN, HELD_Y));
         graphics.text(font, fitted(heldLine(held), heldRight(held) - heldX(held)), heldX(held), HELD_Y + 4, TEXT, false);
         graphics.text(font, fitted(HarvesterStatusLines.state(status.idle()), stateWidth()), MARGIN, STATE_Y, TEXT, false);
     }
 
-    /**
-     * A stack an empty fuel, fill or drain slot takes, drawn faded in it, with the top-left of its slot on screen so
-     * EMI's and JEI's recipe and usage keys work on it.
-     */
-    public record Ghost(ItemStack stack, int x, int y) {
-    }
-
-    private List<Ghost> ghosts() {
-        List<Ghost> ghosts = new ArrayList<>();
-        for (int index : List.of(HarvesterMenu.FUEL_SLOT, HarvesterMenu.FILL_SLOT, HarvesterMenu.DRAIN_SLOT)) {
-            Slot slot = menu.slots.get(index);
-            if (slot.isActive() && !slot.hasItem()) {
-                cycled(taken.computeIfAbsent(index, ignored -> takes(slot)))
-                        .ifPresent(stack -> ghosts.add(new Ghost(stack, leftPos + slot.x, topPos + slot.y)));
-            }
-        }
-        return ghosts;
-    }
-
-    /** The ghost stack under the mouse. */
+    /** The ghost stack under the mouse, with the top-left of its slot on screen so EMI's and JEI's recipe and usage keys work on it. */
     public Optional<Ghost> ghostAt(double mouseX, double mouseY) {
-        return ghosts().stream()
-                .filter(ghost -> mouseX >= ghost.x() && mouseX < ghost.x() + SLOT_SIZE && mouseY >= ghost.y() && mouseY < ghost.y() + SLOT_SIZE)
-                .findFirst();
-    }
-
-    /** Every item the slot takes, asked of the slot itself, so a pack's own fuels and Drilling Fluids show too. */
-    private static List<ItemStack> takes(Slot slot) {
-        return BuiltInRegistries.ITEM.stream().map(ItemStack::new).filter(slot::mayPlace).toList();
-    }
-
-    /** One a second. */
-    private static Optional<ItemStack> cycled(List<ItemStack> stacks) {
-        return stacks.isEmpty() ? Optional.empty() : Optional.of(stacks.get((int) (Util.getMillis() / 1000 % stacks.size())));
+        return ghosts.at(mouseX, mouseY, Util.getMillis());
     }
 
     private static Component heldLine(Optional<HeldRecipeView> held) {
