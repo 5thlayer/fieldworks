@@ -22,8 +22,8 @@ import net.neoforged.neoforge.fluids.FluidStack;
  * <p>Power is shown only for the kinds the tier declares: a kind it does not take reads {@code false} and zero. A
  * tier with no file reads neither.
  *
- * @param burnLeft      burn ticks left of the fuel item last lit
- * @param burnTotal     the burn that item bought, so the two make a bar
+ * @param burnLeft      ticks of work left of the fuel item last lit
+ * @param burnTotal     the ticks of work that item bought, so the two make a bar
  * @param energy        FE buffered, and {@code energyCapacity} what the buffer holds
  * @param progress      ticks into the operation under way, of {@code operationTicks}
  * @param tankCapacity  the one fixed capacity of both tanks, in mB

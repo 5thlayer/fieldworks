@@ -57,7 +57,7 @@ final class HarvesterPowerTests {
         int initial = HarvesterTests.ore(helper, OreResource.IRON, ore, 0);
 
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
-        insert(helper, Items.COAL, 1);
+        insert(helper, Items.COAL, 2);
         HarvesterTests.tick(helper, machine(helper), 200);
         int harvester1Draws = initial - HarvesterTests.remaining(helper, ore);
         helper.getLevel().destroyBlock(helper.absolutePos(ORIGIN), false);

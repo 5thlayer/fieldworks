@@ -15,12 +15,20 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 public record HarvesterTier(int rank, double speed, Power power, int feBuffer) {
 
     /** The power a tier takes: burn time from fuel, FE at a cost per tick of work, or both. */
-    public record Power(boolean fuel, int fePerTick) {
+    /** {@code burnRate} is the fuel's burn ticks one tick of work spends, as a furnace spends one a tick. */
+    public record Power(boolean fuel, int fePerTick, int burnRate) {
 
-        static final Codec<Power> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        static final Codec<Power> CODEC = RecordCodecBuilder.<Power>create(instance -> instance.group(
                 Codec.BOOL.optionalFieldOf("fuel", false).forGetter(Power::fuel),
-                Codec.INT.optionalFieldOf("fe_per_tick", 0).forGetter(Power::fePerTick)
-        ).apply(instance, Power::new));
+                Codec.INT.optionalFieldOf("fe_per_tick", 0).forGetter(Power::fePerTick),
+                Codec.INT.optionalFieldOf("burn_rate", 1).forGetter(Power::burnRate)
+        ).apply(instance, Power::new)).validate(power -> power.burnRate() >= 1 ? DataResult.success(power)
+                : DataResult.error(() -> "a tier's burn_rate must be at least 1, not " + power.burnRate()));
+
+        /** The ticks of work a fuel item burning for {@code burnTime} buys, never none for a fuel. */
+        public int workTicks(int burnTime) {
+            return burnTime <= 0 ? 0 : Math.max(1, burnTime / burnRate);
+        }
 
         public boolean fe() {
             return fePerTick > 0;

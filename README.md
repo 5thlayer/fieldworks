@@ -24,7 +24,7 @@ I also wanted endgame mining that doesn’t mean strip-mining whole chunks. Patc
 
 - **Generation switches.** Each resource and oil fields have a switch in `fieldworks-common.toml`. Turning one off stops new patches; those already generated stay.
 - **Harvest Recipes** are `fieldworks:harvesting` recipes: a block or block-tag source (or the oil well), a result, a duration, an optional Drilling Fluid with its mB per operation, an optional minimum Harvester tier, and `replaces_default`, which makes a resource need its recipe. The bonus recipes Fieldworks ships yield at most twice the default; yours are not capped.
-- **Harvester tiers** are data: each tier's rank, speed, power (burn time, FE or both) and FE buffer are in `data/fieldworks/harvester_tier/`. Their names are in lang.
+- **Harvester tiers** are data: each tier's rank, speed, power (burn time, FE or both), how fast it burns fuel and its FE buffer are in `data/fieldworks/harvester_tier/`. Their names are in lang.
 - **Tags.** `fieldworks:harvestable` (default `c:ores`) is what the Harvester breaks for loot; `#fieldworks:drilling_fluids` is what a recipe may spend.
 
 ## For mod authors

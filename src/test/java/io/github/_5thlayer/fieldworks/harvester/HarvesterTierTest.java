@@ -33,6 +33,22 @@ class HarvesterTierTest {
     }
 
     @Test
+    void oneCoalBuysTheBurnerHarvesterEightOreDrawsAsItBuysAFurnaceEightSmelts() throws Exception {
+        HarvesterTier tier = parse(shipped("harvester_1")).getOrThrow();
+
+        int coal = 1600;
+        assertEquals(8, tier.power().workTicks(coal) / tier.ticks(OperationChoice.ORE_DRAW_TICKS));
+    }
+
+    @Test
+    void aBurnRateBelowOneIsRefused() {
+        DataResult<HarvesterTier> result = parse(json("""
+                {"rank": 1, "speed": 1.0, "power": {"fuel": true, "burn_rate": 0}, "fe_buffer": 0}"""));
+
+        assertRefused(result, "burn_rate");
+    }
+
+    @Test
     void theElectricHarvesterShipsRankTwoFeOnlyAtSpeedTwo() throws Exception {
         HarvesterTier tier = parse(shipped("harvester_2")).getOrThrow();
 
@@ -69,8 +85,8 @@ class HarvesterTierTest {
 
     @Test
     void anOperationTakesItsDurationOverTheSpeedAndNeverLessThanATick() {
-        HarvesterTier doubled = new HarvesterTier(2, 2.0, new HarvesterTier.Power(false, 40), 4000);
-        HarvesterTier fast = new HarvesterTier(3, 100.0, new HarvesterTier.Power(true, 0), 0);
+        HarvesterTier doubled = new HarvesterTier(2, 2.0, new HarvesterTier.Power(false, 40, 1), 4000);
+        HarvesterTier fast = new HarvesterTier(3, 100.0, new HarvesterTier.Power(true, 0, 1), 0);
 
         assertEquals(10, doubled.ticks(20));
         assertEquals(1, fast.ticks(20));

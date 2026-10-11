@@ -12,9 +12,9 @@ import org.junit.jupiter.api.Test;
 /** What pays for a tick of work (#7): FE first, fuel as backup, and a started burn always finishes. */
 class PowerTest {
 
-    private static final Power BOTH = new Power(true, 40);
-    private static final Power FE_ONLY = new Power(false, 40);
-    private static final Power BURN_ONLY = new Power(true, 0);
+    private static final Power BOTH = new Power(true, 40, 1);
+    private static final Power FE_ONLY = new Power(false, 40, 1);
+    private static final Power BURN_ONLY = new Power(true, 0, 1);
 
     @Test
     void aTierThatTakesBothPaysFromFeWhileItHasATicksWorth() {

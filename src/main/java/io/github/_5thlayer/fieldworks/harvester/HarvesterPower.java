@@ -32,7 +32,7 @@ final class HarvesterPower {
     private final ItemStacksResourceHandler remainders;
     private final EnergyBuffer energy;
 
-    /** Burn ticks bought by the last fuel item and not yet worked. */
+    /** Ticks of work bought by the last fuel item and not yet worked. */
     private int burnLeft;
     /** The burn the last fuel item bought, so the menu can draw {@link #burnLeft} against it (#13). */
     private int burnTotal;
@@ -103,7 +103,7 @@ final class HarvesterPower {
                 yield true;
             }
             case LIGHT -> {
-                if (!light(level, commit)) {
+                if (!light(level, tier, commit)) {
                     yield false;
                 }
                 if (commit) {
@@ -120,7 +120,7 @@ final class HarvesterPower {
      * remainder, the bucket of a lava bucket, goes to the output buffer, so a fuel item whose remainder has no room
      * there is not lit.
      */
-    private boolean light(ServerLevel level, boolean commit) {
+    private boolean light(ServerLevel level, HarvesterTier tier, boolean commit) {
         ItemResource item = fuel.getResource(0);
         int burnTime = item.isEmpty() ? 0 : item.toStack(1).getBurnTime(null, level.fuelValues());
         if (burnTime == 0) {
@@ -138,8 +138,8 @@ final class HarvesterPower {
             }
             lighting.commit();
         }
-        burnLeft = burnTime;
-        burnTotal = burnTime;
+        burnLeft = tier.power().workTicks(burnTime);
+        burnTotal = burnLeft;
         return true;
     }
 

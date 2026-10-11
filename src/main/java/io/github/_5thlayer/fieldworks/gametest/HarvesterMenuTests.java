@@ -121,15 +121,16 @@ final class HarvesterMenuTests {
         insertItem(helper, Items.COAL, 1);
         HarvesterBlockEntity machine = machine(helper);
         HarvesterMenu menu = menu(helper);
-        int burnTime = new ItemStack(Items.COAL).getBurnTime(null, helper.getLevel().fuelValues());
+        int bought = HarvesterTiers.get(TierBlock.HARVESTER_1).power()
+                .workTicks(new ItemStack(Items.COAL).getBurnTime(null, helper.getLevel().fuelValues()));
 
         HarvesterTests.tick(helper, machine, 10);
 
         helper.assertValueEqual(menu.progress(), 10, "ticks of progress");
         helper.assertValueEqual(menu.operationTicks(), 20, "ticks the operation takes");
         helper.assertValueEqual(menu.progressFraction(), 0.5f, "progress as a fraction");
-        helper.assertValueEqual(menu.burnTotal(), burnTime, "the burn the coal bought");
-        helper.assertValueEqual(menu.burnLeft(), burnTime - 10, "the burn left");
+        helper.assertValueEqual(menu.burnTotal(), bought, "the work the coal bought");
+        helper.assertValueEqual(menu.burnLeft(), bought - 10, "the work left");
         helper.getLevel().destroyBlock(helper.absolutePos(ORIGIN), false);
 
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_2);
@@ -314,7 +315,7 @@ final class HarvesterMenuTests {
             full.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
         }
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
-        insertItem(helper, Items.COAL, 64);
+        insertItem(helper, Items.COAL_BLOCK, 64);
         HarvesterBlockEntity machine = machine(helper);
 
         HarvesterTests.tick(helper, machine, 15_000);
