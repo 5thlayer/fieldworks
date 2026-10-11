@@ -13,6 +13,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 
 /** The tags other mods find the Library's resources by. */
@@ -23,15 +24,25 @@ final class DataTests {
 
     static void register(FieldworksGameTests.Registrar tests) {
         tests.test("crude_oil_is_tagged_c_crude_oil", 1, DataTests::crudeOil);
+        tests.test("tar_is_tagged_c_tar", 1, DataTests::tar);
         tests.test("the_ores_are_tagged_c_ores", 1, DataTests::ores);
         tests.test("sulfur_and_uranium_carry_their_c_tags", 1, DataTests::items);
         tests.test("the_harvestable_tag_holds_every_block_in_c_ores_and_vanilla_ores_among_them", 1, DataTests::harvestable);
     }
 
     private static void crudeOil(GameTestHelper helper) {
-        TagKey<net.minecraft.world.level.material.Fluid> tag = TagKey.create(Registries.FLUID, Identifier.parse("c:crude_oil"));
+        TagKey<net.minecraft.world.level.material.Fluid> tag = FieldworksTags.CRUDE_OIL;
         if (!CrudeOil.SOURCE.get().defaultFluidState().is(tag) || !CrudeOil.FLOWING.get().defaultFluidState().is(tag)) {
             helper.fail("crude oil is not in c:crude_oil");
+            return;
+        }
+        helper.succeed();
+    }
+
+    /** How Wireworks finds tar for its plastic resins, with no id of ours in its data. */
+    private static void tar(GameTestHelper helper) {
+        if (!new ItemStack(FieldworksRegistries.TAR_ITEM.get()).is(FieldworksTags.TAR)) {
+            helper.fail("tar is not in " + FieldworksTags.TAR.location());
             return;
         }
         helper.succeed();

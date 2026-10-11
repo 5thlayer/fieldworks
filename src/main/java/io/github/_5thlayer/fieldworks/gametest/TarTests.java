@@ -4,7 +4,6 @@
 package io.github._5thlayer.fieldworks.gametest;
 
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
-import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -58,7 +57,6 @@ final class TarTests {
                 helper -> eachSide(helper, TestCrude.BLOCK.get(), Arriving.LAVA, Crude.SOURCE));
         tests.test("breaking_tar_drops_one_tar", 20, TarTests::brokenByHand);
         tests.test("piston_breaks_tar_into_one_tar", 40, TarTests::pushedByPiston);
-        tests.test("tar_is_tagged_c_tar", 1, TarTests::isTagged);
     }
 
     /**
@@ -122,14 +120,6 @@ final class TarTests {
                     expectOneTar(helper, "a piston pushing a tar block");
                 })
                 .thenSucceed();
-    }
-
-    /** How Wireworks finds tar for its plastic resins, with no id of ours in its data. */
-    private static void isTagged(GameTestHelper helper) {
-        if (!new ItemStack(FieldworksRegistries.TAR_ITEM.get()).is(FieldworksTags.TAR)) {
-            helper.fail("tar is not in " + FieldworksTags.TAR.location());
-        }
-        helper.succeed();
     }
 
     /** Exactly one tar lying in the test's area, and nothing else. */

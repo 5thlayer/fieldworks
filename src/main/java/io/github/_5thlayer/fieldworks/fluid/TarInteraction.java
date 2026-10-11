@@ -44,7 +44,7 @@ public final class TarInteraction {
     private static void addInteractions(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             FluidInteractionRegistry.addInteraction(NeoForgeMod.LAVA_TYPE.value(),
-                    new InteractionInformation(TarInteraction::crudeArrived, TarInteraction::setCrudeAround));
+                    new InteractionInformation(TarInteraction::crudeArrived, TarInteraction::setCrudeAroundAsTar));
             InteractionInformation lavaArrived = new InteractionInformation(TarInteraction::lavaArrived, tar());
             for (FluidType type : NeoForgeRegistries.FLUID_TYPES) {
                 FluidInteractionRegistry.addInteraction(type, lavaArrived);
@@ -57,7 +57,7 @@ public final class TarInteraction {
         return isCrudeSource(level, beside) || isCrudeSource(level, lava.below());
     }
 
-    private static void setCrudeAround(Level level, BlockPos lava, BlockPos beside, FluidState lavaState) {
+    private static void setCrudeAroundAsTar(Level level, BlockPos lava, BlockPos beside, FluidState lavaState) {
         for (Direction side : Direction.values()) {
             BlockPos at = lava.relative(side);
             if (isCrudeSource(level, at)) {

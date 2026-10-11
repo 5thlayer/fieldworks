@@ -11,8 +11,8 @@ core and each stage is a subset of the one before.
 Coal, copper, iron, sulfur and uranium wear Malcolm Riley's unused textures (CC BY 4.0, credited in
 NOTICE), committed unmodified under data/art/. Stone is generated: tan boulders standing on the
 ground, from a fixed seed. The items are his too: sulfur and raw uranium as they are, and the uranium
-ingot his lead ingot in the green of the uranium ore's crystals. Tar's block and item are drawn here,
-stand-ins carried over from Wireworks (5thlayer/wireworks#30).
+ingot his lead ingot in the green of the uranium ore's crystals. Tar's block and item are generated:
+near-black tar with a few glints, and a lump of it.
 
     scripts/build-textures.py
     scripts/build-textures.py --check    # regenerate and diff
