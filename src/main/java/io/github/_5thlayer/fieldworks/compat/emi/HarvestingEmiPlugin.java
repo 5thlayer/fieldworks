@@ -9,11 +9,11 @@ import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.EmiStackInteraction;
-import io.github._5thlayer.fieldworks.harvester.client.HarvesterScreen;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
+import io.github._5thlayer.fieldworks.harvester.client.HarvesterScreen;
 
 /**
  * Puts {@code fieldworks:harvesting} in EMI, Default recipes and written ones in one tab, with every Harvester as a

@@ -3,24 +3,25 @@
 
 package io.github._5thlayer.fieldworks.compat.jei;
 
-import io.github._5thlayer.fieldworks.harvester.client.HarvesterScreen;
 import java.util.Optional;
-import mezz.jei.api.gui.builder.IClickableIngredientFactory;
-import mezz.jei.api.gui.handlers.IGuiContainerHandler;
-import mezz.jei.api.registration.IGuiHandlerRegistration;
-import mezz.jei.api.runtime.IClickableIngredient;
+
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
+import io.github._5thlayer.fieldworks.harvester.client.HarvesterScreen;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.gui.builder.IClickableIngredientFactory;
+import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.recipe.types.IRecipeType;
+import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
+import mezz.jei.api.runtime.IClickableIngredient;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeMap;

@@ -4,17 +4,10 @@
 package io.github._5thlayer.fieldworks.harvester.client;
 
 import java.text.NumberFormat;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Comparator;
-import io.github._5thlayer.fieldworks.FieldworksTags;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.util.Util;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.level.material.Fluid;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.github._5thlayer.fieldworks.harvester.HarvesterMenu;
@@ -30,15 +23,17 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.block.FluidModel;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.registries.datamaps.builtin.NeoForgeDataMaps;
 
 /**
  * The Harvester's screen (#13): a stand-in drawn from fills, like the other machines' until there is art. It draws
@@ -58,8 +53,12 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     private static final int TEXT = 0xFF404040;
     private static final int WHITE = 0xFFFFFFFF;
 
+    private static final int SLOT_SIZE = 16;
     private static final int BAR_HEIGHT = 12;
+    /** The room a bar keeps either side of its label. */
+    private static final int BAR_PADDING = 4;
     private static final int FLUID_TILE = 16;
+    private static final int MARGIN = 8;
 
     private static final int BURN_X = 28;
     private static final int BURN_Y = 20;
@@ -75,12 +74,16 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     private static final int PROGRESS_Y = 74;
     private static final int PROGRESS_WIDTH = 160;
     private static final int HELD_Y = 90;
+    /** Where the Held recipe's line starts when its result's icon is drawn before it. */
+    private static final int HELD_TEXT_X = 28;
     private static final int CLEAR_X = 134;
+    private static final int STATE_Y = 108;
     private static final int GHOST = 0x99A0A0A0;
     private static final FormattedText ELLIPSIS = FormattedText.of("…");
-    private static final int STATE_Y = 108;
 
     private Button clear;
+    /** What each input slot takes, by slot index, worked out the first time its ghost is drawn. */
+    private final Map<Integer, List<ItemStack>> taken = new HashMap<>();
 
     public HarvesterScreen(HarvesterMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, 176, HarvesterMenu.INVENTORY_Y + 82);
@@ -109,7 +112,7 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, PANEL);
         for (Slot slot : menu.slots) {
             if (slot.isActive()) {
-                recess(graphics, leftPos + slot.x, topPos + slot.y, 16, 16);
+                recess(graphics, leftPos + slot.x, topPos + slot.y, SLOT_SIZE, SLOT_SIZE);
             }
         }
         HarvesterStatus status = menu.status();
@@ -132,75 +135,68 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         HarvesterStatus status = menu.status();
         Optional<HeldRecipeView> held = menu.held();
         for (Ghost ghost : ghosts()) {
-            graphics.fakeItem(ghost.stack(), ghost.slot().x, ghost.slot().y);
-            graphics.fill(ghost.slot().x, ghost.slot().y, ghost.slot().x + 16, ghost.slot().y + 16, GHOST);
+            int x = ghost.x() - leftPos;
+            int y = ghost.y() - topPos;
+            graphics.fakeItem(ghost.stack(), x, y);
+            graphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, GHOST);
         }
-        held.ifPresent(view -> graphics.item(view.result(), 8, HELD_Y));
-        int x = held.map(view -> view.result().isEmpty()).orElse(true) ? 8 : 28;
-        int right = held.isPresent() ? CLEAR_X - 4 : imageWidth - 8;
-        graphics.text(font, fitted(heldLine(held), right - x), x, HELD_Y + 4, TEXT, false);
-        graphics.text(font, fitted(HarvesterStatusLines.state(status.idle()), imageWidth - 16), 8, STATE_Y, TEXT, false);
+        held.ifPresent(view -> graphics.item(view.result(), MARGIN, HELD_Y));
+        graphics.text(font, fitted(heldLine(held), heldRight(held) - heldX(held)), heldX(held), HELD_Y + 4, TEXT, false);
+        graphics.text(font, fitted(HarvesterStatusLines.state(status.idle()), stateWidth()), MARGIN, STATE_Y, TEXT, false);
     }
 
-    /** What an empty fuel, fill or drain slot takes, drawn faded in it. */
-    private record Ghost(Slot slot, ItemStack stack) {
+    /**
+     * A stack an empty fuel, fill or drain slot takes, drawn faded in it, with the top-left of its slot on screen so
+     * EMI's and JEI's recipe and usage keys work on it.
+     */
+    public record Ghost(ItemStack stack, int x, int y) {
     }
 
     private List<Ghost> ghosts() {
         List<Ghost> ghosts = new ArrayList<>();
-        ghost(ghosts, HarvesterMenu.FUEL_SLOT, cycled(fuels()));
-        ghost(ghosts, HarvesterMenu.FILL_SLOT, Optional.of(new ItemStack(Items.BUCKET)));
-        ghost(ghosts, HarvesterMenu.DRAIN_SLOT, cycled(drillingFluidBuckets()));
+        for (int index : List.of(HarvesterMenu.FUEL_SLOT, HarvesterMenu.FILL_SLOT, HarvesterMenu.DRAIN_SLOT)) {
+            Slot slot = menu.slots.get(index);
+            if (slot.isActive() && !slot.hasItem()) {
+                cycled(taken.computeIfAbsent(index, ignored -> takes(slot)))
+                        .ifPresent(stack -> ghosts.add(new Ghost(stack, leftPos + slot.x, topPos + slot.y)));
+            }
+        }
         return ghosts;
     }
 
-    private void ghost(List<Ghost> ghosts, int index, Optional<ItemStack> stack) {
-        Slot slot = menu.slots.get(index);
-        if (slot.isActive() && !slot.hasItem()) {
-            stack.ifPresent(ghost -> ghosts.add(new Ghost(slot, ghost)));
-        }
-    }
-
-    /**
-     * The ghost stack under the mouse, with the top-left of its slot on screen, so EMI's and JEI's recipe and usage
-     * keys work on it.
-     */
-    public Optional<GhostStack> ghostAt(double mouseX, double mouseY) {
+    /** The ghost stack under the mouse. */
+    public Optional<Ghost> ghostAt(double mouseX, double mouseY) {
         return ghosts().stream()
-                .filter(ghost -> isHovering(ghost.slot().x, ghost.slot().y, 16, 16, mouseX, mouseY))
-                .map(ghost -> new GhostStack(ghost.stack(), leftPos + ghost.slot().x, topPos + ghost.slot().y))
+                .filter(ghost -> mouseX >= ghost.x() && mouseX < ghost.x() + SLOT_SIZE && mouseY >= ghost.y() && mouseY < ghost.y() + SLOT_SIZE)
                 .findFirst();
     }
 
-    public record GhostStack(ItemStack stack, int x, int y) {
+    /** Every item the slot takes, asked of the slot itself, so a pack's own fuels and Drilling Fluids show too. */
+    private static List<ItemStack> takes(Slot slot) {
+        return BuiltInRegistries.ITEM.stream().map(ItemStack::new).filter(slot::mayPlace).toList();
     }
 
-    /** One a second, so a pack's own fuels and Drilling Fluids show too. */
+    /** One a second. */
     private static Optional<ItemStack> cycled(List<ItemStack> stacks) {
         return stacks.isEmpty() ? Optional.empty() : Optional.of(stacks.get((int) (Util.getMillis() / 1000 % stacks.size())));
     }
 
-    /** Whatever burns in a furnace, from NeoForge's furnace fuel data map. */
-    private static List<ItemStack> fuels() {
-        return BuiltInRegistries.ITEM.getDataMap(NeoForgeDataMaps.FURNACE_FUELS).keySet().stream()
-                .sorted(Comparator.comparing(key -> key.identifier().toString()))
-                .map(key -> new ItemStack(BuiltInRegistries.ITEM.getValueOrThrow(key)))
-                .toList();
-    }
-
-    private static List<ItemStack> drillingFluidBuckets() {
-        List<ItemStack> buckets = new ArrayList<>();
-        for (Holder<Fluid> fluid : BuiltInRegistries.FLUID.getTagOrEmpty(FieldworksTags.DRILLING_FLUIDS)) {
-            Item bucket = fluid.value().getBucket();
-            if (bucket != Items.AIR && fluid.value().isSource(fluid.value().defaultFluidState())) {
-                buckets.add(new ItemStack(bucket));
-            }
-        }
-        return buckets;
-    }
-
     private static Component heldLine(Optional<HeldRecipeView> held) {
         return Component.translatable("fieldworks.harvester.held", HarvesterStatusLines.heldName(held));
+    }
+
+    /** Where the Held recipe's line starts: after its result's icon, when there is one. */
+    private static int heldX(Optional<HeldRecipeView> held) {
+        return held.map(view -> view.result().isEmpty()).orElse(true) ? MARGIN : HELD_TEXT_X;
+    }
+
+    /** Where the Held recipe's line must end: before the Clear button, while it shows. */
+    private int heldRight(Optional<HeldRecipeView> held) {
+        return held.isPresent() ? CLEAR_X - BAR_PADDING : imageWidth - MARGIN;
+    }
+
+    private int stateWidth() {
+        return imageWidth - 2 * MARGIN;
     }
 
     /** {@code line} cut to {@code width} with an ellipsis; hovering a cut line shows it whole. */
@@ -218,32 +214,27 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         HarvesterStatus status = menu.status();
         int x = mouseX - leftPos;
         int y = mouseY - topPos;
-        Optional<GhostStack> ghost = ghostAt(mouseX, mouseY);
+        Optional<HeldRecipeView> held = menu.held();
+        Optional<Ghost> ghost = ghostAt(mouseX, mouseY);
         if (ghost.isPresent()) {
             graphics.setTooltipForNextFrame(font, ghost.get().stack(), mouseX, mouseY);
         } else if (status.takesFuel() && over(BURN_X, BURN_Y, burnWidth(status), x, y)) {
-            cutLabel(graphics, HarvesterStatusLines.burn(status), burnWidth(status), mouseX, mouseY);
+            wholeOnHover(graphics, HarvesterStatusLines.burn(status), burnWidth(status) - BAR_PADDING, mouseX, mouseY);
         } else if (status.takesEnergy() && over(energyX(status), BURN_Y, energyWidth(status), x, y)) {
-            cutLabel(graphics, HarvesterStatusLines.energy(status), energyWidth(status), mouseX, mouseY);
+            wholeOnHover(graphics, HarvesterStatusLines.energy(status), energyWidth(status) - BAR_PADDING, mouseX, mouseY);
         } else if (over(DRILLING_X, DRILLING_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.DRILLING, status, mouseX, mouseY);
         } else if (over(PRODUCT_X, PRODUCT_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.PRODUCT, status, mouseX, mouseY);
-        } else if (y >= HELD_Y && y < HELD_Y + 16 && x >= 8 && x < CLEAR_X - 4) {
-            wholeLine(graphics, heldLine(menu.held()), CLEAR_X - 4 - 28, mouseX, mouseY);
-        } else if (y >= STATE_Y && y < STATE_Y + 9 && x >= 8 && x < imageWidth - 8) {
-            wholeLine(graphics, HarvesterStatusLines.state(status.idle()), imageWidth - 16, mouseX, mouseY);
+        } else if (y >= HELD_Y && y < HELD_Y + SLOT_SIZE && x >= heldX(held) && x < heldRight(held)) {
+            wholeOnHover(graphics, heldLine(held), heldRight(held) - heldX(held), mouseX, mouseY);
+        } else if (y >= STATE_Y && y < STATE_Y + font.lineHeight && x >= MARGIN && x < MARGIN + stateWidth()) {
+            wholeOnHover(graphics, HarvesterStatusLines.state(status.idle()), stateWidth(), mouseX, mouseY);
         }
     }
 
-    /** A bar too narrow for its label shows it on hover. */
-    private void cutLabel(GuiGraphicsExtractor graphics, Component label, int width, int mouseX, int mouseY) {
-        if (font.width(label) > width - 4) {
-            graphics.setComponentTooltipForNextFrame(font, List.of(label), mouseX, mouseY);
-        }
-    }
-
-    private void wholeLine(GuiGraphicsExtractor graphics, Component line, int width, int mouseX, int mouseY) {
+    /** A line cut to fit {@code width}, shown whole on hover. */
+    private void wholeOnHover(GuiGraphicsExtractor graphics, Component line, int width, int mouseX, int mouseY) {
         if (font.width(line) > width) {
             graphics.setComponentTooltipForNextFrame(font, List.of(line), mouseX, mouseY);
         }
@@ -266,7 +257,6 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         graphics.fill(x, y, x + width, y + height, SLOT);
     }
 
-    /** A bar in its recess, {@code fraction} of it filled, with {@code label} written over it. */
     // The power bars share the fuel row: an FE-only tier has no fuel slot, and a tier taking both splits the row.
     private static int burnWidth(HarvesterStatus status) {
         return status.takesEnergy() ? (POWER_WIDTH - BURN_X + POWER_X) / 2 - 2 : BURN_WIDTH;
@@ -284,12 +274,13 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         return status.energyCapacity() <= 0 ? 0f : Math.min(1f, (float) status.energy() / status.energyCapacity());
     }
 
+    /** A bar in its recess, {@code fraction} of it filled, with {@code label} written over it when it fits. */
     private void bar(GuiGraphicsExtractor graphics, Font font, int x, int y, int width, float fraction, int colour, Component label) {
         int left = leftPos + x;
         int top = topPos + y;
         recess(graphics, left, top, width, BAR_HEIGHT);
         graphics.fill(left, top, left + Math.round(width * fraction), top + BAR_HEIGHT, colour);
-        if (font.width(label) <= width - 4) {
+        if (font.width(label) <= width - BAR_PADDING) {
             graphics.text(font, label, left + (width - font.width(label)) / 2, top + 2, WHITE, true);
         }
     }
