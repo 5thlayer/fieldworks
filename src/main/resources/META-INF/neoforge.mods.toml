@@ -42,11 +42,11 @@ ordering = "NONE"
 side = "BOTH"
 
 # libworks-runtime, nested by jar-in-jar: the Harvester's item handler routes through its guarded face.
-# The range is the one libworks { runtime } in build.gradle nests, to the next minor: move both together.
+# The range is the one libworks { runtime } in build.gradle nests, to the next minor.
 [[dependencies.${mod_id}]]
 modId = "libworks"
 type = "required"
-versionRange = "[0.1.0,0.2)"
+versionRange = "${libworks_runtime_range}"
 ordering = "NONE"
 side = "BOTH"
 
