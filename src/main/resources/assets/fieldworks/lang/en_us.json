@@ -58,5 +58,7 @@
   "map.fieldworks.patch.amount": "%s: %s",
   "map.fieldworks.patch.yield": "%s: %s yield",
   "tag.fluid.fieldworks.drilling_fluids": "Drilling Fluids",
-  "tag.worldgen.structure_set.fieldworks.flat_worlds": "Fieldworks structures on superflat worlds"
+  "tag.worldgen.structure_set.fieldworks.flat_worlds": "Fieldworks structures on superflat worlds",
+  "fieldworks.harvester.tank_title.drilling": "Drilling Fluid",
+  "fieldworks.harvester.tank_title.product": "Product"
 }

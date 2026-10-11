@@ -3,6 +3,16 @@
 
 package io.github._5thlayer.fieldworks.compat;
 
+import java.util.List;
+import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.fluids.FluidStack;
+import snownee.jade.api.Accessor;
+import snownee.jade.api.fluid.JadeFluidObject;
+import snownee.jade.api.view.ClientViewGroup;
+import snownee.jade.api.view.FluidView;
+import snownee.jade.api.view.IClientExtensionProvider;
+import snownee.jade.api.view.IServerExtensionProvider;
+import snownee.jade.api.view.ViewGroup;
 import java.util.Optional;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
@@ -80,13 +90,55 @@ public class HarvesterJadePlugin implements IWailaPlugin {
         }
     }
 
+    private static final Identifier TANKS = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "harvester_tanks");
+    private static final String DRILLING = "drilling";
+    private static final String PRODUCT = "product";
+
+    /** Each tank its own titled group: Jade's own reading of the fluid capability drew both as one bar. */
+    private static final IServerExtensionProvider<FluidView.Data> TANK_DATA = new IServerExtensionProvider<>() {
+        @Override
+        public @Nullable List<ViewGroup<FluidView.Data>> getGroups(Accessor<?> accessor) {
+            if (!(accessor instanceof BlockAccessor block) || !(block.getBlockEntity() instanceof HarvesterBlockEntity harvester)) {
+                return null;
+            }
+            HarvesterStatus status = harvester.status();
+            return List.of(tank(DRILLING, status.drillingFluidStack(), status.tankCapacity()),
+                    tank(PRODUCT, status.productStack(), status.tankCapacity()));
+        }
+
+        @Override
+        public Identifier getUid() {
+            return TANKS;
+        }
+    };
+
+    private static ViewGroup<FluidView.Data> tank(String id, FluidStack stack, int capacity) {
+        JadeFluidObject shown = stack.isEmpty() ? JadeFluidObject.empty() : JadeFluidObject.of(stack.getFluid(), stack.getAmount());
+        return new ViewGroup<>(List.of(new FluidView.Data(shown, capacity)), Optional.of(id), Optional.empty());
+    }
+
+    private static final IClientExtensionProvider<FluidView.Data, FluidView> TANK_LINES = new IClientExtensionProvider<>() {
+        @Override
+        public List<ClientViewGroup<FluidView>> getClientGroups(Accessor<?> accessor, List<ViewGroup<FluidView.Data>> groups) {
+            return ClientViewGroup.map(groups, FluidView::readDefault, (group, shown) ->
+                    shown.title = Component.translatable("fieldworks.harvester.tank_title." + group.id));
+        }
+
+        @Override
+        public Identifier getUid() {
+            return TANKS;
+        }
+    };
+
     @Override
     public void register(IWailaCommonRegistration registration) {
         registration.registerBlockDataProvider(new Report(), HarvesterBlockEntity.class);
+        registration.registerFluidStorage(TANK_DATA, HarvesterBlockEntity.class);
     }
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(new Client(), HarvesterBlock.class);
+        registration.registerFluidStorageClient(TANK_LINES);
     }
 }
