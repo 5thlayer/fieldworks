@@ -67,18 +67,18 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     private static final int POWER_X = 8;
     private static final int POWER_WIDTH = 100;
     private static final int DRILLING_X = 28;
-    private static final int DRILLING_Y = 40;
+    private static final int DRILLING_Y = 38;
     private static final int PRODUCT_X = 28;
-    private static final int PRODUCT_Y = 60;
+    private static final int PRODUCT_Y = 56;
     private static final int GAUGE_WIDTH = 80;
     private static final int PROGRESS_X = 8;
-    private static final int PROGRESS_Y = 78;
+    private static final int PROGRESS_Y = 74;
     private static final int PROGRESS_WIDTH = 160;
-    private static final int HELD_Y = 108;
+    private static final int HELD_Y = 90;
     private static final int CLEAR_X = 134;
     private static final int GHOST = 0x99A0A0A0;
     private static final FormattedText ELLIPSIS = FormattedText.of("…");
-    private static final int STATE_Y = 126;
+    private static final int STATE_Y = 108;
 
     private Button clear;
 

@@ -52,13 +52,13 @@ public final class HarvesterMenu extends AbstractContainerMenu {
     public static final int FUEL_X = 8;
     public static final int FUEL_Y = 18;
     public static final int DRAIN_X = 8;
-    public static final int DRAIN_Y = 38;
+    public static final int DRAIN_Y = 36;
     public static final int FILL_X = 8;
-    public static final int FILL_Y = 58;
+    public static final int FILL_Y = 54;
     public static final int BUFFER_X = 116;
     public static final int BUFFER_Y = 18;
     /** Where the player's inventory starts, from the top of the screen: below the bars, the Held recipe and the idle reason. */
-    public static final int INVENTORY_Y = 148;
+    public static final int INVENTORY_Y = 130;
 
     private static final int DATA_TAKES_FUEL = 0;
     private static final int DATA_TAKES_ENERGY = 1;
