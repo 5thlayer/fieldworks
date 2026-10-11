@@ -12,6 +12,7 @@ import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.Kind;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.YieldCondition;
 import io.github._5thlayer.fieldworks.oil.OilWellBlock;
@@ -60,14 +61,14 @@ public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> so
         List<HarvestRecipeView> views = new ArrayList<>();
         for (OreResource resource : OreResource.values()) {
             OreBlock ore = FieldworksRegistries.ore(resource).get();
-            Source source = Source.oreBlock(BuiltInRegistries.BLOCK.getKey(ore).toString(), HarvesterBlockEntity.tagsOf(ore));
+            Source source = HarvestSources.of(ore.defaultBlockState(), false);
             if (choices.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
                 views.add(new HarvestRecipeView(defaultId(ore), true, List.of(ore), HarvesterBlockEntity.drop(ore),
                         OperationChoice.ORE_DRAW_TICKS, Optional.empty(), List.of(), 0, Optional.empty(), 0, 0, 0));
             }
         }
         OilWellBlock well = FieldworksRegistries.OIL_WELL.get();
-        Source wellSource = Source.well(BuiltInRegistries.BLOCK.getKey(well).toString());
+        Source wellSource = HarvestSources.of(well.defaultBlockState(), false);
         WellYield yield = WellYield.fromCorpus();
         if (choices.stream().noneMatch(recipe -> recipe.replacesDefaultOf(wellSource))) {
             views.add(new HarvestRecipeView(defaultId(well), true, List.of(well), ItemStack.EMPTY, OperationChoice.WELL_PUMP_TICKS,
@@ -76,11 +77,11 @@ public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> so
         }
         for (Holder<Block> holder : BuiltInRegistries.BLOCK.getTagOrEmpty(FieldworksTags.HARVESTABLE)) {
             Block block = holder.value();
-            // Ore blocks are in the tag too and are drawn, listed above; the well and a block with no item have nothing to show.
-            if (block instanceof OreBlock || block instanceof OilWellBlock || block.asItem() == Items.AIR) {
+            Source source = HarvestSources.of(block.defaultBlockState(), false);
+            // Ore blocks and the well are listed above; a block with no item has nothing to show.
+            if (source.kind() != Kind.HARVESTABLE || block.asItem() == Items.AIR) {
                 continue;
             }
-            Source source = Source.harvestable(BuiltInRegistries.BLOCK.getKey(block).toString(), HarvesterBlockEntity.tagsOf(block));
             if (choices.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
                 views.add(new HarvestRecipeView(defaultId(block), true, List.of(block), ItemStack.EMPTY, OperationChoice.BREAK_TICKS,
                         Optional.empty(), List.of(), 0, Optional.empty(), 0, 0, 0));

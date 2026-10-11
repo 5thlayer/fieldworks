@@ -44,12 +44,24 @@ public final class HarvesterStatusLines {
         return Component.translatable("fieldworks.harvester.energy", number.format(status.energy()), number.format(status.energyCapacity()));
     }
 
-    /** A tank's line, {@code label} being {@code drilling} or {@code product}: the fluid's name and its mB of the capacity. */
-    public static Component tank(String label, FluidStack fluid, int capacity) {
+    /** One of a Harvester's two tanks, as its line names it. */
+    public enum Tank {
+        DRILLING,
+        PRODUCT;
+
+        /** What the tank holds, in {@code status}. */
+        public FluidStack stack(HarvesterStatus status) {
+            return this == DRILLING ? status.drillingFluidStack() : status.productStack();
+        }
+    }
+
+    /** A tank's line: the fluid's name and its mB of the capacity. */
+    public static Component tank(Tank tank, HarvesterStatus status) {
         NumberFormat number = NumberFormat.getIntegerInstance();
-        return Component.translatable("fieldworks.harvester.tank." + label,
+        FluidStack fluid = tank.stack(status);
+        return Component.translatable("fieldworks.harvester.tank." + tank.name().toLowerCase(Locale.ROOT),
                 fluid.isEmpty() ? Component.translatable("fieldworks.harvester.empty") : fluid.getHoverName(),
-                number.format(fluid.getAmount()), number.format(capacity));
+                number.format(fluid.getAmount()), number.format(status.tankCapacity()));
     }
 
     public static Component heldName(Optional<HeldRecipeView> held) {
@@ -70,8 +82,8 @@ public final class HarvesterStatusLines {
         if (status.takesEnergy()) {
             lines.add(energy(status));
         }
-        lines.add(tank("drilling", status.drillingFluidStack(), status.tankCapacity()));
-        lines.add(tank("product", status.productStack(), status.tankCapacity()));
+        lines.add(tank(Tank.DRILLING, status));
+        lines.add(tank(Tank.PRODUCT, status));
         lines.add(Component.translatable("fieldworks.harvester.progress", Math.round(status.progressFraction() * 100)));
         lines.add(Component.translatable("fieldworks.harvester.held", heldName(held)));
         return lines;

@@ -129,14 +129,14 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         int x = mouseX - leftPos;
         int y = mouseY - topPos;
         if (over(DRILLING_X, DRILLING_Y, GAUGE_WIDTH, x, y)) {
-            tankTooltip(graphics, "drilling", status.drillingFluidStack(), status.tankCapacity(), mouseX, mouseY);
+            tankTooltip(graphics, HarvesterStatusLines.Tank.DRILLING, status, mouseX, mouseY);
         } else if (over(PRODUCT_X, PRODUCT_Y, GAUGE_WIDTH, x, y)) {
-            tankTooltip(graphics, "product", status.productStack(), status.tankCapacity(), mouseX, mouseY);
+            tankTooltip(graphics, HarvesterStatusLines.Tank.PRODUCT, status, mouseX, mouseY);
         }
     }
 
-    private void tankTooltip(GuiGraphicsExtractor graphics, String label, FluidStack fluid, int capacity, int mouseX, int mouseY) {
-        graphics.setComponentTooltipForNextFrame(font, List.of(HarvesterStatusLines.tank(label, fluid, capacity)), mouseX, mouseY);
+    private void tankTooltip(GuiGraphicsExtractor graphics, HarvesterStatusLines.Tank tank, HarvesterStatus status, int mouseX, int mouseY) {
+        graphics.setComponentTooltipForNextFrame(font, List.of(HarvesterStatusLines.tank(tank, status)), mouseX, mouseY);
     }
 
     private static boolean over(int x, int y, int width, int mouseX, int mouseY) {

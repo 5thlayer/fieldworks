@@ -7,8 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
@@ -21,7 +20,6 @@ import io.github._5thlayer.fieldworks.harvester.OperationChoice.Machine;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Operation;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Tank;
-import io.github._5thlayer.fieldworks.oil.OilWellBlock;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreMining;
@@ -44,6 +42,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -94,10 +93,9 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     private final ItemStacksResourceHandler drain = new Slots(1);
     private final ItemStacksResourceHandler buffer = new Slots(BUFFER_SLOTS);
     private final ResourceHandler<ItemResource> face = new Face(new CombinedResourceHandler<>(fuel, fill, drain, buffer));
-    private final FluidStacksResourceHandler product = new ProductTank();
-    private final FluidStacksResourceHandler drillingFluidTank = new DrillingTank();
-    private final ResourceHandler<FluidResource> fluidFace =
-            new CombinedResourceHandler<>(new FluidFace(drillingFluidTank, true), new FluidFace(product, false));
+    private final HarvesterTank product = new HarvesterTank(fluid -> fluid == CrudeOil.SOURCE.get(), false);
+    private final HarvesterTank drillingFluidTank = new HarvesterTank(fluid -> fluid.defaultFluidState().is(FieldworksTags.DRILLING_FLUIDS), true);
+    private final ResourceHandler<FluidResource> fluidFace = new CombinedResourceHandler<>(drillingFluidTank.face, product.face);
     private final EnergyBuffer energy = new EnergyBuffer();
 
     /** Whether the energy capability was last seen exposed, so a reload that re-powers the tier invalidates it. */
@@ -143,8 +141,15 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         if (tier == null || !tier.power().fe()) {
             return null;
         }
-        energy.resize(tier.feBuffer());
+        sizeEnergy(tier);
         return energy.face;
+    }
+
+    /** Sizes the FE buffer to the tier's, on a tier that takes FE: a reload can change it. */
+    private void sizeEnergy(@Nullable HarvesterTier tier) {
+        if (tier != null && tier.power().fe()) {
+            energy.resize(tier.feBuffer());
+        }
     }
 
     private TierBlock tierBlock() {
@@ -176,7 +181,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             heldChoice = Optional.of(recipe);
         }
         List<BlockPos> layer = layer();
-        Machine<Result> machine = new Machine<>(tier.rank(), choiceTank(), operation -> work(level, layer, operation) != null, canPay(level, tier));
+        Machine<Result> machine = new Machine<>(tier.rank(), choiceTank(), operation -> work(level, layer, operation) != null, pay(level, tier, false));
         Choice<Result> choice = OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, machine);
         if (!(choice instanceof Operation<Result> operation)) {
             idle = ((Idle<Result>) choice).reason();
@@ -193,7 +198,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             idle = IdleReason.NO_FLUID;
             return;
         }
-        if (!payTick(level, tier)) {
+        if (!pay(level, tier, true)) {
             return;
         }
         idle = null;
@@ -212,9 +217,12 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     private @Nullable Runnable work(ServerLevel level, List<BlockPos> layer, Operation<Result> operation) {
         BlockPos at = layer.get(operation.position());
         Optional<Result> result = operation.recipe().map(OperationChoice.Recipe::result);
-        return level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well, result)
-                : level.getBlockState(at).getBlock() instanceof OreBlock ? draw(level, at, result)
-                : breakBlock(level, at, result);
+        return switch (HarvestSources.kindOf(level.getBlockState(at))) {
+            case WELL -> level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well, result) : null;
+            case ORE_BLOCK -> draw(level, at, result);
+            case HARVESTABLE -> breakBlock(level, at, result);
+            case NONE -> null;
+        };
     }
 
     /**
@@ -339,9 +347,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         HarvesterTier tier = tier();
         boolean takesFuel = tier != null && tier.power().fuel();
         boolean takesEnergy = tier != null && tier.power().fe();
-        if (takesEnergy) {
-            energy.resize(tier.feBuffer());
-        }
+        sizeEnergy(tier);
         FluidResource drillingFluid = drillingFluidTank.getResource(0);
         FluidResource crude = product.getResource(0);
         return new HarvesterStatus(takesFuel, takesEnergy, takesFuel ? burnLeft : 0, takesFuel ? burnTotal : 0,
@@ -400,23 +406,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     }
 
     private static List<Source> sources(ServerLevel level, List<BlockPos> layer) {
-        List<Source> sources = new ArrayList<>(layer.size());
-        for (BlockPos pos : layer) {
-            BlockState state = level.getBlockState(pos);
-            Block block = state.getBlock();
-            String id = BuiltInRegistries.BLOCK.getKey(block).toString();
-            sources.add(block instanceof OilWellBlock ? level.getBlockEntity(pos) instanceof OilWellBlockEntity well && well.atFloor()
-                            ? Source.flooredWell(id) : Source.well(id)
-                    : block instanceof OreBlock ? Source.oreBlock(id, tagsOf(block))
-                    // After the ore blocks: they are in c:ores, so in this tag, and are drawn, never broken (#1).
-                    : state.is(FieldworksTags.HARVESTABLE) ? Source.harvestable(id, tagsOf(block))
-                    : Source.NONE);
-        }
-        return sources;
-    }
-
-    static Set<String> tagsOf(Block block) {
-        return block.builtInRegistryHolder().tags().map(tag -> tag.location().toString()).collect(Collectors.toUnmodifiableSet());
+        return layer.stream().map(pos -> HarvestSources.at(level, pos)).toList();
     }
 
     static ItemStack drop(OreBlock ore) {
@@ -448,42 +438,35 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         }
     }
 
-    /** Whether the tier's power rule could pay for a tick of work now, without paying it. */
-    private boolean canPay(ServerLevel level, HarvesterTier tier) {
-        HarvesterTier.Power power = tier.power();
-        if (power.fe()) {
-            energy.resize(tier.feBuffer());
-        }
-        return switch (power.payment(burnLeft, energy.getAmountAsInt())) {
-            case BURN, FE -> true;
-            case LIGHT -> light(level, false);
-            case NONE -> false;
-        };
-    }
-
-    /** Pays for one tick of work as the tier's power rule says (#7): a burn tick, a tick's FE, or a fuel item lit. */
-    private boolean payTick(ServerLevel level, HarvesterTier tier) {
-        HarvesterTier.Power power = tier.power();
-        if (power.fe()) {
-            energy.resize(tier.feBuffer());
-        }
-        return switch (power.payment(burnLeft, energy.getAmountAsInt())) {
+    /**
+     * Pays for one tick of work as the tier's power rule says (#7), when {@code commit}, or says whether it could: a
+     * burn tick, a tick's FE, or a fuel item lit.
+     */
+    private boolean pay(ServerLevel level, HarvesterTier tier, boolean commit) {
+        sizeEnergy(tier);
+        return switch (tier.power().payment(burnLeft, energy.getAmountAsInt())) {
             case BURN -> {
-                burnLeft--;
+                if (commit) {
+                    burnLeft--;
+                }
                 yield true;
             }
             case FE -> {
-                try (Transaction paying = Transaction.openRoot()) {
-                    energy.extract(power.fePerTick(), paying);
-                    paying.commit();
+                if (commit) {
+                    try (Transaction paying = Transaction.openRoot()) {
+                        energy.extract(tier.power().fePerTick(), paying);
+                        paying.commit();
+                    }
                 }
                 yield true;
             }
             case LIGHT -> {
-                if (!light(level, true)) {
+                if (!light(level, commit)) {
                     yield false;
                 }
-                burnLeft--;
+                if (commit) {
+                    burnLeft--;
+                }
                 yield true;
             }
             case NONE -> false;
@@ -726,34 +709,40 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         }
     }
 
-    /** The product tank: crude only. */
-    private final class ProductTank extends FluidStacksResourceHandler {
+    /**
+     * A tank of {@link #TANK_CAPACITY}, one kind of fluid at a time of those {@code holds} takes, and its face to pipes.
+     * A face that {@code fills} takes fluid in and gives nothing back, the Drilling Fluid tank's, since the Harvester
+     * spends it itself; one that does not drains and takes nothing in, the product tank's (ADR 0004).
+     */
+    private final class HarvesterTank extends FluidStacksResourceHandler {
 
-        ProductTank() {
+        private final Predicate<Fluid> holds;
+        final ResourceHandler<FluidResource> face;
+
+        HarvesterTank(Predicate<Fluid> holds, boolean fills) {
             super(1, TANK_CAPACITY);
+            this.holds = holds;
+            this.face = new GuardedResourceHandler<>(this) {
+                @Override
+                public boolean isValid(int index, FluidResource resource) {
+                    return fills && super.isValid(index, resource);
+                }
+
+                @Override
+                public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
+                    return fills ? super.insert(index, resource, amount, transaction) : 0;
+                }
+
+                @Override
+                public int extract(int index, FluidResource resource, int amount, TransactionContext transaction) {
+                    return fills ? 0 : super.extract(index, resource, amount, transaction);
+                }
+            };
         }
 
         @Override
         public boolean isValid(int index, FluidResource resource) {
-            return resource.getFluid() == CrudeOil.SOURCE.get();
-        }
-
-        @Override
-        protected void onContentsChanged(int index, FluidStack previousContents) {
-            setChanged();
-        }
-    }
-
-    /** The Drilling Fluid tank: any fluid in {@code #fieldworks:drilling_fluids}, one kind at a time. */
-    private final class DrillingTank extends FluidStacksResourceHandler {
-
-        DrillingTank() {
-            super(1, TANK_CAPACITY);
-        }
-
-        @Override
-        public boolean isValid(int index, FluidResource resource) {
-            return resource.getFluid().defaultFluidState().is(FieldworksTags.DRILLING_FLUIDS);
+            return holds.test(resource.getFluid());
         }
 
         @Override
@@ -818,35 +807,6 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         @Override
         public int extract(int index, ItemResource resource, int amount, TransactionContext transaction) {
             return isInputSlot(index) ? 0 : super.extract(index, resource, amount, transaction);
-        }
-    }
-
-    /**
-     * A tank as a pipe sees it: the product tank drains and takes nothing in, the Drilling Fluid tank takes a Drilling
-     * Fluid in and gives nothing back, since the Harvester spends it itself (ADR 0004).
-     */
-    private static final class FluidFace extends GuardedResourceHandler<FluidResource> {
-
-        private final boolean fills;
-
-        FluidFace(ResourceHandler<FluidResource> tank, boolean fills) {
-            super(tank);
-            this.fills = fills;
-        }
-
-        @Override
-        public boolean isValid(int index, FluidResource resource) {
-            return fills && super.isValid(index, resource);
-        }
-
-        @Override
-        public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
-            return fills ? super.insert(index, resource, amount, transaction) : 0;
-        }
-
-        @Override
-        public int extract(int index, FluidResource resource, int amount, TransactionContext transaction) {
-            return fills ? 0 : super.extract(index, resource, amount, transaction);
         }
     }
 
