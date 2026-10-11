@@ -4,9 +4,9 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
-- The Harvester's fuel, fill and drain slots show their faded item with the suite's veil, the same grey as the other mods' ghosts, a little lighter than before; libworks-runtime 0.1.1 draws it (#25).
+- The Harvester's fuel, fill and drain slots veil their faded item in the suite's grey, the same as the other mods' machines: a touch darker and less opaque than before. The nested libworks-runtime is now 0.1.1 up to but not including 0.2 (#25).
 - Sulfur ore blocks and the sulfur, raw uranium and uranium ingot items wear Malcolm Riley's unused textures (CC BY 4.0) in place of their generated stand-ins (#3).
-- The nested libworks-runtime accepts 0.1.0 up to but not including 0.2, in place of 1.0: its next minor may break, as ADR 0001 sets. The jar also carries `NOTICE` and every licence text under `LICENSES/` (#17).
+- The nested libworks-runtime's range ends before 0.2, in place of 1.0: its next minor may break, as ADR 0001 sets. The jar also carries `NOTICE` and every licence text under `LICENSES/` (#17).
 
 ## 0.2.0
 
