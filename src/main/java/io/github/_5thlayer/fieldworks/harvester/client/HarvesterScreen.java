@@ -5,6 +5,15 @@ package io.github._5thlayer.fieldworks.harvester.client;
 
 import java.text.NumberFormat;
 import java.util.List;
+import java.util.ArrayList;
+import io.github._5thlayer.fieldworks.FieldworksTags;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.util.Util;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.material.Fluid;
 import java.util.Optional;
 
 import io.github._5thlayer.fieldworks.harvester.HarvesterMenu;
@@ -66,6 +75,9 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     private static final int PROGRESS_WIDTH = 160;
     private static final int HELD_Y = 108;
     private static final int CLEAR_X = 134;
+    private static final String[] SLOT_TOOLTIPS = {
+            "fieldworks.harvester.slot.fuel", "fieldworks.harvester.slot.fill", "fieldworks.harvester.slot.drain"};
+    private static final int GHOST = 0x99A0A0A0;
     private static final FormattedText ELLIPSIS = FormattedText.of("…");
     private static final int STATE_Y = 126;
 
@@ -121,11 +133,34 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         super.extractLabels(graphics, mouseX, mouseY);
         HarvesterStatus status = menu.status();
         Optional<HeldRecipeView> held = menu.held();
+        ghost(graphics, menu.slots.get(HarvesterMenu.FILL_SLOT), new ItemStack(Items.BUCKET));
+        drillingFluidBucket().ifPresent(bucket -> ghost(graphics, menu.slots.get(HarvesterMenu.DRAIN_SLOT), bucket));
         held.ifPresent(view -> graphics.item(view.result(), 8, HELD_Y));
         int x = held.map(view -> view.result().isEmpty()).orElse(true) ? 8 : 28;
         int right = held.isPresent() ? CLEAR_X - 4 : imageWidth - 8;
         graphics.text(font, fitted(heldLine(held), right - x), x, HELD_Y + 4, TEXT, false);
         graphics.text(font, fitted(HarvesterStatusLines.state(status.idle()), imageWidth - 16), 8, STATE_Y, TEXT, false);
+    }
+
+    /** What an empty slot takes, drawn faded in it. */
+    private static void ghost(GuiGraphicsExtractor graphics, Slot slot, ItemStack stack) {
+        if (slot.isActive() && !slot.hasItem()) {
+            graphics.fakeItem(stack, slot.x, slot.y);
+            graphics.fill(slot.x, slot.y, slot.x + 16, slot.y + 16, GHOST);
+        }
+    }
+
+    /** One bucket a second from the Drilling Fluids' buckets, so a pack's own fluids show too. */
+    private static Optional<ItemStack> drillingFluidBucket() {
+        List<ItemStack> buckets = new ArrayList<>();
+        for (Holder<Fluid> fluid : BuiltInRegistries.FLUID.getTagOrEmpty(FieldworksTags.DRILLING_FLUIDS)) {
+            Item bucket = fluid.value().getBucket();
+            if (bucket != Items.AIR && fluid.value().isSource(fluid.value().defaultFluidState())) {
+                buckets.add(new ItemStack(bucket));
+            }
+        }
+        return buckets.isEmpty() ? Optional.empty()
+                : Optional.of(buckets.get((int) (Util.getMillis() / 1000 % buckets.size())));
     }
 
     private static Component heldLine(Optional<HeldRecipeView> held) {
@@ -147,7 +182,10 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         HarvesterStatus status = menu.status();
         int x = mouseX - leftPos;
         int y = mouseY - topPos;
-        if (over(DRILLING_X, DRILLING_Y, GAUGE_WIDTH, x, y)) {
+        int slot = hoveredSlot == null ? -1 : menu.slots.indexOf(hoveredSlot);
+        if (slot >= 0 && slot <= HarvesterMenu.DRAIN_SLOT && !hoveredSlot.hasItem()) {
+            graphics.setComponentTooltipForNextFrame(font, List.of(Component.translatable(SLOT_TOOLTIPS[slot])), mouseX, mouseY);
+        } else if (over(DRILLING_X, DRILLING_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.DRILLING, status, mouseX, mouseY);
         } else if (over(PRODUCT_X, PRODUCT_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.PRODUCT, status, mouseX, mouseY);
