@@ -138,6 +138,8 @@ dependencies {
     localRuntime(ftbChunks) { transitive = false }
     localRuntime(ftbLibrary) { transitive = false }
     localRuntime(ftbTeams) { transitive = false }
+    // And Jade, for an ore block's amount and the Harvester's status.
+    localRuntime jade
     compileOnly jade
 
     // EMI and JEI, both soft: only compat/emi and compat/jei name them, and each viewer loads its plugin only
