@@ -4,12 +4,16 @@
 package io.github._5thlayer.fieldworks.gametest;
 
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
+import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.ore.OreResource;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
 
 /** The tags other mods find the Library's resources by. */
 final class DataTests {
@@ -21,6 +25,7 @@ final class DataTests {
         tests.test("crude_oil_is_tagged_c_crude_oil", 1, DataTests::crudeOil);
         tests.test("the_ores_are_tagged_c_ores", 1, DataTests::ores);
         tests.test("sulfur_and_uranium_carry_their_c_tags", 1, DataTests::items);
+        tests.test("the_harvestable_tag_holds_every_block_in_c_ores_and_vanilla_ores_among_them", 1, DataTests::harvestable);
     }
 
     private static void crudeOil(GameTestHelper helper) {
@@ -39,6 +44,27 @@ final class DataTests {
                 helper.fail(resource.blockName() + " is not in c:ores");
                 return;
             }
+        }
+        helper.succeed();
+    }
+
+    /**
+     * {@code fieldworks:harvestable} defaults to {@code #c:ores} (#19): every block in {@code c:ores} is in it, which a
+     * hand-written list of ores would miss, and that reaches vanilla's ores.
+     */
+    private static void harvestable(GameTestHelper helper) {
+        TagKey<Block> ores = TagKey.create(Registries.BLOCK, Identifier.parse("c:ores"));
+        boolean vanilla = false;
+        for (Holder<Block> ore : BuiltInRegistries.BLOCK.getTagOrEmpty(ores)) {
+            if (!ore.value().defaultBlockState().is(FieldworksTags.HARVESTABLE)) {
+                helper.fail(BuiltInRegistries.BLOCK.getKey(ore.value()) + " is in c:ores but not in " + FieldworksTags.HARVESTABLE.location());
+                return;
+            }
+            vanilla |= BuiltInRegistries.BLOCK.getKey(ore.value()).getNamespace().equals("minecraft");
+        }
+        if (!vanilla) {
+            helper.fail("no vanilla ore is in " + FieldworksTags.HARVESTABLE.location());
+            return;
         }
         helper.succeed();
     }
