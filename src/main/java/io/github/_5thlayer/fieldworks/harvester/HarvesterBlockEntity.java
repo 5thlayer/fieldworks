@@ -6,6 +6,7 @@ package io.github._5thlayer.fieldworks.harvester;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -259,18 +260,23 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
 
     /**
      * One cycle of the well's yield and decay (ADR 0002), or null while the product tank has no room for it. A recipe
-     * with a crude result pumps that many mB in place of the cycle's yield; the cycle still takes its step off the
-     * well, so a well above its floor goes on decaying (#12). A recipe whose result is an item, which only a block tag
-     * naming the well could give it, pumps the cycle's own yield.
+     * with a crude result pumps that many mB, or that share of the well's starting yield, in place of the cycle's
+     * yield; the cycle still takes its step off the well, so a well above its floor goes on decaying (#12). A recipe
+     * whose result is an item, which only a block tag naming the well could give it, pumps the cycle's own yield.
      */
     private @Nullable Runnable pump(OilWellBlockEntity well, Optional<Result> recipeResult) {
-        int recipeCrude = recipeResult.map(result -> result instanceof Result.Crude crude ? crude.millibuckets() : 0).orElse(0);
-        if ((recipeCrude > 0 ? recipeCrude : well.nextCycle()) > TANK_CAPACITY - product.getAmountAsInt(0)) {
+        OptionalInt recipeCrude = switch (recipeResult.orElse(null)) {
+            case Result.Crude fixed -> OptionalInt.of(fixed.millibuckets());
+            case Result.Restored restored -> OptionalInt.of(well.restored(restored.fraction()));
+            case Result.Item item -> OptionalInt.empty();
+            case null -> OptionalInt.empty();
+        };
+        if (recipeCrude.orElseGet(well::nextCycle) > TANK_CAPACITY - product.getAmountAsInt(0)) {
             return null;
         }
         return () -> {
             int cycled = well.cycle();
-            int crude = recipeCrude > 0 ? recipeCrude : cycled;
+            int crude = recipeCrude.orElse(cycled);
             if (crude > 0) {
                 try (Transaction pumping = Transaction.openRoot()) {
                     product.insert(0, crudeOil(), crude, pumping);

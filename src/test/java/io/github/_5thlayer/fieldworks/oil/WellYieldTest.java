@@ -75,6 +75,19 @@ class WellYieldTest {
     }
 
     @Test
+    void aRestoredYieldIsAFractionOfTheYieldAtTheWellsStartingAmount() {
+        assertEquals(10, YIELD.restored(300_000, 1.0));
+        assertEquals(5, YIELD.restored(300_000, 0.5));
+        assertEquals(18, YIELD.restored(540_000, 1.0));
+    }
+
+    @Test
+    void aRestoredYieldDropsTheFractionOfAMillibucketAndYieldsAtMostOneThousand() {
+        assertEquals(2, YIELD.restored(75_000, 1.0));
+        assertEquals(1_000, YIELD.restored(40_000_000, 1.0));
+    }
+
+    @Test
     void aWellBelowItsFloorIsNeverDepleted() {
         assertEquals(50_000, YIELD.cycle(50_000, 50_000, 0).amount());
     }

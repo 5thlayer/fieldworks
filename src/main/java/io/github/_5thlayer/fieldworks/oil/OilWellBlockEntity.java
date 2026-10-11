@@ -53,6 +53,11 @@ public class OilWellBlockEntity extends BlockEntity {
         return YIELD.cycle(amount, initial, carry).crude();
     }
 
+    /** The crude of a cycle at {@code fraction} of the yield the well had at its starting amount. */
+    public int restored(double fraction) {
+        return YIELD.restored(initial, fraction);
+    }
+
     /** Runs one cycle: the crude it yields, the well depleted by it. */
     public int cycle() {
         WellYield.Cycle cycle = YIELD.cycle(amount, initial, carry);

@@ -50,8 +50,10 @@ import net.minecraft.world.level.material.Fluid;
  * <p>{@code drilling_fluid}, optional, is a fluid, fluid tag or list of fluids and the mB an operation takes of it
  * from the Harvester's Drilling Fluid tank; only a Held recipe takes it (#11).
  *
- * <p>{@code result} is an item stack, or for an oil well {@code {"crude_oil": <mB>}}, the crude one operation
- * pumps in place of the well's own cycle's yield (the cycle still takes its step off the well, ADR 0002).
+ * <p>{@code result} is an item stack, or for an oil well {@code {"crude_oil": <mB>}} or
+ * {@code {"crude_oil": {"restores": <fraction>}}}, the crude one operation pumps in place of the well's own cycle's
+ * yield: so many mB, or that fraction of the yield the well had at its starting amount (the cycle still takes its
+ * step off the well, ADR 0002).
  * {@code yield_condition}, optional and for a well, is {@code above_floor} or {@code at_floor}: the recipe works
  * a well only in that state, and with none it works a well either way (#12).
  *
@@ -67,17 +69,26 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
         Optional<Identifier> minimumTier, boolean replacesDefault, Optional<FluidInput> drillingFluid,
         Optional<YieldCondition> yieldCondition) implements Recipe<RecipeInput> {
 
-    /** What one operation yields: an item stack, or crude oil for a well. */
+    /** What one operation yields: an item stack, or crude oil for a well, fixed or restored. */
     public sealed interface Result {
 
-        /** Crude is an object, {@code {"crude_oil": 10}}; anything else is read as an item stack. */
-        Codec<Result> CODEC = Codec.either(Crude.CODEC, ItemStackTemplate.CODEC).xmap(
-                either -> either.map(crude -> crude, Item::new),
-                result -> result instanceof Item item ? Either.right(item.template()) : Either.left((Crude) result));
+        /** Crude is an object, {@code {"crude_oil": 10}} or {@code {"crude_oil": {"restores": 1.0}}}; anything else is read as an item stack. */
+        Codec<Result> CODEC = Codec.either(Codec.either(Crude.CODEC, Restored.CODEC), ItemStackTemplate.CODEC).xmap(
+                either -> either.map(crude -> crude.map(fixed -> fixed, restored -> restored), Item::new),
+                Result::toEither);
 
-        StreamCodec<RegistryFriendlyByteBuf, Result> STREAM_CODEC = ByteBufCodecs.either(Crude.STREAM_CODEC, ItemStackTemplate.STREAM_CODEC).map(
-                either -> either.map(crude -> crude, Item::new),
-                result -> result instanceof Item item ? Either.right(item.template()) : Either.left((Crude) result));
+        StreamCodec<RegistryFriendlyByteBuf, Result> STREAM_CODEC = ByteBufCodecs.either(
+                ByteBufCodecs.either(Crude.STREAM_CODEC, Restored.STREAM_CODEC), ItemStackTemplate.STREAM_CODEC).map(
+                either -> either.map(crude -> crude.map(fixed -> fixed, restored -> restored), Item::new),
+                Result::toEither);
+
+        private static Either<Either<Crude, Restored>, ItemStackTemplate> toEither(Result result) {
+            return switch (result) {
+                case Crude crude -> Either.left(Either.left(crude));
+                case Restored restored -> Either.left(Either.right(restored));
+                case Item item -> Either.right(item.template());
+            };
+        }
 
         /** The item stack, or an empty stack for crude. */
         default ItemStack stack() {
@@ -93,6 +104,18 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
             private static final Codec<Crude> CODEC = Codec.INT.fieldOf("crude_oil").codec().xmap(Crude::new, Crude::millibuckets);
 
             private static final StreamCodec<ByteBuf, Crude> STREAM_CODEC = ByteBufCodecs.VAR_INT.map(Crude::new, Crude::millibuckets);
+        }
+
+        /**
+         * The crude one operation pumps as {@code fraction} of the yield the well had at its starting amount, so a well
+         * that started rich is restored to more than one that started poor (ADR 0002).
+         */
+        record Restored(double fraction) implements Result {
+
+            private static final Codec<Restored> CODEC = Codec.DOUBLE.fieldOf("restores").codec().fieldOf("crude_oil").codec()
+                    .xmap(Restored::new, Restored::fraction);
+
+            private static final StreamCodec<ByteBuf, Restored> STREAM_CODEC = ByteBufCodecs.DOUBLE.map(Restored::new, Restored::fraction);
         }
     }
 
@@ -205,6 +228,9 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
         }
         if (recipe.result instanceof Result.Crude crude && crude.millibuckets() < 1) {
             return DataResult.error(() -> "a Harvest Recipe's crude_oil result must be at least 1 mB, not " + crude.millibuckets());
+        }
+        if (recipe.result instanceof Result.Restored restored && !(restored.fraction() > 0 && restored.fraction() <= 1)) {
+            return DataResult.error(() -> "a Harvest Recipe's crude_oil restores must be above 0 and at most 1.0, not " + restored.fraction());
         }
         // A block tag is read after the load, so only a source named block by block can be checked here (#12).
         List<Holder<Block>> named = recipe.source.unwrap().right().orElse(List.of());

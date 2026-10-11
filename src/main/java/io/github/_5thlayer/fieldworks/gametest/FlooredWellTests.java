@@ -57,17 +57,22 @@ final class FlooredWellTests {
     /** A game-test recipe pumping 40 mB a cycle at any yield. */
     private static final Identifier FLAT_CRUDE = id("gametest/crude_flat");
 
-    /** A well whose amount is its floor, 60,000: the Default recipe yields 2 mB a cycle there. */
+    /** A well that started at a normal amount: it decays to a floor of 60,000, where the Default recipe yields 2 mB a cycle. */
+    private static final long NORMAL_START = 300_000;
     private static final long FLOOR = 60_000;
-    /** A well 100 above that floor. */
+    /** A well that started five times richer: its floor is 300,000, where the Default recipe yields 10 mB a cycle. */
+    private static final long RICH_START = 1_500_000;
+    /** A well 100 above the floor of one that started at 60,000. */
     private static final long ABOVE_FLOOR = 60_100;
 
     private FlooredWellTests() {
     }
 
     static void register(FieldworksGameTests.Registrar tests) {
-        tests.test("a_floored_well_held_to_the_drilling_mud_recipe_yields_more_crude_per_operation_than_its_default", 20,
+        tests.test("a_floored_well_that_started_at_300000_is_restored_to_10_mb_per_operation_by_the_drilling_mud_recipe", 20,
                 FlooredWellTests::mudBeatsTheFloor);
+        tests.test("a_floored_well_that_started_at_1500000_is_restored_to_50_mb_per_operation_by_the_drilling_mud_recipe", 20,
+                FlooredWellTests::mudRestoresARichWell);
         tests.test("a_well_above_its_floor_ignores_the_drilling_mud_recipe_that_needs_it_at_the_floor", 20, FlooredWellTests::aboveTheFloor);
         tests.test("a_held_well_recipe_with_no_drilling_mud_in_the_tank_idles_and_pumps_nothing", 20, FlooredWellTests::noMud);
         tests.test("a_held_crude_recipe_pumps_its_own_amount_and_the_well_still_decays", 20, FlooredWellTests::flatRecipeStillDecays);
@@ -83,10 +88,10 @@ final class FlooredWellTests {
 
     /**
      * At its floor the well pumps 2 mB a cycle with nothing held, mud in the tank or not. Held to the shipped recipe it
-     * pumps 10 and takes 25 mB of mud, and the well stays at its floor (ADR 0002).
+     * pumps the 10 it started at and takes 25 mB of mud, and the well stays at its floor (ADR 0002).
      */
     private static void mudBeatsTheFloor(GameTestHelper helper) {
-        OilWellBlockEntity well = well(helper, FLOOR);
+        OilWellBlockEntity well = flooredWell(helper, NORMAL_START);
         HarvesterBlockEntity machine = harvester(helper);
         fillMud(helper, 1_000);
 
@@ -103,6 +108,23 @@ final class FlooredWellTests {
         helper.assertValueEqual(mud(helper), 975, "mud left after one operation");
         helper.assertValueEqual(well.amount(), FLOOR, "the well's amount, at its floor");
         helper.assertValueEqual(machine.idleReason(), Optional.empty(), "the idle reason");
+        helper.succeed();
+    }
+
+    /** A well five times richer floors at five times the crude, and the recipe restores five times as much. */
+    private static void mudRestoresARichWell(GameTestHelper helper) {
+        OilWellBlockEntity well = flooredWell(helper, RICH_START);
+        HarvesterBlockEntity machine = harvester(helper);
+        fillMud(helper, 1_000);
+
+        HarvesterTests.tick(helper, machine, 20);
+        int byDefault = crude(helper);
+        helper.assertValueEqual(byDefault, 10, "crude from one Default operation at the floor");
+
+        machine.setHeldRecipe(MUD_CRUDE);
+        HarvesterTests.tick(helper, machine, 20);
+        helper.assertValueEqual(crude(helper) - byDefault, 50, "crude from one operation of the mud recipe");
+        helper.assertValueEqual(well.amount(), RICH_START / 5, "the well's amount, at its floor");
         helper.succeed();
     }
 
@@ -123,7 +145,7 @@ final class FlooredWellTests {
     }
 
     private static void noMud(GameTestHelper helper) {
-        OilWellBlockEntity well = well(helper, FLOOR);
+        OilWellBlockEntity well = flooredWell(helper, NORMAL_START);
         HarvesterBlockEntity machine = harvester(helper);
         machine.setHeldRecipe(MUD_CRUDE);
 
@@ -154,7 +176,7 @@ final class FlooredWellTests {
      * both are fed from the one hopper, and the chest at the output face gets a crude bucket and two glass bottles.
      */
     private static void mixedHopper(GameTestHelper helper) {
-        well(helper, FLOOR);
+        flooredWell(helper, NORMAL_START);
         helper.setBlock(CHEST, Blocks.CHEST);
         HarvesterBlockEntity machine = harvester(helper);
         fillMud(helper, 3_000);
@@ -184,7 +206,7 @@ final class FlooredWellTests {
         HarvestRecipe mud = HarvestRecipes.find(helper.getLevel(), MUD_CRUDE)
                 .orElseThrow(() -> helper.assertionException("the shipped drilling mud recipe did not load"));
         helper.assertValueEqual(mud.yieldCondition(), Optional.of(YieldCondition.AT_FLOOR), "the shipped recipe's yield condition");
-        helper.assertValueEqual(mud.result(), new HarvestRecipe.Result.Crude(10), "the shipped recipe's crude");
+        helper.assertValueEqual(mud.result(), new HarvestRecipe.Result.Restored(1.0), "the shipped recipe's crude");
         helper.assertValueEqual(mud.drillingFluid().orElseThrow().amount(), 25, "the shipped recipe's mud per operation");
         helper.assertValueEqual(mud.replacesDefault(), false, "whether the shipped recipe replaces the Default");
         HarvestRecipe flat = HarvestRecipes.find(helper.getLevel(), FLAT_CRUDE).orElseThrow();
@@ -195,6 +217,10 @@ final class FlooredWellTests {
                  "yield_condition": "sometimes"}""");
         expectRefused(helper, "no crude", "crude_oil", """
                 {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": {"crude_oil": 0}, "duration": 20}""");
+        expectRefused(helper, "a crude result restoring none of the yield", "restores", """
+                {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": {"crude_oil": {"restores": 0}}, "duration": 20}""");
+        expectRefused(helper, "a crude result restoring more than the yield", "restores", """
+                {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": {"crude_oil": {"restores": 1.5}}, "duration": 20}""");
         expectRefused(helper, "a crude result from an ore block", "crude", """
                 {"type": "fieldworks:harvesting", "source": "fieldworks:iron_ore", "result": {"crude_oil": 10}, "duration": 20}""");
         expectRefused(helper, "an item result from an oil well", "oil", """
@@ -226,7 +252,10 @@ final class FlooredWellTests {
                 .orElseThrow(() -> helper.assertionException("the viewer does not list the drilling mud recipe"));
 
         helper.assertFalse(mud.isDefault(), "the drilling mud recipe is listed as a Default recipe");
-        helper.assertValueEqual(mud.crude(), 10, "the recipe's crude");
+        helper.assertValueEqual(mud.crude(), 10, "the recipe's crude at a normal well");
+        helper.assertValueEqual(mud.restores(), 1.0, "the share of its starting yield the recipe restores");
+        helper.assertValueEqual(HarvestRecipeLines.restores(mud), Component.translatable("fieldworks.harvesting.restores", "100"),
+                "the line saying what the recipe restores");
         helper.assertValueEqual(mud.crudeAtFloor(), 0, "a written recipe lists no floor figure");
         helper.assertValueEqual(mud.yieldCondition(), Optional.of(YieldCondition.AT_FLOOR), "the recipe's yield condition");
         helper.assertValueEqual(mud.fluids(), List.of(DrillingMud.SOURCE.get()), "the recipe's fluids");
@@ -277,6 +306,16 @@ final class FlooredWellTests {
         String error = result.error().map(DataResult.Error::message).orElse("");
         helper.assertTrue(result.error().isPresent(), "a recipe with " + what + " was accepted");
         helper.assertTrue(error.contains(named), "the refusal of " + what + " does not say '" + named + "': " + error);
+    }
+
+    /** A well started at {@code initial} and cycled down to its floor. */
+    private static OilWellBlockEntity flooredWell(GameTestHelper helper, long initial) {
+        OilWellBlockEntity well = well(helper, initial);
+        while (!well.atFloor()) {
+            well.cycle();
+        }
+        helper.assertValueEqual(well.amount(), Math.max(FLOOR, initial / 5), "the well's floor");
+        return well;
     }
 
     private static OilWellBlockEntity well(GameTestHelper helper, long amount) {

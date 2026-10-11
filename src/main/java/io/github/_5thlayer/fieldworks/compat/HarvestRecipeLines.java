@@ -14,7 +14,7 @@ public final class HarvestRecipeLines {
 
     /** A recipe's width in a viewer: source, arrow, result, and room for its lines. */
     public static final int WIDTH = 140;
-    public static final int HEIGHT = 56;
+    public static final int HEIGHT = 67;
 
     /** How far a recipe with a Drilling Fluid moves its arrow and result right, to make room for the fluid's slot. */
     public static final int FLUID_SHIFT = 20;
@@ -50,6 +50,13 @@ public final class HarvestRecipeLines {
         }
         return view.yieldCondition().map(condition -> (Component) Component.translatable("fieldworks.harvesting." + condition.id()))
                 .orElse(Component.empty());
+    }
+
+    /** A fourth line for a well recipe that restores a share of its well's starting yield, as a percentage; empty for any other. */
+    public static Component restores(HarvestRecipeView view) {
+        return view.restores() > 0
+                ? Component.translatable("fieldworks.harvesting.restores", String.format(Locale.ROOT, "%.0f", view.restores() * 100))
+                : Component.empty();
     }
 
     /** Why a viewer's transfer is not offered on a Default recipe. */

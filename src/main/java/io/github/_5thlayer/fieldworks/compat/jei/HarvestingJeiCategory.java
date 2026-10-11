@@ -81,6 +81,7 @@ final class HarvestingJeiCategory implements IRecipeCategory<HarvestRecipeView> 
         builder.addText(HarvestRecipeLines.seconds(view), getWidth(), 10).setPosition(0, 24).setColor(0xFF808080);
         builder.addText(HarvestRecipeLines.note(view), getWidth(), 10).setPosition(0, 34).setColor(0xFF808080);
         builder.addText(HarvestRecipeLines.detail(view), getWidth(), 10).setPosition(0, 45).setColor(0xFF808080);
+        builder.addText(HarvestRecipeLines.restores(view), getWidth(), 10).setPosition(0, 56).setColor(0xFF808080);
     }
 
     @Override

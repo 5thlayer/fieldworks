@@ -3,6 +3,6 @@
   "source": "fieldworks:oil_well",
   "drilling_fluid": { "fluid": "fieldworks:drilling_mud", "amount": 25 },
   "yield_condition": "at_floor",
-  "result": { "crude_oil": 10 },
+  "result": { "crude_oil": { "restores": 1.0 } },
   "duration": 20
 }

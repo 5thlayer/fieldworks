@@ -28,6 +28,7 @@
   "fieldworks.harvesting.falls_to": "Per cycle, falls to %s mB",
   "fieldworks.harvesting.at_floor": "Only at the well's floor",
   "fieldworks.harvesting.above_floor": "Only above the well's floor",
+  "fieldworks.harvesting.restores": "%s%% of its starting yield",
   "fieldworks.harvesting.default_not_held": "A Default recipe runs without being held",
   "fieldworks.harvesting.hold": "Hold this recipe",
   "fieldworks.harvester.working": "Working",
