@@ -1,0 +1,11 @@
+{
+  "values": [
+    "fieldworks:patch_iron",
+    "fieldworks:patch_copper",
+    "fieldworks:patch_coal",
+    "fieldworks:patch_stone",
+    "fieldworks:patch_sulfur",
+    "fieldworks:patch_uranium",
+    "fieldworks:oil_field"
+  ]
+}

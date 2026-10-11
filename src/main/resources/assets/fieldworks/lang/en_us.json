@@ -56,5 +56,7 @@
   "map.fieldworks.patch.sulfur": "Sulfur",
   "map.fieldworks.patch.crude_oil": "Crude oil",
   "map.fieldworks.patch.amount": "%s: %s",
-  "map.fieldworks.patch.yield": "%s: %s yield"
+  "map.fieldworks.patch.yield": "%s: %s yield",
+  "tag.fluid.fieldworks.drilling_fluids": "Drilling Fluids",
+  "tag.worldgen.structure_set.fieldworks.flat_worlds": "Fieldworks structures on superflat worlds"
 }

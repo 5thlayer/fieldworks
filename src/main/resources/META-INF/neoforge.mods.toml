@@ -14,6 +14,10 @@ description = '''
 ${mod_description}
 '''
 
+# Superflat worlds place the patches and oil fields too.
+[[mixins]]
+config = "${mod_id}.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
