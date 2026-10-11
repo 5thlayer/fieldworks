@@ -70,8 +70,8 @@ public final class HarvesterStatusLines {
     }
 
     /**
-     * The tooltip Jade shows, a line each: the state or idle reason, the power of the kinds the tier declares, both
-     * tanks, the progress and the Held recipe.
+     * The tooltip Jade shows, a line each: the state or idle reason, the burn of a tier that takes fuel, the progress
+     * and the Held recipe. FE and both tanks are Jade's own, read from the capabilities.
      */
     public static List<Component> lines(HarvesterStatus status, Optional<HeldRecipeView> held) {
         List<Component> lines = new ArrayList<>();
@@ -79,11 +79,6 @@ public final class HarvesterStatusLines {
         if (status.takesFuel()) {
             lines.add(burn(status));
         }
-        if (status.takesEnergy()) {
-            lines.add(energy(status));
-        }
-        lines.add(tank(Tank.DRILLING, status));
-        lines.add(tank(Tank.PRODUCT, status));
         lines.add(Component.translatable("fieldworks.harvester.progress", Math.round(status.progressFraction() * 100)));
         lines.add(Component.translatable("fieldworks.harvester.held", heldName(held)));
         return lines;

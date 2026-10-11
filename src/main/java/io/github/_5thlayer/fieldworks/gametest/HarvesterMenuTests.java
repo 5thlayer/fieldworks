@@ -367,6 +367,9 @@ final class HarvesterMenuTests {
         helper.assertTrue(lines.stream().anyMatch(line -> line.getContents() instanceof TranslatableContents contents
                         && contents.getKey().equals("fieldworks.harvester.idle.no_fluid")),
                 "the tooltip does not name the idle reason: " + lines);
+        helper.assertFalse(lines.stream().anyMatch(line -> line.getContents() instanceof TranslatableContents contents
+                        && (contents.getKey().startsWith("fieldworks.harvester.tank") || contents.getKey().startsWith("fieldworks.harvester.energy"))),
+                "the tooltip repeats what Jade shows from the capabilities: " + lines);
         helper.succeed();
     }
 
