@@ -1,6 +1,6 @@
 # Fieldworks
 
-A 5thlayer Library: a mod the FactoryWorks Pack consumes as a pinned local jar. See `GLOSSARY.md` for the domain glossary.
+A 5thlayer Library, released on its own to Modrinth and CurseForge. See `GLOSSARY.md` for the domain glossary.
 
 ## Workflow
 
@@ -22,7 +22,7 @@ The `skillworks:quicklaunch` skill opens the dev client into the most recent sav
 
 A change a Consumer can use or will notice adds its line under `## Unreleased` in `CHANGELOG.md` as it lands. Before bumping `mod_version`, publishing to `~/.m2`, tagging a release or uploading to Modrinth or CurseForge, read `docs/agents/releases.md`: releases go through `scripts/release.sh`, which uploads last with `scripts/upload.py` when `gradle.properties` names a project, and a published version never changes, in `~/.m2` or on either site. ADR 0001, inherited from 5thlayer/libworks, sets the version bumps.
 
-A release that must reach another Library or the Pack follows the `release-train` skill: one owning session per checkout, and pushes only on the user's word.
+A release that must reach another Library follows the `release-train` skill: one owning session per checkout, and pushes only on the user's word.
 
 ## Agent skills
 

@@ -1,8 +1,7 @@
 # Fieldworks
 
 The resources of the world: ore patches of iron, copper, coal, stone, uranium and sulfur, oil wells
-and the crude oil under them, and one map marker per patch. The FactoryWorks Pack consumes it; it
-plays alone in vanilla.
+and the crude oil under them, and one map marker per patch. It plays alone in vanilla.
 
 ## Language
 
@@ -14,7 +13,7 @@ The Library's terms, each with what it is and the words to avoid. `/domain-model
 This Library.
 
 **Consumer**:
-A mod that builds against this Library: the FactoryWorks Pack, or another Library.
+A mod that builds against this Library, such as another Library.
 _Avoid_: client (collides with the game's client side), dependent, integration
 
 ### Resources
