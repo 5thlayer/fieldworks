@@ -64,16 +64,15 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     private static final int BURN_X = 28;
     private static final int BURN_Y = 20;
     private static final int BURN_WIDTH = 80;
-    private static final int ENERGY_X = 8;
-    private static final int ENERGY_Y = 36;
-    private static final int ENERGY_WIDTH = 100;
+    private static final int POWER_X = 8;
+    private static final int POWER_WIDTH = 100;
     private static final int DRILLING_X = 28;
-    private static final int DRILLING_Y = 54;
+    private static final int DRILLING_Y = 40;
     private static final int PRODUCT_X = 28;
-    private static final int PRODUCT_Y = 74;
+    private static final int PRODUCT_Y = 60;
     private static final int GAUGE_WIDTH = 80;
     private static final int PROGRESS_X = 8;
-    private static final int PROGRESS_Y = 92;
+    private static final int PROGRESS_Y = 78;
     private static final int PROGRESS_WIDTH = 160;
     private static final int HELD_Y = 108;
     private static final int CLEAR_X = 134;
@@ -116,11 +115,10 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         HarvesterStatus status = menu.status();
         Font font = Minecraft.getInstance().font;
         if (status.takesFuel()) {
-            bar(graphics, font, BURN_X, BURN_Y, BURN_WIDTH, status.burnFraction(), BURN, HarvesterStatusLines.burn(status));
+            bar(graphics, font, BURN_X, BURN_Y, burnWidth(status), status.burnFraction(), BURN, HarvesterStatusLines.burn(status));
         }
         if (status.takesEnergy()) {
-            float charge = status.energyCapacity() <= 0 ? 0f : Math.min(1f, (float) status.energy() / status.energyCapacity());
-            bar(graphics, font, ENERGY_X, ENERGY_Y, ENERGY_WIDTH, charge, ENERGY, HarvesterStatusLines.energy(status));
+            bar(graphics, font, energyX(status), BURN_Y, energyWidth(status), charge(status), ENERGY, HarvesterStatusLines.energy(status));
         }
         gauge(graphics, DRILLING_X, DRILLING_Y, status.drillingFluidStack(), status.tankCapacity());
         gauge(graphics, PRODUCT_X, PRODUCT_Y, status.productStack(), status.tankCapacity());
@@ -223,6 +221,10 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         Optional<GhostStack> ghost = ghostAt(mouseX, mouseY);
         if (ghost.isPresent()) {
             graphics.setTooltipForNextFrame(font, ghost.get().stack(), mouseX, mouseY);
+        } else if (status.takesFuel() && over(BURN_X, BURN_Y, burnWidth(status), x, y)) {
+            cutLabel(graphics, HarvesterStatusLines.burn(status), burnWidth(status), mouseX, mouseY);
+        } else if (status.takesEnergy() && over(energyX(status), BURN_Y, energyWidth(status), x, y)) {
+            cutLabel(graphics, HarvesterStatusLines.energy(status), energyWidth(status), mouseX, mouseY);
         } else if (over(DRILLING_X, DRILLING_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.DRILLING, status, mouseX, mouseY);
         } else if (over(PRODUCT_X, PRODUCT_Y, GAUGE_WIDTH, x, y)) {
@@ -231,6 +233,13 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
             wholeLine(graphics, heldLine(menu.held()), CLEAR_X - 4 - 28, mouseX, mouseY);
         } else if (y >= STATE_Y && y < STATE_Y + 9 && x >= 8 && x < imageWidth - 8) {
             wholeLine(graphics, HarvesterStatusLines.state(status.idle()), imageWidth - 16, mouseX, mouseY);
+        }
+    }
+
+    /** A bar too narrow for its label shows it on hover. */
+    private void cutLabel(GuiGraphicsExtractor graphics, Component label, int width, int mouseX, int mouseY) {
+        if (font.width(label) > width - 4) {
+            graphics.setComponentTooltipForNextFrame(font, List.of(label), mouseX, mouseY);
         }
     }
 
@@ -258,12 +267,31 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     }
 
     /** A bar in its recess, {@code fraction} of it filled, with {@code label} written over it. */
+    // The power bars share the fuel row: an FE-only tier has no fuel slot, and a tier taking both splits the row.
+    private static int burnWidth(HarvesterStatus status) {
+        return status.takesEnergy() ? (POWER_WIDTH - BURN_X + POWER_X) / 2 - 2 : BURN_WIDTH;
+    }
+
+    private static int energyX(HarvesterStatus status) {
+        return status.takesFuel() ? BURN_X + burnWidth(status) + 4 : POWER_X;
+    }
+
+    private static int energyWidth(HarvesterStatus status) {
+        return POWER_X + POWER_WIDTH - energyX(status);
+    }
+
+    private static float charge(HarvesterStatus status) {
+        return status.energyCapacity() <= 0 ? 0f : Math.min(1f, (float) status.energy() / status.energyCapacity());
+    }
+
     private void bar(GuiGraphicsExtractor graphics, Font font, int x, int y, int width, float fraction, int colour, Component label) {
         int left = leftPos + x;
         int top = topPos + y;
         recess(graphics, left, top, width, BAR_HEIGHT);
         graphics.fill(left, top, left + Math.round(width * fraction), top + BAR_HEIGHT, colour);
-        graphics.text(font, label, left + (width - font.width(label)) / 2, top + 2, WHITE, true);
+        if (font.width(label) <= width - 4) {
+            graphics.text(font, label, left + (width - font.width(label)) / 2, top + 2, WHITE, true);
+        }
     }
 
     /** A fluid gauge in its recess: the fluid's still texture, tinted as in the world, tiled over the part the tank fills. */
