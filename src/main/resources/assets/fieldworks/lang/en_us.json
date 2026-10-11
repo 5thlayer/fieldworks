@@ -58,8 +58,5 @@
   "map.fieldworks.patch.amount": "%s: %s",
   "map.fieldworks.patch.yield": "%s: %s yield",
   "tag.fluid.fieldworks.drilling_fluids": "Drilling Fluids",
-  "tag.worldgen.structure_set.fieldworks.flat_worlds": "Fieldworks structures on superflat worlds",
-  "fieldworks.harvester.slot.fuel": "Fuel: anything a furnace burns",
-  "fieldworks.harvester.slot.fill": "Empty buckets, filled with crude oil",
-  "fieldworks.harvester.slot.drain": "Drilling Fluid in bottles or buckets"
+  "tag.worldgen.structure_set.fieldworks.flat_worlds": "Fieldworks structures on superflat worlds"
 }

@@ -6,6 +6,7 @@ package io.github._5thlayer.fieldworks.harvester.client;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
 import io.github._5thlayer.fieldworks.FieldworksTags;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -37,6 +38,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.registries.datamaps.builtin.NeoForgeDataMaps;
 
 /**
  * The Harvester's screen (#13): a stand-in drawn from fills, like the other machines' until there is art. It draws
@@ -75,8 +77,6 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     private static final int PROGRESS_WIDTH = 160;
     private static final int HELD_Y = 108;
     private static final int CLEAR_X = 134;
-    private static final String[] SLOT_TOOLTIPS = {
-            "fieldworks.harvester.slot.fuel", "fieldworks.harvester.slot.fill", "fieldworks.harvester.slot.drain"};
     private static final int GHOST = 0x99A0A0A0;
     private static final FormattedText ELLIPSIS = FormattedText.of("…");
     private static final int STATE_Y = 126;
@@ -133,8 +133,10 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         super.extractLabels(graphics, mouseX, mouseY);
         HarvesterStatus status = menu.status();
         Optional<HeldRecipeView> held = menu.held();
-        ghost(graphics, menu.slots.get(HarvesterMenu.FILL_SLOT), new ItemStack(Items.BUCKET));
-        drillingFluidBucket().ifPresent(bucket -> ghost(graphics, menu.slots.get(HarvesterMenu.DRAIN_SLOT), bucket));
+        for (Ghost ghost : ghosts()) {
+            graphics.fakeItem(ghost.stack(), ghost.slot().x, ghost.slot().y);
+            graphics.fill(ghost.slot().x, ghost.slot().y, ghost.slot().x + 16, ghost.slot().y + 16, GHOST);
+        }
         held.ifPresent(view -> graphics.item(view.result(), 8, HELD_Y));
         int x = held.map(view -> view.result().isEmpty()).orElse(true) ? 8 : 28;
         int right = held.isPresent() ? CLEAR_X - 4 : imageWidth - 8;
@@ -142,16 +144,53 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         graphics.text(font, fitted(HarvesterStatusLines.state(status.idle()), imageWidth - 16), 8, STATE_Y, TEXT, false);
     }
 
-    /** What an empty slot takes, drawn faded in it. */
-    private static void ghost(GuiGraphicsExtractor graphics, Slot slot, ItemStack stack) {
+    /** What an empty fuel, fill or drain slot takes, drawn faded in it. */
+    private record Ghost(Slot slot, ItemStack stack) {
+    }
+
+    private List<Ghost> ghosts() {
+        List<Ghost> ghosts = new ArrayList<>();
+        ghost(ghosts, HarvesterMenu.FUEL_SLOT, cycled(fuels()));
+        ghost(ghosts, HarvesterMenu.FILL_SLOT, Optional.of(new ItemStack(Items.BUCKET)));
+        ghost(ghosts, HarvesterMenu.DRAIN_SLOT, cycled(drillingFluidBuckets()));
+        return ghosts;
+    }
+
+    private void ghost(List<Ghost> ghosts, int index, Optional<ItemStack> stack) {
+        Slot slot = menu.slots.get(index);
         if (slot.isActive() && !slot.hasItem()) {
-            graphics.fakeItem(stack, slot.x, slot.y);
-            graphics.fill(slot.x, slot.y, slot.x + 16, slot.y + 16, GHOST);
+            stack.ifPresent(ghost -> ghosts.add(new Ghost(slot, ghost)));
         }
     }
 
-    /** One bucket a second from the Drilling Fluids' buckets, so a pack's own fluids show too. */
-    private static Optional<ItemStack> drillingFluidBucket() {
+    /**
+     * The ghost stack under the mouse, with the top-left of its slot on screen, so EMI's and JEI's recipe and usage
+     * keys work on it.
+     */
+    public Optional<GhostStack> ghostAt(double mouseX, double mouseY) {
+        return ghosts().stream()
+                .filter(ghost -> isHovering(ghost.slot().x, ghost.slot().y, 16, 16, mouseX, mouseY))
+                .map(ghost -> new GhostStack(ghost.stack(), leftPos + ghost.slot().x, topPos + ghost.slot().y))
+                .findFirst();
+    }
+
+    public record GhostStack(ItemStack stack, int x, int y) {
+    }
+
+    /** One a second, so a pack's own fuels and Drilling Fluids show too. */
+    private static Optional<ItemStack> cycled(List<ItemStack> stacks) {
+        return stacks.isEmpty() ? Optional.empty() : Optional.of(stacks.get((int) (Util.getMillis() / 1000 % stacks.size())));
+    }
+
+    /** Whatever burns in a furnace, from NeoForge's furnace fuel data map. */
+    private static List<ItemStack> fuels() {
+        return BuiltInRegistries.ITEM.getDataMap(NeoForgeDataMaps.FURNACE_FUELS).keySet().stream()
+                .sorted(Comparator.comparing(key -> key.identifier().toString()))
+                .map(key -> new ItemStack(BuiltInRegistries.ITEM.getValueOrThrow(key)))
+                .toList();
+    }
+
+    private static List<ItemStack> drillingFluidBuckets() {
         List<ItemStack> buckets = new ArrayList<>();
         for (Holder<Fluid> fluid : BuiltInRegistries.FLUID.getTagOrEmpty(FieldworksTags.DRILLING_FLUIDS)) {
             Item bucket = fluid.value().getBucket();
@@ -159,8 +198,7 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
                 buckets.add(new ItemStack(bucket));
             }
         }
-        return buckets.isEmpty() ? Optional.empty()
-                : Optional.of(buckets.get((int) (Util.getMillis() / 1000 % buckets.size())));
+        return buckets;
     }
 
     private static Component heldLine(Optional<HeldRecipeView> held) {
@@ -182,10 +220,7 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         HarvesterStatus status = menu.status();
         int x = mouseX - leftPos;
         int y = mouseY - topPos;
-        int slot = hoveredSlot == null ? -1 : menu.slots.indexOf(hoveredSlot);
-        if (slot >= 0 && slot <= HarvesterMenu.DRAIN_SLOT && !hoveredSlot.hasItem()) {
-            graphics.setComponentTooltipForNextFrame(font, List.of(Component.translatable(SLOT_TOOLTIPS[slot])), mouseX, mouseY);
-        } else if (over(DRILLING_X, DRILLING_Y, GAUGE_WIDTH, x, y)) {
+        if (over(DRILLING_X, DRILLING_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.DRILLING, status, mouseX, mouseY);
         } else if (over(PRODUCT_X, PRODUCT_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.PRODUCT, status, mouseX, mouseY);

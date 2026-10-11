@@ -3,6 +3,12 @@
 
 package io.github._5thlayer.fieldworks.compat.jei;
 
+import io.github._5thlayer.fieldworks.harvester.client.HarvesterScreen;
+import java.util.Optional;
+import mezz.jei.api.gui.builder.IClickableIngredientFactory;
+import mezz.jei.api.gui.handlers.IGuiContainerHandler;
+import mezz.jei.api.registration.IGuiHandlerRegistration;
+import mezz.jei.api.runtime.IClickableIngredient;
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
@@ -63,6 +69,18 @@ public final class HarvestingJeiPlugin implements IModPlugin {
         for (TierBlock tier : TierBlock.values()) {
             registration.addCraftingStation(TYPE, new ItemStack(Harvesters.item(tier).get()));
         }
+    }
+
+    @Override
+    public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+        registration.addGuiContainerHandler(HarvesterScreen.class, new IGuiContainerHandler<>() {
+            @Override
+            public Optional<? extends IClickableIngredient<?>> getClickableIngredientUnderMouse(
+                    IClickableIngredientFactory factory, HarvesterScreen screen, double mouseX, double mouseY) {
+                return screen.ghostAt(mouseX, mouseY).flatMap(ghost -> factory.createBuilder(ghost.stack())
+                        .buildWithArea(ghost.x(), ghost.y(), 16, 16));
+            }
+        });
     }
 
     @Override

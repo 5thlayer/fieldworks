@@ -8,6 +8,8 @@ import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiStack;
+import dev.emi.emi.api.stack.EmiStackInteraction;
+import io.github._5thlayer.fieldworks.harvester.client.HarvesterScreen;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
@@ -35,5 +37,7 @@ public final class HarvestingEmiPlugin implements EmiPlugin {
             registry.addRecipe(new HarvestingEmiRecipe(category, view));
         }
         registry.addRecipeHandler(Harvesters.MENU.get(), new HarvesterEmiHandler());
+        registry.addStackProvider(HarvesterScreen.class, (screen, x, y) -> screen.ghostAt(x, y)
+                .map(ghost -> new EmiStackInteraction(EmiStack.of(ghost.stack()))).orElse(EmiStackInteraction.EMPTY));
     }
 }
