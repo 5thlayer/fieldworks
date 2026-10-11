@@ -55,6 +55,8 @@ public final class FieldworksGameTests {
             modBus.addListener(FieldworksGameTests::addGameTestPack);
             // The tests' own fluid-handler block, which a player's world never has.
             TestTank.register(modBus);
+            // A second crude, so the tar tests show the tag decides.
+            TestCrude.register(modBus);
         }
     }
 
@@ -87,6 +89,7 @@ public final class FieldworksGameTests {
         HarvesterMenuTests.register(tests);
         FlooredWellTests.register(tests);
         FlatWorldTests.register(tests);
+        TarTests.register(tests);
     }
 
     private static Identifier id(String path) {

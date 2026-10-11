@@ -22,6 +22,8 @@ path = [
     "publish/summary.txt",
     ".github/**",
     "src/main/resources/assets/fieldworks/textures/block/ore/stone_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/tar.png",
+    "src/main/resources/assets/fieldworks/textures/item/tar.png",
 ]
 SPDX-FileCopyrightText = "2026 5thlayer"
 SPDX-License-Identifier = "MIT"

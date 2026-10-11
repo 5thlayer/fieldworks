@@ -18,7 +18,11 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -28,7 +32,7 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
-/** The ore blocks, the oil well, the items the ores pay out, and the chunk attachment a draw writes. */
+/** The ore blocks, the oil well, the items the ores pay out, tar, and the chunk attachment a draw writes. */
 public final class FieldworksRegistries {
 
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Fieldworks.MOD_ID);
@@ -61,6 +65,17 @@ public final class FieldworksRegistries {
     public static final DeferredItem<Item> SULFUR = ITEMS.registerSimpleItem("sulfur");
     public static final DeferredItem<Item> URANIUM_INGOT = ITEMS.registerSimpleItem("uranium_ingot");
 
+    /**
+     * Tar, which crude sets as where its source block touches lava ({@code TarInteraction}). A piston
+     * breaks the block rather than pushing it, and the block drops one tar, which is not placeable.
+     */
+    public static final DeferredBlock<Block> TAR = BLOCKS.registerSimpleBlock("tar", props -> props
+            .mapColor(MapColor.COLOR_BLACK)
+            .strength(0.5F)
+            .sound(SoundType.MUD)
+            .pushReaction(PushReaction.DESTROY));
+    public static final DeferredItem<Item> TAR_ITEM = ITEMS.registerSimpleItem("tar");
+
     /** What has been drawn out of the ore blocks in one chunk: sparse, so an untouched patch costs nothing. */
     public static final Supplier<AttachmentType<OreDelta>> ORE_DELTA = ATTACHMENTS.register(
             "ore_delta",
@@ -90,6 +105,7 @@ public final class FieldworksRegistries {
             event.accept(RAW_URANIUM.get());
             event.accept(SULFUR.get());
             event.accept(URANIUM_INGOT.get());
+            event.accept(TAR_ITEM.get());
         }
     }
 }

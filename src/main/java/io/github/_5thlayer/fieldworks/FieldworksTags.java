@@ -6,11 +6,12 @@ package io.github._5thlayer.fieldworks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.material.Fluid;
 
-/** The tags Fieldworks reads, each set by data a pack may replace or extend. */
+/** The tags Fieldworks reads or fills, each set by data a pack may replace or extend. */
 public final class FieldworksTags {
 
     /** The blocks, besides ore blocks, that a Harvester breaks for their loot. */
@@ -21,6 +22,12 @@ public final class FieldworksTags {
 
     /** The structure sets a superflat world places beside the ones its preset lists. */
     public static final TagKey<StructureSet> FLAT_WORLD_STRUCTURE_SETS = TagKey.create(Registries.STRUCTURE_SET, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "flat_worlds"));
+
+    /** Crude: a source block of any fluid here that touches lava sets as tar. Fieldworks' crude oil is one. */
+    public static final TagKey<Fluid> CRUDE_OIL = TagKey.create(Registries.FLUID, Identifier.fromNamespaceAndPath("c", "crude_oil"));
+
+    /** Tar, which other mods find it by: Wireworks blasts it into plastic. */
+    public static final TagKey<Item> TAR = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "tar"));
 
     private FieldworksTags() {
     }

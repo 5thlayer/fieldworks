@@ -6,6 +6,7 @@ package io.github._5thlayer.fieldworks;
 import io.github._5thlayer.fieldworks.config.FieldworksConfig;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.fluid.DrillingMud;
+import io.github._5thlayer.fieldworks.fluid.TarInteraction;
 import io.github._5thlayer.fieldworks.fluid.client.CrudeOilClient;
 import io.github._5thlayer.fieldworks.fluid.client.DrillingMudClient;
 import io.github._5thlayer.fieldworks.gametest.FieldworksGameTests;
@@ -40,6 +41,7 @@ public final class Fieldworks {
         FieldworksConfig.register(container);
         FieldworksRegistries.register(modBus);
         CrudeOil.register(modBus);
+        TarInteraction.register(modBus);
         DrillingMud.register(modBus);
         Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);

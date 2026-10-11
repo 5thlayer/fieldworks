@@ -4,6 +4,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Tar: a source block of any fluid in `c:crude_oil` that touches lava, on any side, sets as `fieldworks:tar`, through NeoForge's `FluidInteractionRegistry`, and the lava stays. Flowing crude does nothing. The tar block breaks by hand or with a shovel, and a piston pushing it breaks it, each time into one `fieldworks:tar` item, in the new `c:tar` item tag, which is how Wireworks blasts it into plastic. Carried over from Wireworks, which registers no crude (#22).
 - Sulfur ore blocks and the sulfur, raw uranium and uranium ingot items wear Malcolm Riley's unused textures (CC BY 4.0) in place of their generated stand-ins (#3).
 
 ## 0.2.0

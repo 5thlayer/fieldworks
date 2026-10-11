@@ -45,6 +45,12 @@ A group of oil wells placed together on land, spaced apart and never on a patch'
 **Crude oil**:
 The fluid an oil well yields, in the `c:crude_oil` tag, carried in its own bucket.
 
+**Tar**:
+What a source block of crude, any fluid in `c:crude_oil`, sets as where it touches lava, on any side;
+the lava stays, and flowing crude never sets. A piston breaks the tar block, and it drops one tar, in
+the `c:tar` tag.
+_Avoid_: bitumen, asphalt
+
 ### Markers
 
 **Marker**:
