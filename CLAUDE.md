@@ -14,13 +14,13 @@ Conventional commits: `<type>(<optional scope>): <summary>`, with the summary in
 
 ## Testing
 
-`sh ./gradlew build` runs the JUnit tests, on a plain JVM with no Minecraft. `sh ./gradlew runGameTestServer` runs the game tests headless, a real player on a real server with only Groundworks beside the Library, and names each one it ran; it fails if it ran none. FTB Chunks, Jade and EMI or JEI are on the dev client only. `python3 -m unittest discover scripts/tests` tests the upload step against a stand-in server on localhost. A new game test class is registered by a line in `FieldworksGameTests.registerTests`, and its tests stand on the `gametest/platform` structure that `scripts/build-gametest-structures.py` writes. CI (`.github/workflows/ci.yml`) runs all three on every push and never publishes.
+`sh ./gradlew build` runs the JUnit tests, on a plain JVM with no Minecraft. `sh ./gradlew runGameTestServer` runs the game tests headless, a real player on a real server with only Groundworks beside the Library, and names each one it ran; it fails if it ran none. FTB Chunks, Jade and EMI or JEI are on the dev client only. `python3 -m unittest discover scripts/tests` checks the committed sprites match `scripts/build-textures.py`. A new game test class is registered by a line in `FieldworksGameTests.registerTests`, and its tests stand on the `gametest/platform` structure that `sh ./gradlew buildGametestStructures` writes. CI (`.github/workflows/ci.yml`) runs all three on every push, the first two through the libworks plugin's shared `module-ci.yml`, and never publishes. The build, the game test server, publishing and the release tasks come from the libworks convention plugin (libworks ADR 0003); `libworks { }` in `build.gradle` names Groundworks' range and the nested libworks-runtime.
 
 The `skillworks:quicklaunch` skill opens the dev client into the most recent save in `run/saves`, one client per checkout.
 
 ## Releases
 
-A change a Consumer can use or will notice adds its line under `## Unreleased` in `CHANGELOG.md` as it lands. Before bumping `mod_version`, publishing to `~/.m2`, tagging a release or uploading to Modrinth or CurseForge, read `docs/agents/releases.md`: releases go through `scripts/release.sh`, which uploads last with `scripts/upload.py` when `gradle.properties` names a project, and a published version never changes, in `~/.m2` or on either site. ADR 0001, inherited from 5thlayer/libworks, sets the version bumps.
+A change a Consumer can use or will notice adds its line under `## Unreleased` in `CHANGELOG.md` as it lands. Before bumping `mod_version`, publishing to `~/.m2`, tagging a release or uploading to Modrinth or CurseForge, read `docs/agents/releases.md`: releases go through the libworks plugin's `release` task, which uploads last with its `upload` task when `gradle.properties` names a project, and a published version never changes, in `~/.m2` or on either site. ADR 0001, inherited from 5thlayer/libworks, sets the version bumps.
 
 A release that must reach another Library follows the `release-train` skill: one owning session per checkout, and pushes only on the user's word.
 

@@ -5,6 +5,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 ## Unreleased
 
 - Sulfur ore blocks and the sulfur, raw uranium and uranium ingot items wear Malcolm Riley's unused textures (CC BY 4.0) in place of their generated stand-ins (#3).
+- The nested libworks-runtime accepts 0.1.0 up to but not including 0.2, in place of 1.0: its next minor may break, as ADR 0001 sets. The jar also carries `NOTICE` and every licence text under `LICENSES/` (#17).
 
 ## 0.2.0
 

@@ -32,20 +32,21 @@ versionRange = "[${minecraft_version}]"
 ordering = "NONE"
 side = "BOTH"
 
-# Required, and never nested: the Harvester is a Groundworks footprint. Capped below the next minor,
-# which may move Footprint.
+# Required, and never nested: the Harvester is a Groundworks footprint. The range is upstream('groundworks')
+# in build.gradle, capped below the next minor, which may move Footprint.
 [[dependencies.${mod_id}]]
 modId = "groundworks"
 type = "required"
-versionRange = "[${groundworks_version},0.6)"
+versionRange = "${groundworks_range}"
 ordering = "NONE"
 side = "BOTH"
 
 # libworks-runtime, nested by jar-in-jar: the Harvester's item handler routes through its guarded face.
+# The range is the one libworks { runtime } in build.gradle nests, to the next minor: move both together.
 [[dependencies.${mod_id}]]
 modId = "libworks"
 type = "required"
-versionRange = "[${libworks_runtime_version},1.0)"
+versionRange = "[0.1.0,0.2)"
 ordering = "NONE"
 side = "BOTH"
 
