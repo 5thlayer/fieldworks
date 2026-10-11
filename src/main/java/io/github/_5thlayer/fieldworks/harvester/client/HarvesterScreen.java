@@ -20,7 +20,10 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.block.FluidModel;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
@@ -63,6 +66,7 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     private static final int PROGRESS_WIDTH = 160;
     private static final int HELD_Y = 108;
     private static final int CLEAR_X = 134;
+    private static final FormattedText ELLIPSIS = FormattedText.of("…");
     private static final int STATE_Y = 126;
 
     private Button clear;
@@ -120,9 +124,21 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         held.ifPresent(view -> graphics.item(view.result(), 8, HELD_Y));
         int x = held.map(view -> view.result().isEmpty()).orElse(true) ? 8 : 28;
         int right = held.isPresent() ? CLEAR_X - 4 : imageWidth - 8;
-        Component line = Component.translatable("fieldworks.harvester.held", HarvesterStatusLines.heldName(held));
-        graphics.text(font, font.split(line, right - x).getFirst(), x, HELD_Y + 4, TEXT, false);
-        graphics.text(font, HarvesterStatusLines.state(status.idle()), 8, STATE_Y, TEXT, false);
+        graphics.text(font, fitted(heldLine(held), right - x), x, HELD_Y + 4, TEXT, false);
+        graphics.text(font, fitted(HarvesterStatusLines.state(status.idle()), imageWidth - 16), 8, STATE_Y, TEXT, false);
+    }
+
+    private static Component heldLine(Optional<HeldRecipeView> held) {
+        return Component.translatable("fieldworks.harvester.held", HarvesterStatusLines.heldName(held));
+    }
+
+    /** {@code line} cut to {@code width} with an ellipsis; hovering a cut line shows it whole. */
+    private FormattedCharSequence fitted(Component line, int width) {
+        if (font.width(line) <= width) {
+            return line.getVisualOrderText();
+        }
+        FormattedText cut = font.substrByWidth(line, width - font.width(ELLIPSIS));
+        return Language.getInstance().getVisualOrder(FormattedText.composite(cut, ELLIPSIS));
     }
 
     @Override
@@ -135,6 +151,16 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
             tankTooltip(graphics, HarvesterStatusLines.Tank.DRILLING, status, mouseX, mouseY);
         } else if (over(PRODUCT_X, PRODUCT_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.PRODUCT, status, mouseX, mouseY);
+        } else if (y >= HELD_Y && y < HELD_Y + 16 && x >= 8 && x < CLEAR_X - 4) {
+            wholeLine(graphics, heldLine(menu.held()), CLEAR_X - 4 - 28, mouseX, mouseY);
+        } else if (y >= STATE_Y && y < STATE_Y + 9 && x >= 8 && x < imageWidth - 8) {
+            wholeLine(graphics, HarvesterStatusLines.state(status.idle()), imageWidth - 16, mouseX, mouseY);
+        }
+    }
+
+    private void wholeLine(GuiGraphicsExtractor graphics, Component line, int width, int mouseX, int mouseY) {
+        if (font.width(line) > width) {
+            graphics.setComponentTooltipForNextFrame(font, List.of(line), mouseX, mouseY);
         }
     }
 
