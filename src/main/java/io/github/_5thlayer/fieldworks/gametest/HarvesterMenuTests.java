@@ -5,7 +5,6 @@ package io.github._5thlayer.fieldworks.gametest;
 
 import static io.github._5thlayer.fieldworks.gametest.HarvesterTests.ORIGIN;
 
-import java.util.List;
 import java.util.Optional;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
@@ -365,13 +364,10 @@ final class HarvesterMenuTests {
         helper.assertValueEqual(read.containerId(), 7, "the sync's container id");
         helper.assertValueEqual(read.held().map(HeldRecipeView::id), Optional.of(MUDDY_IRON), "the sync's Held recipe");
 
-        List<Component> lines = HarvesterStatusLines.lines(status, held);
-        helper.assertTrue(lines.stream().anyMatch(line -> line.getContents() instanceof TranslatableContents contents
-                        && contents.getKey().equals("fieldworks.harvester.idle.no_fluid")),
-                "the tooltip does not name the idle reason: " + lines);
-        helper.assertFalse(lines.stream().anyMatch(line -> line.getContents() instanceof TranslatableContents contents
-                        && (contents.getKey().startsWith("fieldworks.harvester.tank") || contents.getKey().startsWith("fieldworks.harvester.energy"))),
-                "the tooltip repeats what Jade shows from the capabilities: " + lines);
+        Component state = HarvesterStatusLines.state(status.idle());
+        helper.assertTrue(state.getContents() instanceof TranslatableContents contents
+                        && contents.getKey().equals("fieldworks.harvester.idle.no_fluid"),
+                "the tooltip does not name the idle reason: " + state);
         helper.succeed();
     }
 

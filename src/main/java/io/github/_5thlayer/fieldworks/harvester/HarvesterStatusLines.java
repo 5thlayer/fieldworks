@@ -4,8 +4,6 @@
 package io.github._5thlayer.fieldworks.harvester;
 
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -67,20 +65,5 @@ public final class HarvesterStatusLines {
     public static Component heldName(Optional<HeldRecipeView> held) {
         return held.map(view -> view.result().isEmpty() ? Component.literal(view.id().toString()) : view.result().getHoverName())
                 .orElseGet(() -> Component.translatable("fieldworks.harvester.no_held_recipe").withStyle(ChatFormatting.GRAY));
-    }
-
-    /**
-     * The tooltip Jade shows, a line each: the state or idle reason, the burn of a tier that takes fuel, the progress
-     * and the Held recipe. FE and both tanks are Jade's own, read from the capabilities.
-     */
-    public static List<Component> lines(HarvesterStatus status, Optional<HeldRecipeView> held) {
-        List<Component> lines = new ArrayList<>();
-        lines.add(state(status.idle()));
-        if (status.takesFuel()) {
-            lines.add(burn(status));
-        }
-        lines.add(Component.translatable("fieldworks.harvester.progress", Math.round(status.progressFraction() * 100)));
-        lines.add(Component.translatable("fieldworks.harvester.held", heldName(held)));
-        return lines;
     }
 }
