@@ -220,7 +220,10 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         HarvesterStatus status = menu.status();
         int x = mouseX - leftPos;
         int y = mouseY - topPos;
-        if (over(DRILLING_X, DRILLING_Y, GAUGE_WIDTH, x, y)) {
+        Optional<GhostStack> ghost = ghostAt(mouseX, mouseY);
+        if (ghost.isPresent()) {
+            graphics.setTooltipForNextFrame(font, ghost.get().stack(), mouseX, mouseY);
+        } else if (over(DRILLING_X, DRILLING_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.DRILLING, status, mouseX, mouseY);
         } else if (over(PRODUCT_X, PRODUCT_Y, GAUGE_WIDTH, x, y)) {
             tankTooltip(graphics, HarvesterStatusLines.Tank.PRODUCT, status, mouseX, mouseY);
