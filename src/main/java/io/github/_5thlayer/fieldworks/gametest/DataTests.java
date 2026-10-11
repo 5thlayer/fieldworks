@@ -3,6 +3,10 @@
 
 package io.github._5thlayer.fieldworks.gametest;
 
+import java.util.List;
+import java.util.Set;
+
+import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
@@ -26,6 +30,7 @@ final class DataTests {
         tests.test("the_ores_are_tagged_c_ores", 1, DataTests::ores);
         tests.test("sulfur_and_uranium_carry_their_c_tags", 1, DataTests::items);
         tests.test("the_harvestable_tag_holds_every_block_in_c_ores_and_vanilla_ores_among_them", 1, DataTests::harvestable);
+        tests.test("every_tag_fieldworks_reads_holds_an_entry_of_minecraft_or_fieldworks", 1, DataTests::tagsPlayAlone);
     }
 
     private static void crudeOil(GameTestHelper helper) {
@@ -67,6 +72,30 @@ final class DataTests {
             return;
         }
         helper.succeed();
+    }
+
+    /**
+     * Fieldworks plays alone on Groundworks (#20): each tag it reads reaches at least one entry with no other mod
+     * installed, Minecraft's or its own. A tag filled only by other mods would leave it inert.
+     */
+    private static void tagsPlayAlone(GameTestHelper helper) {
+        List<TagKey<?>> read = List.of(FieldworksTags.HARVESTABLE, FieldworksTags.DRILLING_FLUIDS,
+                FieldworksTags.FLAT_WORLD_STRUCTURE_SETS,
+                TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_land")));
+        var alone = Set.of("minecraft", Fieldworks.MOD_ID);
+        for (TagKey<?> tag : read) {
+            if (!reachesAlone(helper, tag, alone)) {
+                helper.fail(tag.location() + " holds no entry of " + alone);
+                return;
+            }
+        }
+        helper.succeed();
+    }
+
+    private static <T> boolean reachesAlone(GameTestHelper helper, TagKey<T> tag, Set<String> namespaces) {
+        return helper.getLevel().registryAccess().lookupOrThrow(tag.registry()).get(tag).stream()
+                .flatMap(set -> set.stream())
+                .anyMatch(holder -> holder.unwrapKey().filter(key -> namespaces.contains(key.identifier().getNamespace())).isPresent());
     }
 
     private static void items(GameTestHelper helper) {

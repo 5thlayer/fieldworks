@@ -34,6 +34,19 @@ def jei = '29.20.0.53'
 
 def gameTestReport = layout.buildDirectory.file('reports/gametest.xml').get().asFile
 
+// Mods on the dev client that the published jar does not depend on. The game tests run on a source set
+// of their own, with no code and the Library's dependencies but not these, so they prove the Library
+// plays alone with Groundworks (#20).
+sourceSets {
+    solo
+}
+
+configurations {
+    localRuntime
+    runtimeClasspath.extendsFrom localRuntime
+    soloRuntimeOnly.extendsFrom implementation, runtimeOnly
+}
+
 neoForge {
     version = neoforge_version
 
@@ -54,6 +67,7 @@ neoForge {
         // A directory of its own, so nothing the dev client loads or saves reaches it.
         gameTestServer {
             type = 'gameTestServer'
+            sourceSet = sourceSets.solo
             gameDirectory = project.file('run/gametest')
             programArguments.addAll '--tests', "${mod_id}:*", '--report', gameTestReport.absolutePath
             // What only the game tests stand on, which only this run turns on: a datapack of recipes in
@@ -61,6 +75,8 @@ neoForge {
             systemProperty 'fieldworks.gametestPack', 'true'
         }
     }
+
+    addModdingDependenciesTo sourceSets.solo
 
     mods {
         "$mod_id" {
@@ -115,12 +131,6 @@ repositories {
     }
 }
 
-// Mods on the dev runs that the published jar does not depend on.
-configurations {
-    localRuntime
-    runtimeClasspath.extendsFrom localRuntime
-}
-
 dependencies {
     // Required, and never jar-in-jar: every Consumer and the Pack share one Groundworks. The least the
     // Library accepts at load is the one it is built against, capped below the next minor (0.6).
@@ -134,7 +144,7 @@ dependencies {
     // Both soft: their code is reached only from classes that load when the mod is present.
     compileOnly(ftbChunks) { transitive = false }
     compileOnly(ftbLibrary) { transitive = false }
-    // On the dev runs too, so the patches' markers show; FTB Chunks requires FTB Teams.
+    // On the dev client too, so the patches' markers show; FTB Chunks requires FTB Teams.
     localRuntime(ftbChunks) { transitive = false }
     localRuntime(ftbLibrary) { transitive = false }
     localRuntime(ftbTeams) { transitive = false }
@@ -143,7 +153,7 @@ dependencies {
     compileOnly jade
 
     // EMI and JEI, both soft: only compat/emi and compat/jei name them, and each viewer loads its plugin only
-    // when it is installed (#10). EMI is on the dev runs; -PwithJEI puts JEI there instead, as a pack ships one.
+    // when it is installed (#10). EMI is on the dev client; -PwithJEI puts JEI there instead, as a pack ships one.
     compileOnly emi
     compileOnly "mezz.jei:jei-26.1.2-common-api:$jei"
     compileOnly "mezz.jei:jei-26.1.2-neoforge-api:$jei"
