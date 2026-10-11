@@ -4,15 +4,6 @@
 package io.github._5thlayer.fieldworks.compat;
 
 import java.util.List;
-import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.fluids.FluidStack;
-import snownee.jade.api.Accessor;
-import snownee.jade.api.fluid.JadeFluidObject;
-import snownee.jade.api.view.ClientViewGroup;
-import snownee.jade.api.view.FluidView;
-import snownee.jade.api.view.IClientExtensionProvider;
-import snownee.jade.api.view.IServerExtensionProvider;
-import snownee.jade.api.view.ViewGroup;
 import java.util.Optional;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
@@ -22,11 +13,14 @@ import io.github._5thlayer.fieldworks.harvester.HarvesterStatus;
 import io.github._5thlayer.fieldworks.harvester.HarvesterStatusLines;
 import io.github._5thlayer.fieldworks.harvester.HeldRecipeView;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.jspecify.annotations.Nullable;
+import snownee.jade.api.Accessor;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.ITooltip;
@@ -36,6 +30,12 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.StreamServerDataProvider;
 import snownee.jade.api.WailaPlugin;
 import snownee.jade.api.config.IPluginConfig;
+import snownee.jade.api.fluid.JadeFluidObject;
+import snownee.jade.api.view.ClientViewGroup;
+import snownee.jade.api.view.FluidView;
+import snownee.jade.api.view.IClientExtensionProvider;
+import snownee.jade.api.view.IServerExtensionProvider;
+import snownee.jade.api.view.ViewGroup;
 
 /**
  * A Harvester's status in Jade (#13): the same {@link HarvesterStatus} its menu shows, worded by the same
@@ -50,6 +50,9 @@ import snownee.jade.api.config.IPluginConfig;
 public class HarvesterJadePlugin implements IWailaPlugin {
 
     private static final Identifier UID = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "harvester");
+    private static final Identifier TANKS = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "harvester_tanks");
+    private static final String DRILLING = "drilling";
+    private static final String PRODUCT = "product";
 
     /** What the server tells Jade: the status and the Held recipe with what it makes. */
     record Data(HarvesterStatus status, Optional<HeldRecipeView> held) {
@@ -90,11 +93,7 @@ public class HarvesterJadePlugin implements IWailaPlugin {
         }
     }
 
-    private static final Identifier TANKS = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "harvester_tanks");
-    private static final String DRILLING = "drilling";
-    private static final String PRODUCT = "product";
-
-    /** Each tank its own titled group: Jade's own reading of the fluid capability drew both as one bar. */
+    /** Each tank its own titled group, where Jade's own reading of the fluid capability would merge both into one bar. */
     private static final IServerExtensionProvider<FluidView.Data> TANK_DATA = new IServerExtensionProvider<>() {
         @Override
         public @Nullable List<ViewGroup<FluidView.Data>> getGroups(Accessor<?> accessor) {

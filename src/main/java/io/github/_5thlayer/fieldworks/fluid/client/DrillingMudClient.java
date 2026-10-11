@@ -14,7 +14,7 @@ import net.neoforged.neoforge.client.fluid.FluidTintSources;
 /** How drilling mud draws in the world, a tank or a pipe: vanilla water's sprites under a clay-brown tint. */
 public final class DrillingMudClient {
 
-    // Water's sprites are drawn to be tinted; crude oil's is near black, so mud on it read as crude.
+    // Water's sprites are drawn to be tinted; crude oil's near-black one would hide the tint.
     private static final Material STILL = new Material(Identifier.withDefaultNamespace("block/water_still"));
     private static final Material FLOWING = new Material(Identifier.withDefaultNamespace("block/water_flow"));
 
