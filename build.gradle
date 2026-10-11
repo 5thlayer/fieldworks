@@ -25,6 +25,7 @@ tasks.withType(Jar).configureEach {
 
 def ftbChunks = 'curse.maven:ftb-chunks-314906:8791100'
 def ftbLibrary = 'curse.maven:ftb-library-404465:8574542'
+def ftbTeams = 'curse.maven:ftb-teams-404468:8074003'
 def jade = 'maven.modrinth:jade:26.1.11+neoforge'
 // No official EMI for 26.1: this unofficial port is what the 5thlayer mods build against.
 def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
@@ -133,6 +134,10 @@ dependencies {
     // Both soft: their code is reached only from classes that load when the mod is present.
     compileOnly(ftbChunks) { transitive = false }
     compileOnly(ftbLibrary) { transitive = false }
+    // On the dev runs too, so the patches' markers show; FTB Chunks requires FTB Teams.
+    localRuntime(ftbChunks) { transitive = false }
+    localRuntime(ftbLibrary) { transitive = false }
+    localRuntime(ftbTeams) { transitive = false }
     compileOnly jade
 
     // EMI and JEI, both soft: only compat/emi and compat/jei name them, and each viewer loads its plugin only
