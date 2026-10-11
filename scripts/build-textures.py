@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 5thlayer
 # SPDX-License-Identifier: MIT
-"""Build the ore blocks' stage sprites and the three item stand-ins.
+"""Build the ore blocks' stage sprites and the three item sprites.
 
 A block shows one of eight sprites for what is left in it. The ratios at which a block changes
 stage are in fieldworks/ore/amounts.json; what each stage draws is an even step: stage `i` of `n`
 keeps `(n - i) / n` of the full sprite's ore, from the outside in, so a thinning block keeps its
 core and each stage is a subset of the one before.
 
-Coal, copper, iron and uranium wear Malcolm Riley's unused textures (CC BY 4.0, credited in NOTICE),
-committed unmodified under data/art/. Stone and sulfur are generated: boulders standing on the
-ground, tan for stone and yellow for sulfur, from a fixed seed. The sulfur ore, raw uranium, sulfur
-and uranium ingot sprites are placeholders for commissioned art.
+Coal, copper, iron, sulfur and uranium wear Malcolm Riley's unused textures (CC BY 4.0, credited in
+NOTICE), committed unmodified under data/art/. Stone is generated: tan boulders standing on the
+ground, from a fixed seed. The items are his too: sulfur and raw uranium as they are, and the uranium
+ingot his lead ingot in the green of the uranium ore's crystals.
 
     scripts/build-textures.py
     scripts/build-textures.py --check    # regenerate and diff
@@ -33,25 +33,33 @@ ITEM_OUT = os.path.join(TEXTURES, "item")
 ART = os.path.join(ROOT, "data", "art")
 
 SOURCED = {"coal": "ore_slade_coal.png", "copper": "ore_stone_copper_2.png",
-           "iron": "ore_slade_iron.png", "uranium": "ore_stone_soul.png"}
+           "iron": "ore_slade_iron.png", "sulfur": "ore_stone_brimstone.png",
+           "uranium": "ore_stone_soul.png"}
+
+# The items wear his sprites too. The uranium ingot's is recoloured to the uranium ore's green.
+ITEM_ART = {"sulfur": "material_crystal_sulfur_fancy.png", "raw_uranium": "material_crystal_greenish.png",
+            "uranium_ingot": "ingot_lead.png"}
 
 # A source pixel is ore above the HSV saturation or below the value. The value catches a dark ore
 # and a crystal's shadow, which must go with the crystal or a spent block keeps a dark hole. Coal
 # and iron sit on slade, a dark stone, so their value is tighter; coal has no colour at all.
+# Brimstone's nuggets sit in a yellow haze with a pale, faintly tinted rim, and both are ore: left
+# behind, the haze yellows a spent block and the rim, copied into a hole, leaves a pale ghost. Its
+# grey matrix is at most 2% saturated, the rim 3 to 5%.
 ORE_PIXEL = {
     "coal": (1.1, 0.2),
     "copper": (0.25, 0.0),
     "iron": (0.25, 0.2),
+    "sulfur": (0.025, 0.0),
     "uranium": (0.25, 0.3),
 }
 
 STONE = (122, 122, 122)
 
-# Generated ores: the boulder's highlight, body and shadow. The shadow is darker than any matrix
+# Generated ore: the boulder's highlight, body and shadow. The shadow is darker than any matrix
 # pixel, so each boulder stands up.
 BOULDERS = {
     "stone": ((176, 156, 109), (155, 135, 88), (72, 64, 50)),
-    "sulfur": ((244, 232, 120), (226, 206, 70), (110, 96, 30)),
 }
 # One per stage, so each stage takes exactly one boulder.
 BOULDER_COUNT = 8
@@ -66,7 +74,6 @@ BOULDER_SHAPES = [
 
 # One seed, so a rerun does not churn the binaries for no reason.
 SEED = 20260905
-CLEAR = (0, 0, 0, 0)
 
 
 def png(pixels):
@@ -118,12 +125,21 @@ def read_png(path):
     return rows
 
 
+def art(name):
+    """One of the borrowed sprites under data/art/."""
+    return read_png(os.path.join(ART, name))
+
+
+def to_hsv(pixel):
+    return colorsys.rgb_to_hsv(*(v / 255 for v in pixel[:3]))
+
+
 def sourced_sprites(resource, ratios):
     """One sprite per stage from a borrowed full sprite: the ore shrinks toward its centre."""
-    source = read_png(os.path.join(ART, SOURCED[resource]))
+    source = art(SOURCED[resource])
     saturation, value = ORE_PIXEL[resource]
     cells = [(x, y) for y in range(16) for x in range(16)]
-    hsv = {c: colorsys.rgb_to_hsv(*(v / 255 for v in source[c[1]][c[0]][:3])) for c in cells}
+    hsv = {c: to_hsv(source[c[1]][c[0]]) for c in cells}
     ore = [c for c in cells if hsv[c][1] > saturation or hsv[c][2] < value]
     stone = [c for c in cells if c not in ore]
     cx = sum(x for x, _ in ore) / len(ore)
@@ -199,56 +215,27 @@ def boulder_sprites(resource, ratios):
     return out
 
 
-def dark(colour, delta):
-    return tuple(max(0, min(255, v + delta)) for v in colour[:3]) + (255,)
+def uranium_green():
+    """The mean hue and saturation of the uranium ore's crystals: its coloured ore pixels."""
+    saturation, _ = ORE_PIXEL["uranium"]
+    crystals = [hsv for hsv in (to_hsv(p) for row in art(SOURCED["uranium"]) for p in row) if hsv[1] > saturation]
+    return (sum(h for h, _, _ in crystals) / len(crystals), sum(s for _, s, _ in crystals) / len(crystals))
 
 
-def fill(rows, x0, y0, x1, y1, colour, edge=-45):
-    """A rectangle with a darker one-pixel border."""
-    for y in range(y0, y1 + 1):
-        for x in range(x0, x1 + 1):
-            border = x in (x0, x1) or y in (y0, y1)
-            rows[y][x] = dark(colour, edge if border else 0)
+def colourised(rows, hue, saturation):
+    """The sprite in one colour: each pixel takes the hue and saturation, and keeps its brightness
+    and alpha."""
+    def pixel(p):
+        return [round(c * 255) for c in colorsys.hsv_to_rgb(hue, saturation, max(p[:3]) / 255)] + [p[3]]
+
+    return [[pixel(p) for p in row] for row in rows]
 
 
-def blank():
-    return [[CLEAR] * 16 for _ in range(16)]
-
-
-def sulfur_item(base):
-    rows = blank()
-    for row, (x0, x1) in zip(range(7, 13), ((6, 9), (4, 11), (3, 12), (3, 12), (3, 12), (4, 11))):
-        for x in range(x0, x1 + 1):
-            rows[row][x] = dark(base, -40 if row == 12 or x in (x0, x1) else 0)
-    for x in (6, 7):
-        rows[6][x] = dark(base, 30)
-    return rows
-
-
-def raw_ore_item(base):
-    rows = blank()
-    for row, (x0, x1) in zip(range(4, 13), ((6, 9), (4, 11), (3, 12), (2, 13), (2, 13),
-                                              (2, 13), (3, 12), (4, 11), (6, 9))):
-        for x in range(x0, x1 + 1):
-            rows[row][x] = dark(base, -45 if row in (4, 12) or x in (x0, x1) else 0)
-    for x, y in ((5, 6), (9, 8), (6, 10), (11, 6)):
-        rows[y][x] = (180, 235, 90, 255)
-    return rows
-
-
-def ingot_item(base):
-    rows = blank()
-    fill(rows, 2, 6, 13, 11, base)
-    for x in range(4, 12):
-        rows[7][x] = dark(base, 35)
-    return rows
-
-
-ITEMS = {
-    "sulfur": sulfur_item((226, 206, 70, 255)),
-    "raw_uranium": raw_ore_item((92, 140, 62, 255)),
-    "uranium_ingot": ingot_item((120, 170, 80, 255)),
-}
+def item_sprites():
+    """Each item's sprite, by item name."""
+    sprites = {name: art(source) for name, source in ITEM_ART.items()}
+    sprites["uranium_ingot"] = colourised(sprites["uranium_ingot"], *uranium_green())
+    return sprites
 
 
 def build():
@@ -263,7 +250,7 @@ def build():
                   else boulder_sprites(resource, ratios))
         for stage, image in enumerate(images):
             files[os.path.join(ORE_OUT, f"{resource}_stage{stage}.png")] = image
-    for name, pixels in ITEMS.items():
+    for name, pixels in item_sprites().items():
         files[os.path.join(ITEM_OUT, f"{name}.png")] = png(pixels)
     return files
 

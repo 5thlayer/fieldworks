@@ -22,8 +22,6 @@ path = [
     "publish/summary.txt",
     ".github/**",
     "src/main/resources/assets/fieldworks/textures/block/ore/stone_stage*.png",
-    "src/main/resources/assets/fieldworks/textures/block/ore/sulfur_stage*.png",
-    "src/main/resources/assets/fieldworks/textures/item/*.png",
 ]
 SPDX-FileCopyrightText = "2026 5thlayer"
 SPDX-License-Identifier = "MIT"
@@ -35,15 +33,23 @@ precedence = "override"
 SPDX-FileCopyrightText = "Gradle"
 SPDX-License-Identifier = "Apache-2.0"
 
-# Malcolm Riley's unused textures: the coal, copper, iron and uranium ore sprites and the crude
-# oil sprite, with the unmodified copies the ore sprites are derived from (NOTICE).
+# Malcolm Riley's unused textures: the coal, copper, iron, sulfur and uranium ore sprites, the item
+# sprites and the crude oil sprite, with the unmodified copies the ore and item sprites are built
+# from (NOTICE).
 [[annotations]]
 path = [
     "data/art/ore_*.png",
+    "data/art/material_crystal_sulfur_fancy.png",
+    "data/art/material_crystal_greenish.png",
+    "data/art/ingot_lead.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/coal_stage*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/copper_stage*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/iron_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/sulfur_stage*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/uranium_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/item/sulfur.png",
+    "src/main/resources/assets/fieldworks/textures/item/raw_uranium.png",
+    "src/main/resources/assets/fieldworks/textures/item/uranium_ingot.png",
     "src/main/resources/assets/fieldworks/textures/block/fluid/crude_oil.png",
     "src/main/resources/assets/fieldworks/textures/block/fluid/crude_oil.png.mcmeta",
 ]

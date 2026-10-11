@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Sulfur ore blocks and the sulfur, raw uranium and uranium ingot items wear Malcolm Riley's unused textures (CC BY 4.0) in place of their generated stand-ins (#3).
+
 ## 0.2.0
 
 - Groundworks is now required, from 0.5.5 up to but not including 0.6, and is not nested: a player installs it beside Fieldworks. libworks-runtime 0.1.0 (mod id `libworks`) rides inside the jar by jar-in-jar (#5).
