@@ -141,7 +141,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         }
         List<BlockPos> layer = layer();
         Machine<Result> machine = new Machine<>(tier.rank(), fluids.choiceTank(), operation -> work(level, layer, operation) != null,
-                power.pay(level, tier, false));
+                power.canPay(level, tier));
         Choice<Result> choice = OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, machine);
         if (!(choice instanceof Operation<Result> operation)) {
             idle = ((Idle<Result>) choice).reason();
@@ -158,7 +158,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             idle = IdleReason.NO_FLUID;
             return;
         }
-        if (!power.pay(level, tier, true)) {
+        if (!power.pay(level, tier, progress, ticks)) {
             return;
         }
         idle = null;
@@ -283,6 +283,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         FluidStack drillingFluid = fluids.drillingFluid();
         FluidStack crude = fluids.crude();
         return new HarvesterStatus(takesFuel, takesEnergy, takesFuel ? power.burnLeft() : 0, takesFuel ? power.burnTotal() : 0,
+                takesFuel ? tier.power().burnPerOperation() : 0,
                 takesEnergy ? energy : 0, takesEnergy ? tier.feBuffer() : 0, progress, operationTicks, idleReason(),
                 drillingFluid.getFluid(), drillingFluid.getAmount(), crude.getFluid(), crude.getAmount(), HarvesterFluids.TANK_CAPACITY);
     }

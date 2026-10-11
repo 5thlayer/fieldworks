@@ -17,8 +17,8 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import org.jspecify.annotations.Nullable;
 
 /**
- * How a Harvester pays for its work (#7): its fuel slot, the burn of the fuel item last lit and its FE buffer. One burn
- * tick, or one tick's FE, buys one tick of work.
+ * How a Harvester pays for its work (#7): its fuel slot, the burn of the fuel item last lit and its FE buffer. A tick of
+ * work costs a tick's FE, or its share of the tier's burn per operation.
  */
 final class HarvesterPower {
 
@@ -32,9 +32,9 @@ final class HarvesterPower {
     private final ItemStacksResourceHandler remainders;
     private final EnergyBuffer energy;
 
-    /** Ticks of work bought by the last fuel item and not yet worked. */
+    /** Burn time of the last fuel item not yet spent. */
     private int burnLeft;
-    /** The burn the last fuel item bought, so the menu can draw {@link #burnLeft} against it (#13). */
+    /** The last fuel item's burn time, so the menu can draw {@link #burnLeft} against it (#13). */
     private int burnTotal;
 
     HarvesterPower(ItemStacksResourceHandler remainders, Runnable changed) {
@@ -80,16 +80,26 @@ final class HarvesterPower {
         }
     }
 
+    /** Whether the next tick of work could be paid for, spending nothing. */
+    boolean canPay(ServerLevel level, HarvesterTier tier) {
+        return pay(level, tier, 0, 1, false);
+    }
+
+    /** Pays for the tick at {@code progress} of an operation {@code ticks} long, or says it cannot. */
+    boolean pay(ServerLevel level, HarvesterTier tier, int progress, int ticks) {
+        return pay(level, tier, progress, ticks, true);
+    }
+
     /**
-     * Pays for one tick of work as the tier's power rule says, when {@code commit}, or says whether it could: a burn
-     * tick, a tick's FE, or a fuel item lit.
+     * Pays for one tick of work as the tier's power rule says, when {@code commit}, or says whether it could: its
+     * share of a started burn, a tick's FE, or a fuel item lit. The last share of a burn may be short of the tick's.
      */
-    boolean pay(ServerLevel level, HarvesterTier tier, boolean commit) {
+    private boolean pay(ServerLevel level, HarvesterTier tier, int progress, int ticks, boolean commit) {
         sizeEnergy(tier);
         return switch (tier.power().payment(burnLeft, energy.getAmountAsInt())) {
             case BURN -> {
                 if (commit) {
-                    burnLeft--;
+                    burnLeft -= Math.min(burnLeft, tier.power().burnShare(progress, ticks));
                 }
                 yield true;
             }
@@ -103,11 +113,11 @@ final class HarvesterPower {
                 yield true;
             }
             case LIGHT -> {
-                if (!light(level, tier, commit)) {
+                if (!light(level, commit)) {
                     yield false;
                 }
                 if (commit) {
-                    burnLeft--;
+                    burnLeft -= Math.min(burnLeft, tier.power().burnShare(progress, ticks));
                 }
                 yield true;
             }
@@ -120,7 +130,7 @@ final class HarvesterPower {
      * remainder, the bucket of a lava bucket, goes to the output buffer, so a fuel item whose remainder has no room
      * there is not lit.
      */
-    private boolean light(ServerLevel level, HarvesterTier tier, boolean commit) {
+    private boolean light(ServerLevel level, boolean commit) {
         ItemResource item = fuel.getResource(0);
         int burnTime = item.isEmpty() ? 0 : item.toStack(1).getBurnTime(null, level.fuelValues());
         if (burnTime == 0) {
@@ -138,7 +148,7 @@ final class HarvesterPower {
             }
             lighting.commit();
         }
-        burnLeft = tier.power().workTicks(burnTime);
+        burnLeft = burnTime;
         burnTotal = burnLeft;
         return true;
     }

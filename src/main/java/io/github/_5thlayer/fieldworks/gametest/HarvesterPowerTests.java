@@ -39,6 +39,9 @@ final class HarvesterPowerTests {
     /** The game tests' datapack's tier that takes FE and fuel, with a buffer of ten ticks' FE. */
     private static final Identifier BOTH_KINDS = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "gametest/both_kinds");
 
+    /** An ore draw's ticks at speed x1. */
+    private static final int OPERATION_TICKS = 20;
+
     private HarvesterPowerTests() {
     }
 
@@ -47,6 +50,8 @@ final class HarvesterPowerTests {
                 HarvesterPowerTests::twiceAsFast);
         tests.test("a_tier_that_takes_both_kinds_pays_fe_first_falls_back_to_fuel_and_finishes_a_started_burn", 20,
                 HarvesterPowerTests::bothKinds);
+        tests.test("one_coal_buys_a_burner_harvester_eight_operations_whether_it_draws_ore_or_breaks_harvestable_blocks", 20,
+                HarvesterPowerTests::coalBuysEightOperations);
         tests.test("a_burner_harvester_exposes_no_energy_capability", 20, HarvesterPowerTests::burnOnlyHasNoEnergy);
         tests.test("an_electric_harvester_takes_no_fuel_from_a_hopper", 60, HarvesterPowerTests::feOnlyTakesNoFuel);
     }
@@ -81,6 +86,7 @@ final class HarvesterPowerTests {
         HarvesterTier both = HarvesterTiers.get(BOTH_KINDS);
         helper.assertTrue(both != null, "the game tests' datapack tier " + BOTH_KINDS + " did not load");
         int burnTime = new ItemStack(Items.COAL).getBurnTime(null, helper.getLevel().fuelValues());
+        int burnWork = burnTime * OPERATION_TICKS / both.power().burnPerOperation();
         BlockPos ore = ORIGIN.below();
         int initial = HarvesterTests.ore(helper, OreResource.IRON, ore, 0);
 
@@ -99,13 +105,39 @@ final class HarvesterPowerTests {
             helper.assertValueEqual(initial - HarvesterTests.remaining(helper, ore), 1, "units drawn in 20 ticks of work");
 
             helper.assertValueEqual(feed(helper, 400), 400, "FE fed back mid-burn");
-            HarvesterTests.tick(helper, machine, burnTime - 10);
+            HarvesterTests.tick(helper, machine, burnWork - 10);
             helper.assertValueEqual((int) energy(helper).getAmountAsLong(), 400, "FE spent while the coal still burned");
             HarvesterTests.tick(helper, machine, 1);
             helper.assertValueEqual((int) energy(helper).getAmountAsLong(), 360, "FE once the burn ran out");
-            helper.assertValueEqual(initial - HarvesterTests.remaining(helper, ore), (burnTime + 11) / 20,
+            helper.assertValueEqual(initial - HarvesterTests.remaining(helper, ore), (burnWork + 11) / OPERATION_TICKS,
                     "units drawn, one per 20 ticks of work whatever paid for them");
         }
+        helper.succeed();
+    }
+
+    /** One coal, as it buys a furnace eight smelts: eight 20-tick ore draws, and eight 40-tick breaks of nine blocks. */
+    private static void coalBuysEightOperations(GameTestHelper helper) {
+        BlockPos centre = ORIGIN.below();
+        int initial = HarvesterTests.ore(helper, OreResource.IRON, centre, 0);
+        HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
+        insert(helper, Items.COAL, 1);
+        HarvesterTests.tick(helper, machine(helper), 10 * OPERATION_TICKS);
+        helper.assertValueEqual(initial - HarvesterTests.remaining(helper, centre), 8, "ore draws one coal bought");
+        helper.getLevel().destroyBlock(helper.absolutePos(ORIGIN), false);
+
+        for (BlockPos rel : BlockPos.betweenClosed(centre.offset(-1, 0, -1), centre.offset(1, 0, 1))) {
+            helper.setBlock(rel, Blocks.IRON_ORE);
+        }
+        HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
+        insert(helper, Items.COAL, 1);
+        HarvesterTests.tick(helper, machine(helper), 10 * 2 * OPERATION_TICKS);
+        int left = 0;
+        for (BlockPos rel : BlockPos.betweenClosed(centre.offset(-1, 0, -1), centre.offset(1, 0, 1))) {
+            if (helper.getBlockState(rel).is(Blocks.IRON_ORE)) {
+                left++;
+            }
+        }
+        helper.assertValueEqual(9 - left, 8, "harvestable blocks one coal broke");
         helper.succeed();
     }
 

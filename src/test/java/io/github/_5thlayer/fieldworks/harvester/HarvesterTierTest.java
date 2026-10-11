@@ -33,19 +33,27 @@ class HarvesterTierTest {
     }
 
     @Test
-    void oneCoalBuysTheBurnerHarvesterEightOreDrawsAsItBuysAFurnaceEightSmelts() throws Exception {
+    void oneCoalBuysTheBurnerHarvesterEightOperationsAsItBuysAFurnaceEightSmelts() throws Exception {
         HarvesterTier tier = parse(shipped("harvester_1")).getOrThrow();
 
         int coal = 1600;
-        assertEquals(8, tier.power().workTicks(coal) / tier.ticks(OperationChoice.ORE_DRAW_TICKS));
+        assertEquals(8f, tier.power().operations(coal));
     }
 
     @Test
-    void aBurnRateBelowOneIsRefused() {
-        DataResult<HarvesterTier> result = parse(json("""
-                {"rank": 1, "speed": 1.0, "power": {"fuel": true, "burn_rate": 0}, "fe_buffer": 0}"""));
+    void aTierThatNamesNoBurnPerOperationSpendsAFurnacesSmelt() {
+        HarvesterTier tier = parse(json("""
+                {"rank": 1, "speed": 1.0, "power": {"fuel": true}, "fe_buffer": 0}""")).getOrThrow();
 
-        assertRefused(result, "burn_rate");
+        assertEquals(200, tier.power().burnPerOperation());
+    }
+
+    @Test
+    void aBurnPerOperationBelowOneIsRefused() {
+        DataResult<HarvesterTier> result = parse(json("""
+                {"rank": 1, "speed": 1.0, "power": {"fuel": true, "burn_per_operation": 0}, "fe_buffer": 0}"""));
+
+        assertRefused(result, "burn_per_operation");
     }
 
     @Test

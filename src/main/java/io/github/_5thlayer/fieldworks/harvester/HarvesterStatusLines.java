@@ -34,9 +34,9 @@ public final class HarvesterStatusLines {
                 .orElseGet(() -> Component.translatable("fieldworks.harvester.working").withStyle(ChatFormatting.GREEN));
     }
 
-    /** The burn left of the last fuel item, in seconds. */
+    /** The burn left of the last fuel item, in operations. */
     public static Component burn(HarvesterStatus status) {
-        return Component.translatable("fieldworks.harvester.burn", String.format(Locale.ROOT, "%.1f", status.burnLeft() / 20F));
+        return Component.translatable("fieldworks.harvester.burn", String.format(Locale.ROOT, "%.1f", status.burnOperations()));
     }
 
     public static Component energy(HarvesterStatus status) {

@@ -76,7 +76,8 @@ public final class HarvesterMenu extends AbstractContainerMenu {
     private static final int DATA_PRODUCT_FLUID = 11;
     private static final int DATA_PRODUCT_AMOUNT = 12;
     private static final int DATA_TANK_CAPACITY = 13;
-    private static final int DATA_COUNT = 14;
+    private static final int DATA_BURN_PER_OPERATION = 14;
+    private static final int DATA_COUNT = 15;
 
     private final BlockPos pos;
     /** The Harvester on the server; null on the client, which reads what the server sends. */
@@ -131,6 +132,7 @@ public final class HarvesterMenu extends AbstractContainerMenu {
                     case DATA_TAKES_ENERGY -> status.takesEnergy() ? 1 : 0;
                     case DATA_BURN_LEFT -> status.burnLeft();
                     case DATA_BURN_TOTAL -> status.burnTotal();
+                    case DATA_BURN_PER_OPERATION -> status.burnPerOperation();
                     case DATA_ENERGY -> status.energy();
                     case DATA_ENERGY_CAPACITY -> status.energyCapacity();
                     case DATA_PROGRESS -> status.progress();
@@ -160,7 +162,7 @@ public final class HarvesterMenu extends AbstractContainerMenu {
     public HarvesterStatus status() {
         int idle = data.get(DATA_IDLE);
         return new HarvesterStatus(data.get(DATA_TAKES_FUEL) != 0, data.get(DATA_TAKES_ENERGY) != 0, data.get(DATA_BURN_LEFT),
-                data.get(DATA_BURN_TOTAL), data.get(DATA_ENERGY), data.get(DATA_ENERGY_CAPACITY), data.get(DATA_PROGRESS),
+                data.get(DATA_BURN_TOTAL), data.get(DATA_BURN_PER_OPERATION), data.get(DATA_ENERGY), data.get(DATA_ENERGY_CAPACITY), data.get(DATA_PROGRESS),
                 data.get(DATA_OPERATION_TICKS),
                 idle > 0 && idle <= IdleReason.values().length ? Optional.of(IdleReason.values()[idle - 1]) : Optional.empty(),
                 BuiltInRegistries.FLUID.byId(data.get(DATA_DRILLING_FLUID)), data.get(DATA_DRILLING_AMOUNT),

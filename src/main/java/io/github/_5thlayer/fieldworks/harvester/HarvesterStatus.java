@@ -22,13 +22,15 @@ import net.neoforged.neoforge.fluids.FluidStack;
  * <p>Power is shown only for the kinds the tier declares: a kind it does not take reads {@code false} and zero. A
  * tier with no file reads neither.
  *
- * @param burnLeft      ticks of work left of the fuel item last lit
- * @param burnTotal     the ticks of work that item bought, so the two make a bar
+ * @param burnLeft          burn time left of the fuel item last lit
+ * @param burnTotal         that item's burn time, so the two make a bar
+ * @param burnPerOperation  the burn time the tier spends on an operation, so the burn can be told in operations
  * @param energy        FE buffered, and {@code energyCapacity} what the buffer holds
  * @param progress      ticks into the operation under way, of {@code operationTicks}
  * @param tankCapacity  the one fixed capacity of both tanks, in mB
  */
-public record HarvesterStatus(boolean takesFuel, boolean takesEnergy, int burnLeft, int burnTotal, int energy,
+public record HarvesterStatus(boolean takesFuel, boolean takesEnergy, int burnLeft, int burnTotal, int burnPerOperation,
+        int energy,
         int energyCapacity, int progress, int operationTicks, Optional<IdleReason> idle, Fluid drillingFluid,
         int drillingAmount, Fluid product, int productAmount, int tankCapacity) {
 
@@ -42,6 +44,7 @@ public record HarvesterStatus(boolean takesFuel, boolean takesEnergy, int burnLe
                 buffer.writeBoolean(status.takesEnergy);
                 buffer.writeVarInt(status.burnLeft);
                 buffer.writeVarInt(status.burnTotal);
+                buffer.writeVarInt(status.burnPerOperation);
                 buffer.writeVarInt(status.energy);
                 buffer.writeVarInt(status.energyCapacity);
                 buffer.writeVarInt(status.progress);
@@ -54,7 +57,7 @@ public record HarvesterStatus(boolean takesFuel, boolean takesEnergy, int burnLe
                 buffer.writeVarInt(status.tankCapacity);
             },
             buffer -> new HarvesterStatus(buffer.readBoolean(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(),
-                    buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
                     IDLE.decode(buffer),
                     FLUID.decode(buffer), buffer.readVarInt(),
                     FLUID.decode(buffer), buffer.readVarInt(),
@@ -73,6 +76,11 @@ public record HarvesterStatus(boolean takesFuel, boolean takesEnergy, int burnLe
     /** How far the operation under way is, 0 to 1; 0 before the first. */
     public float progressFraction() {
         return operationTicks <= 0 ? 0f : Math.min(1f, (float) progress / operationTicks);
+    }
+
+    /** The operations the last fuel item's burn has left. */
+    public float burnOperations() {
+        return burnPerOperation <= 0 ? 0f : (float) burnLeft / burnPerOperation;
     }
 
     /** How much of the last fuel item's burn is left, 0 to 1. */

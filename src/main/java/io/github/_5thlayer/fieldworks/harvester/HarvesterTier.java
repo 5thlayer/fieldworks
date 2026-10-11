@@ -14,20 +14,32 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  */
 public record HarvesterTier(int rank, double speed, Power power, int feBuffer) {
 
-    /** The power a tier takes: burn time from fuel, FE at a cost per tick of work, or both. */
-    /** {@code burnRate} is the fuel's burn ticks one tick of work spends, as a furnace spends one a tick. */
-    public record Power(boolean fuel, int fePerTick, int burnRate) {
+    /**
+     * The power a tier takes: burn time from fuel, FE at a cost per tick of work, or both. A fuel's burn time is spent
+     * {@code burnPerOperation} to an operation however long it runs, as a furnace spends 200 on a smelt, so a coal
+     * buys the same operations of every kind.
+     */
+    public record Power(boolean fuel, int fePerTick, int burnPerOperation) {
 
         static final Codec<Power> CODEC = RecordCodecBuilder.<Power>create(instance -> instance.group(
                 Codec.BOOL.optionalFieldOf("fuel", false).forGetter(Power::fuel),
                 Codec.INT.optionalFieldOf("fe_per_tick", 0).forGetter(Power::fePerTick),
-                Codec.INT.optionalFieldOf("burn_rate", 1).forGetter(Power::burnRate)
-        ).apply(instance, Power::new)).validate(power -> power.burnRate() >= 1 ? DataResult.success(power)
-                : DataResult.error(() -> "a tier's burn_rate must be at least 1, not " + power.burnRate()));
+                Codec.INT.optionalFieldOf("burn_per_operation", 200).forGetter(Power::burnPerOperation)
+        ).apply(instance, Power::new)).validate(power -> power.burnPerOperation() >= 1 ? DataResult.success(power)
+                : DataResult.error(() -> "a tier's burn_per_operation must be at least 1, not " + power.burnPerOperation()));
 
-        /** The ticks of work a fuel item burning for {@code burnTime} buys, never none for a fuel. */
-        public int workTicks(int burnTime) {
-            return burnTime <= 0 ? 0 : Math.max(1, burnTime / burnRate);
+        /**
+         * The burn time the tick at {@code progress} of an operation {@code ticks} long spends: the operation's
+         * {@link #burnPerOperation} spread over its ticks, so its ticks together spend exactly that.
+         */
+        public int burnShare(int progress, int ticks) {
+            long perOperation = burnPerOperation;
+            return (int) (perOperation * (progress + 1) / ticks - perOperation * progress / ticks);
+        }
+
+        /** The operations {@code burnTime} buys. */
+        public float operations(int burnTime) {
+            return (float) burnTime / burnPerOperation;
         }
 
         public boolean fe() {
@@ -35,7 +47,7 @@ public record HarvesterTier(int rank, double speed, Power power, int feBuffer) {
         }
 
         /**
-         * What pays for the next tick of work, given the burn ticks left of the fuel item last lit and the FE
+         * What pays for the next tick of work, given the burn time left of the fuel item last lit and the FE
          * buffered (#7): a started burn finishes first, then FE pays while a tick's cost is buffered, and only
          * then is fuel lit. A burn outlives a reload that took the tier's fuel away.
          */
@@ -50,7 +62,7 @@ public record HarvesterTier(int rank, double speed, Power power, int feBuffer) {
         }
     }
 
-    /** What pays for a tick of work: a burn tick, a tick's FE, lighting a fuel item to burn, or nothing. */
+    /** What pays for a tick of work: burn time, a tick's FE, lighting a fuel item to burn, or nothing. */
     public enum Payment {
         BURN, FE, LIGHT, NONE
     }

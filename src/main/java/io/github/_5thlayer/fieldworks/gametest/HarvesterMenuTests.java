@@ -114,23 +114,25 @@ final class HarvesterMenuTests {
         helper.succeed();
     }
 
-    /** Ten ticks into a 20-tick draw on coal: halfway, with the coal's burn started and ten ticks spent. */
+    /** Ten ticks into a 20-tick draw on coal: halfway, with the coal lit and half an operation's burn spent. */
     private static void burnFeAndProgress(GameTestHelper helper) {
         HarvesterTests.ore(helper, OreResource.IRON, CENTRE, 0);
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
         insertItem(helper, Items.COAL, 1);
         HarvesterBlockEntity machine = machine(helper);
         HarvesterMenu menu = menu(helper);
-        int bought = HarvesterTiers.get(TierBlock.HARVESTER_1).power()
-                .workTicks(new ItemStack(Items.COAL).getBurnTime(null, helper.getLevel().fuelValues()));
+        int burnTime = new ItemStack(Items.COAL).getBurnTime(null, helper.getLevel().fuelValues());
+        int perOperation = HarvesterTiers.get(TierBlock.HARVESTER_1).power().burnPerOperation();
 
         HarvesterTests.tick(helper, machine, 10);
 
         helper.assertValueEqual(menu.progress(), 10, "ticks of progress");
         helper.assertValueEqual(menu.operationTicks(), 20, "ticks the operation takes");
         helper.assertValueEqual(menu.progressFraction(), 0.5f, "progress as a fraction");
-        helper.assertValueEqual(menu.burnTotal(), bought, "the work the coal bought");
-        helper.assertValueEqual(menu.burnLeft(), bought - 10, "the work left");
+        helper.assertValueEqual(menu.burnTotal(), burnTime, "the coal's burn time");
+        helper.assertValueEqual(menu.burnLeft(), burnTime - perOperation / 2, "the burn left");
+        helper.assertValueEqual(menu.status().burnOperations(), (burnTime - perOperation / 2) / (float) perOperation,
+                "the operations the burn has left");
         helper.getLevel().destroyBlock(helper.absolutePos(ORIGIN), false);
 
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_2);
