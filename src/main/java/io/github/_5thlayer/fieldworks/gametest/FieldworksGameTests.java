@@ -74,6 +74,7 @@ public final class FieldworksGameTests {
         HarvesterMenuTests.register(tests);
         FlooredWellTests.register(tests);
         FlatWorldTests.register(tests);
+        CreativeTabTests.register(tests);
         TarTests.register(tests);
     }
 

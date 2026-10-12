@@ -10,7 +10,6 @@ import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.FieldworksTags;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -18,7 +17,6 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -62,12 +60,5 @@ public final class Tar {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         TarInteraction.register(modBus);
-        modBus.addListener(Tar::addToCreativeTabs);
-    }
-
-    private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
-            event.accept(ITEM.get());
-        }
     }
 }

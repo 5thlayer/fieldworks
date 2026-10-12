@@ -14,7 +14,6 @@ import io.github._5thlayer.groundworks.FootprintPartBlock;
 import io.github._5thlayer.groundworks.FootprintShape;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -25,7 +24,6 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -88,7 +86,6 @@ public final class Harvesters {
         MENUS.register(modBus);
         HarvestRecipes.register(modBus);
         modBus.addListener(Harvesters::registerCapabilities);
-        modBus.addListener(Harvesters::addToCreativeTabs);
         NeoForge.EVENT_BUS.addListener(HarvesterTiers::addListener);
     }
 
@@ -105,11 +102,5 @@ public final class Harvesters {
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), (harvester, side) -> harvester.itemFace());
         event.registerBlockEntity(Capabilities.Fluid.BLOCK, BLOCK_ENTITY.get(), (harvester, side) -> harvester.fluidFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, BLOCK_ENTITY.get(), (harvester, side) -> harvester.energyFace());
-    }
-
-    private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
-            ITEM_BY_TIER.values().forEach(item -> event.accept(item.get()));
-        }
     }
 }

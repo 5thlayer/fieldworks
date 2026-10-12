@@ -45,6 +45,7 @@ public final class Fieldworks {
         Tar.register(modBus);
         Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);
+        modBus.addListener(WorksTabContents::add);
         modBus.addListener(Fieldworks::registerPayloads);
         NeoForge.EVENT_BUS.addListener(OreMining::onBreak);
         NeoForge.EVENT_BUS.addListener(MarkerEvents::onChunkSent);
