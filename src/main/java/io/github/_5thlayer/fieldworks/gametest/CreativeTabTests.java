@@ -9,6 +9,7 @@ import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.libworks.WorksTab;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
@@ -43,6 +44,11 @@ final class CreativeTabTests {
 
     private static void noOtherTab(GameTestHelper helper) {
         rebuild(helper);
+        // Empty tabs would pass the loop below without the Library's items reaching any tab.
+        if (ownItems(BuiltInRegistries.CREATIVE_MODE_TAB.getValueOrThrow(WorksTab.KEY)).isEmpty()) {
+            helper.fail("the Works tab shows no Fieldworks item, so no tab was filled");
+            return;
+        }
         for (var entry : BuiltInRegistries.CREATIVE_MODE_TAB.entrySet()) {
             CreativeModeTab tab = entry.getValue();
             // The search tab lists every other tab's items.
@@ -68,7 +74,7 @@ final class CreativeTabTests {
                 .map(ItemStack::getItem)
                 .map(BuiltInRegistries.ITEM::getKey)
                 .filter(id -> id.getNamespace().equals(Fieldworks.MOD_ID))
-                .map(id -> id.getPath())
+                .map(Identifier::getPath)
                 .toList();
     }
 }
