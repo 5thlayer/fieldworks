@@ -76,6 +76,7 @@ public final class FieldworksGameTests {
         FlatWorldTests.register(tests);
         CreativeTabTests.register(tests);
         TarTests.register(tests);
+        HarvesterCraftingTests.register(tests);
     }
 
     private static Identifier id(String path) {
