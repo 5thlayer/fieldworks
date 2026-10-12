@@ -27,6 +27,11 @@ import net.neoforged.neoforge.fluids.FluidType;
  * workstation, and its {@code +} on an open Harvester setting the Held recipe (#10). Crude meeting lava shows as a
  * world interaction making tar, with the lava left in place (#22).
  *
+ * <p>The recipe and usage keys work on the faded stack in an empty fuel, fill or drain slot, as on a real one. A ghost
+ * is not clickable, so a click on its slot reaches the slot: EMI otherwise takes the left click to show recipes, and a
+ * stack in hand could never be put in an empty slot. JEI needs no such care, as it never takes a click on an
+ * ingredient a screen's handler names.
+ *
  * <p>EMI finds this by its annotation and loads it only when EMI is installed; nothing outside this package names an
  * EMI type, so the Library loads without it. The recipes are the ones the server sends ({@link HarvestRecipes}).
  */
@@ -46,7 +51,8 @@ public final class HarvestingEmiPlugin implements EmiPlugin {
         }
         registry.addRecipeHandler(Harvesters.MENU.get(), new HarvesterEmiHandler());
         registry.addStackProvider(HarvesterScreen.class, (screen, x, y) -> screen.ghostAt(x, y)
-                .map(ghost -> new EmiStackInteraction(EmiStack.of(ghost.stack()))).orElse(EmiStackInteraction.EMPTY));
+                .map(ghost -> new EmiStackInteraction(EmiStack.of(ghost.stack()), null, false))
+                .orElse(EmiStackInteraction.EMPTY));
         registry.addRecipe(EmiWorldInteractionRecipe.builder()
                 .leftInput(EmiIngredient.of(Tar.crudeSources().stream()
                         .map(fluid -> EmiStack.of(fluid, FluidType.BUCKET_VOLUME)).toList()))

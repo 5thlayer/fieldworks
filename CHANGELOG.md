@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- With EMI installed, a left click on an empty fuel, fill or drain slot of the Harvester reaches the slot, so a stack in hand goes in; EMI took the click on the slot's faded item to show its recipes. The recipe and usage keys still work on it.
+
 ## 0.2.1
 
 - Both Harvesters are crafted at a crafting table. The Burner Harvester takes three iron ingots over cobblestone, a furnace and an iron pickaxe; the Electric Harvester takes a Burner Harvester ringed by iron ingots, copper ingots and redstone. Iron, copper, cobblestone and redstone are read from their `c:` tags, so another mod's may stand in. The recipes are `fieldworks:harvester_1` and `fieldworks:harvester_2`, which a datapack can override (#24).
