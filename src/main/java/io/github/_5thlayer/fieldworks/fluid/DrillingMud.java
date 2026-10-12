@@ -7,7 +7,6 @@ import io.github._5thlayer.fieldworks.Fieldworks;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -27,7 +26,6 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
@@ -108,7 +106,6 @@ public final class DrillingMud {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         modBus.addListener(DrillingMud::registerCapabilities);
-        modBus.addListener(DrillingMud::addToCreativeTabs);
         // A game bus event, posted on the server and again on a client's login.
         NeoForge.EVENT_BUS.addListener(DrillingMud::registerBrewing);
     }
@@ -122,13 +119,6 @@ public final class DrillingMud {
         Ingredient water = DataComponentIngredient.of(DataComponents.POTION_CONTENTS, new PotionContents(Potions.WATER), Items.POTION);
         event.getBuilder().addRecipe(water, Ingredient.of(Items.CLAY_BALL), new ItemStack(BOTTLE.get()));
         event.getBuilder().addRecipe(water, Ingredient.of(Items.SLIME_BALL), new ItemStack(BOTTLE.get()));
-    }
-
-    private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(BUCKET.get());
-            event.accept(BOTTLE.get());
-        }
     }
 
     /**

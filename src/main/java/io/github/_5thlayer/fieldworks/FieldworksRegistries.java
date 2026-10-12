@@ -16,12 +16,10 @@ import io.github._5thlayer.fieldworks.ore.OreDelta;
 import io.github._5thlayer.fieldworks.ore.OreResource;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -75,21 +73,14 @@ public final class FieldworksRegistries {
         return ORES.get(resource);
     }
 
+    public static DeferredItem<BlockItem> oreItem(OreResource resource) {
+        return ORE_ITEMS.get(resource);
+    }
+
     public static void register(IEventBus modBus) {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         BLOCK_ENTITIES.register(modBus);
         ATTACHMENTS.register(modBus);
-        modBus.addListener(FieldworksRegistries::addToCreativeTabs);
-    }
-
-    private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) {
-            ORE_ITEMS.values().forEach(item -> event.accept(item.get()));
-        } else if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
-            event.accept(RAW_URANIUM.get());
-            event.accept(SULFUR.get());
-            event.accept(URANIUM_INGOT.get());
-        }
     }
 }
