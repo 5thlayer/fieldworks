@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+## 0.2.1
+
 - Both Harvesters are crafted at a crafting table. The Burner Harvester takes three iron ingots over cobblestone, a furnace and an iron pickaxe; the Electric Harvester takes a Burner Harvester ringed by iron ingots, copper ingots and redstone. Iron, copper, cobblestone and redstone are read from their `c:` tags, so another mod's may stand in. The recipes are `fieldworks:harvester_1` and `fieldworks:harvester_2`, which a datapack can override (#24).
 - The iron, copper, coal, uranium and sulfur ore blocks are each in their `c:ores/<resource>` block tag, such as `c:ores/sulfur`; stone ore stays in plain `c:ores` only. Raw uranium is in `c:raw_materials/uranium` (#21).
 - Fieldworks' items moved from the vanilla tabs (Natural Blocks, Ingredients, Tools & Utilities, Functional Blocks) to the suite's shared Works tab, libworks-runtime's `WorksTab.KEY`, and are in no other tab. Within it they run Harvesters by tier, the ore blocks, sulfur, raw uranium, the uranium ingot and tar, then the crude oil bucket and the drilling mud bottle and bucket (#4).
