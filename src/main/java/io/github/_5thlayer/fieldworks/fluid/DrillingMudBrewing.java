@@ -28,7 +28,7 @@ public final class DrillingMudBrewing {
     /** Each bottle a brewing stand turns into a mud bottle, and what it is brewed with. */
     public static final List<Pairing> PAIRINGS = List.of(
             new Pairing(Potions.WATER, Items.CLAY_BALL),
-            new Pairing(Potions.WATER, Items.SLIME_BALL));
+            new Pairing(Potions.WATER, Items.CLAY));
 
     private DrillingMudBrewing() {
     }

@@ -4,7 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
-- With EMI installed, drilling mud's brewing shows as a water bottle with a clay ball, or with a slime ball, brewing into a drilling mud bottle. EMI showed each as an Uncraftable Potion brewing into nothing, and listed no brewing recipe under the mud bottle (#29).
+- A brewing stand brews drilling mud from a water bottle with a clay ball or a clay block; the slime ball no longer brews it (#29).
+- With EMI installed, drilling mud's brewing shows as a water bottle with a clay ball, or with a clay block, brewing into a drilling mud bottle. EMI showed each as an Uncraftable Potion brewing into nothing, and listed no brewing recipe under the mud bottle (#29).
 
 ## 0.2.3
 

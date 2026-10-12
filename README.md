@@ -17,7 +17,7 @@ I also wanted endgame mining that doesn’t mean strip-mining whole chunks. Patc
 - **Oil fields.** Oil wells yield crude oil, which decays to a floor and never runs out. Crude has its own bucket.
 - **Map markers.** FTB Chunks' map shows one marker per patch, with its resource and what is left, for every player once anyone has found it.
 - **The Harvester.** A 3×3×3 machine that works the layer under it. Over an oil well it pumps crude; otherwise it draws ore blocks one unit at a time, and breaks other ores for their loot. The Burner Harvester burns anything a furnace burns; the Electric Harvester runs on FE at twice the speed.
-- **Harvest Recipes and Drilling Fluids.** Every resource has a fluid-free default, so a Harvester works as soon as it is placed and powered. Recipes add Drilling Fluid variants: pick one in EMI or JEI and the Harvester holds it. Drilling mud, the first Drilling Fluid, is brewed in a brewing stand from a water bottle with a clay ball or a slime ball, and keeps a decayed well pumping above its floor.
+- **Harvest Recipes and Drilling Fluids.** Every resource has a fluid-free default, so a Harvester works as soon as it is placed and powered. Recipes add Drilling Fluid variants: pick one in EMI or JEI and the Harvester holds it. Drilling mud, the first Drilling Fluid, is brewed in a brewing stand from a water bottle with a clay ball or a clay block, and keeps a decayed well pumping above its floor.
 - **Hoppers are enough.** Fuel, mud in bottles or buckets, and empty buckets go in by hopper. Results, emptied bottles and filled crude buckets are pushed out of the Harvester's front into a chest, a hopper or a belt, and crude into a pipe. Pipe mods can fill its mud tank and drain its crude too.
 
 ## For pack authors

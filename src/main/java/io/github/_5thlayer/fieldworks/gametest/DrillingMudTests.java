@@ -35,7 +35,7 @@ final class DrillingMudTests {
     static void register(FieldworksGameTests.Registrar tests) {
         // A brew takes 400 ticks, run by the stand itself.
         tests.test("a_water_bottle_brewed_with_a_clay_ball_gives_a_drilling_mud_bottle", 460, helper -> brews(helper, pairing(Items.CLAY_BALL)));
-        tests.test("a_water_bottle_brewed_with_a_slime_ball_gives_a_drilling_mud_bottle", 460, helper -> brews(helper, pairing(Items.SLIME_BALL)));
+        tests.test("a_water_bottle_brewed_with_a_clay_block_gives_a_drilling_mud_bottle", 460, helper -> brews(helper, pairing(Items.CLAY)));
         tests.test("the_drilling_mud_bottle_and_bucket_expose_the_item_fluid_capability_and_mud_is_a_drilling_fluid", 1,
                 DrillingMudTests::exposesTheCapability);
     }
