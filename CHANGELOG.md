@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Nests libworks-runtime 0.1.7, which offers the Harvester's ghosts to EMI in place of Fieldworks' own stack provider: the recipe and usage keys still work on a ghost and a click still reaches its empty slot (libworks#23).
+
 ## 0.2.4
 
 - A brewing stand brews drilling mud from a water bottle with a clay ball or a clay block; the slime ball no longer brews it (#29).

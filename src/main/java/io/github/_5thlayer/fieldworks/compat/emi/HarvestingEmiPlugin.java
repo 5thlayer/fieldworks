@@ -10,13 +10,11 @@ import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.recipe.EmiWorldInteractionRecipe;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
-import dev.emi.emi.api.stack.EmiStackInteraction;
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
-import io.github._5thlayer.fieldworks.harvester.client.HarvesterScreen;
 import io.github._5thlayer.fieldworks.oil.Tar;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.material.Fluids;
@@ -27,10 +25,9 @@ import net.neoforged.neoforge.fluids.FluidType;
  * workstation, and its {@code +} on an open Harvester setting the Held recipe (#10). Crude meeting lava shows as a
  * world interaction making tar, with the lava left in place (#22).
  *
- * <p>The recipe and usage keys work on the faded stack in an empty fuel, fill or drain slot, as on a real one. A ghost
- * is not clickable, so a click on its slot reaches the slot: EMI otherwise takes the left click to show recipes, and a
- * stack in hand could never be put in an empty slot. JEI needs no such care, as it never takes a click on an
- * ingredient a screen's handler names.
+ * <p>The recipe and usage keys work on the faded stack in an empty fuel, fill or drain slot, as on a real one, and a
+ * click on it reaches the slot: {@code HarvesterScreen} is a libworks {@code GhostScreen}, whose ghosts libworks-runtime
+ * offers to EMI itself (libworks ADR 0007), so this registers no stack provider for them.
  *
  * <p>EMI finds this by its annotation and loads it only when EMI is installed; nothing outside this package names an
  * EMI type, so the Library loads without it. The recipes are the ones the server sends ({@link HarvestRecipes}).
@@ -50,9 +47,6 @@ public final class HarvestingEmiPlugin implements EmiPlugin {
             registry.addRecipe(new HarvestingEmiRecipe(category, view));
         }
         registry.addRecipeHandler(Harvesters.MENU.get(), new HarvesterEmiHandler());
-        registry.addStackProvider(HarvesterScreen.class, (screen, x, y) -> screen.ghostAt(x, y)
-                .map(ghost -> new EmiStackInteraction(EmiStack.of(ghost.stack()), null, false))
-                .orElse(EmiStackInteraction.EMPTY));
         registry.addRecipe(EmiWorldInteractionRecipe.builder()
                 .leftInput(EmiIngredient.of(Tar.crudeSources().stream()
                         .map(fluid -> EmiStack.of(fluid, FluidType.BUCKET_VOLUME)).toList()))

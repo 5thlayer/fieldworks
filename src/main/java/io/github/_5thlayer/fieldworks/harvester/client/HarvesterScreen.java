@@ -12,6 +12,7 @@ import io.github._5thlayer.fieldworks.harvester.HarvesterStatusLines;
 import io.github._5thlayer.fieldworks.harvester.HeldRecipeView;
 import io.github._5thlayer.fieldworks.network.ClearHeldRecipePacket;
 import io.github._5thlayer.libworks.ghost.Ghost;
+import io.github._5thlayer.libworks.ghost.GhostScreen;
 import io.github._5thlayer.libworks.ghost.Ghosts;
 import io.github._5thlayer.libworks.ghost.client.GhostDraw;
 import io.github._5thlayer.libworks.machine.client.MachineDraw;
@@ -32,7 +33,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * the kinds the tier declares, both tanks, the output buffer, progress, the Held recipe with a button that clears it,
  * and the idle reason. The button sends {@link ClearHeldRecipePacket}; a recipe is never picked here.
  */
-public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu> {
+public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu> implements GhostScreen {
 
     private static final int BURN = 0xFFD9822B;
     private static final int ENERGY = 0xFFB8392B;
@@ -118,9 +119,10 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
         graphics.text(font, MachineDraw.fitted(font, HarvesterStatusLines.state(status.idle()), stateWidth()), MachineDraw.MARGIN, STATE_Y, MachineDraw.TEXT, false);
     }
 
-    /** The ghost stack under the mouse, with the top-left of its slot on screen so EMI's and JEI's recipe and usage keys work on it. */
-    public Optional<Ghost> ghostAt(double mouseX, double mouseY) {
-        return ghosts.at(mouseX, mouseY, Util.getMillis());
+    /** The slots' ghosts, which libworks-runtime offers to EMI as the hovered stack, not clickable; {@code ghostAt} finds one for JEI's keys. */
+    @Override
+    public Ghosts ghosts() {
+        return ghosts;
     }
 
     private static Component heldLine(Optional<HeldRecipeView> held) {
