@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- The Harvester's screen and its Jade view are drawn by libworks-runtime's shared machine look, the same as the other mods' machines: a gauge writes its amount only when it fits. The nested libworks-runtime is now 0.1.2 up to but not including 0.2 (#30).
+
 ## 0.2.2
 
 - With EMI installed, a left click on an empty fuel, fill or drain slot of the Harvester reaches the slot, so a stack in hand goes in; EMI took the click on the slot's faded item to show its recipes. The recipe and usage keys still work on it.
