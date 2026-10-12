@@ -39,7 +39,7 @@ I also wanted endgame mining that doesn’t mean strip-mining whole chunks. Patc
 
 ## Art
 
-The coal, copper, iron and uranium ore sprites and the crude oil sprite are by Malcolm Riley ([unused-textures](https://github.com/malcolmriley/unused-textures)), under CC BY 4.0; the cover and icon are drawn from them. The stone and sulfur sprites are Fieldworks' own. `NOTICE` and `REUSE.toml` record each file.
+The coal, copper, iron, sulfur and uranium ore sprites, the sulfur, raw uranium and uranium ingot sprites, and the crude oil sprite are by Malcolm Riley ([unused-textures](https://github.com/malcolmriley/unused-textures)), under CC BY 4.0; the cover and icon are drawn from them. The stone sprites are Fieldworks' own. `NOTICE` and `REUSE.toml` record each file.
 
 ## Developing
 
