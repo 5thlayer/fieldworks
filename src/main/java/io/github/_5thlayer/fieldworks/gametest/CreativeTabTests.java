@@ -21,7 +21,7 @@ final class CreativeTabTests {
             "harvester_1", "harvester_2",
             "iron_ore", "copper_ore", "coal_ore", "stone_ore", "uranium_ore",
             "sulfur_ore",
-            "sulfur", "raw_uranium", "uranium_ingot",
+            "sulfur", "raw_uranium", "uranium_ingot", "tar",
             "crude_oil_bucket", "drilling_mud_bottle", "drilling_mud_bucket");
 
     private CreativeTabTests() {

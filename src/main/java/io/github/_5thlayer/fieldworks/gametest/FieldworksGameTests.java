@@ -48,8 +48,9 @@ public final class FieldworksGameTests {
         // Posted only when game tests are enabled, so a production server never registers the tests.
         modBus.addListener(FieldworksGameTests::registerTests);
         if (Boolean.getBoolean(OWN_RUN)) {
-            // The tests' own fluid-handler block, which a player's world never has.
+            // The tests' own fluid-handler block and second crude, which a player's world never has.
             TestTank.register(modBus);
+            TestCrude.register(modBus);
         }
     }
 
@@ -74,6 +75,7 @@ public final class FieldworksGameTests {
         FlooredWellTests.register(tests);
         FlatWorldTests.register(tests);
         CreativeTabTests.register(tests);
+        TarTests.register(tests);
     }
 
     private static Identifier id(String path) {

@@ -7,6 +7,7 @@ import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.fluid.DrillingMud;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
+import io.github._5thlayer.fieldworks.oil.Tar;
 import io.github._5thlayer.fieldworks.ore.OreResource;
 import io.github._5thlayer.libworks.WorksTab;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -33,6 +34,7 @@ final class WorksTabContents {
         event.accept(FieldworksRegistries.SULFUR.get());
         event.accept(FieldworksRegistries.RAW_URANIUM.get());
         event.accept(FieldworksRegistries.URANIUM_INGOT.get());
+        event.accept(Tar.ITEM.get());
         event.accept(CrudeOil.BUCKET.get());
         event.accept(DrillingMud.BOTTLE.get());
         event.accept(DrillingMud.BUCKET.get());

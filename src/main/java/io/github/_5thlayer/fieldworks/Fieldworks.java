@@ -17,6 +17,7 @@ import io.github._5thlayer.fieldworks.network.ClearHeldRecipePacket;
 import io.github._5thlayer.fieldworks.network.HeldRecipeSyncPacket;
 import io.github._5thlayer.fieldworks.network.HoldRecipePacket;
 import io.github._5thlayer.fieldworks.network.PatchMarkersPacket;
+import io.github._5thlayer.fieldworks.oil.Tar;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.worldgen.FieldworksWorldgen;
 import net.neoforged.api.distmarker.Dist;
@@ -27,7 +28,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
-/** The Library's entry point: ore patches, oil wells and crude oil, their map markers, and the Harvester. */
+/** The Library's entry point: ore patches, oil wells, crude oil and tar, their map markers, and the Harvester. */
 @Mod(Fieldworks.MOD_ID)
 public final class Fieldworks {
 
@@ -41,6 +42,7 @@ public final class Fieldworks {
         FieldworksRegistries.register(modBus);
         CrudeOil.register(modBus);
         DrillingMud.register(modBus);
+        Tar.register(modBus);
         Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);
         modBus.addListener(WorksTabContents::add);

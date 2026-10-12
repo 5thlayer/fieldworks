@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 5thlayer
 # SPDX-License-Identifier: MIT
-"""Build the ore blocks' stage sprites and the three item sprites.
+"""Build the ore blocks' stage sprites, the item sprites and tar's.
 
 A block shows one of eight sprites for what is left in it. The ratios at which a block changes
 stage are in fieldworks/ore/amounts.json; what each stage draws is an even step: stage `i` of `n`
@@ -11,7 +11,8 @@ core and each stage is a subset of the one before.
 Coal, copper, iron, sulfur and uranium wear Malcolm Riley's unused textures (CC BY 4.0, credited in
 NOTICE), committed unmodified under data/art/. Stone is generated: tan boulders standing on the
 ground, from a fixed seed. The items are his too: sulfur and raw uranium as they are, and the uranium
-ingot his lead ingot in the green of the uranium ore's crystals.
+ingot his lead ingot in the green of the uranium ore's crystals. Tar's block and item are drawn here:
+Fieldworks' own stand-ins until real art is drawn.
 
     scripts/build-textures.py
     scripts/build-textures.py --check    # regenerate and diff
@@ -28,7 +29,8 @@ import zlib
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 AMOUNTS = os.path.join(ROOT, "src", "main", "resources", "fieldworks", "ore", "amounts.json")
 TEXTURES = os.path.join(ROOT, "src", "main", "resources", "assets", "fieldworks", "textures")
-ORE_OUT = os.path.join(TEXTURES, "block", "ore")
+BLOCK_OUT = os.path.join(TEXTURES, "block")
+ORE_OUT = os.path.join(BLOCK_OUT, "ore")
 ITEM_OUT = os.path.join(TEXTURES, "item")
 ART = os.path.join(ROOT, "data", "art")
 
@@ -74,6 +76,11 @@ BOULDER_SHAPES = [
 
 # One seed, so a rerun does not churn the binaries for no reason.
 SEED = 20260905
+
+TAR = (24, 20, 18, 255)
+TAR_DARK = (12, 10, 9, 255)
+TAR_SHEEN = (70, 62, 56, 255)
+CLEAR = (0, 0, 0, 0)
 
 
 def png(pixels):
@@ -238,6 +245,30 @@ def item_sprites():
     return sprites
 
 
+def tar_block():
+    """Near-black tar with darker pits and a few brown-grey glints of sheen."""
+    pixels = [[TAR] * 16 for _ in range(16)]
+    for x, y in ((2, 3), (3, 3), (9, 1), (12, 6), (13, 6), (5, 9), (6, 10), (10, 12), (1, 13), (14, 14)):
+        pixels[y][x] = TAR_DARK
+    for x, y in ((4, 5), (11, 3), (7, 13), (13, 10), (2, 11)):
+        pixels[y][x] = TAR_SHEEN
+    return pixels
+
+
+def tar_item():
+    """A lump of tar on a clear ground: a rounded blob, darker at its rim, with a glint at its top left."""
+    pixels = [[CLEAR] * 16 for _ in range(16)]
+    for y in range(16):
+        for x in range(16):
+            dx, dy = x - 7.5, (y - 8.5) * 1.25
+            distance = dx * dx + dy * dy
+            if distance <= 36:
+                pixels[y][x] = TAR_DARK if distance > 26 else TAR
+    for x, y in ((5, 5), (6, 5), (5, 6)):
+        pixels[y][x] = TAR_SHEEN
+    return pixels
+
+
 def build():
     with open(AMOUNTS, encoding="utf-8") as handle:
         by_key = json.load(handle)["resources"]
@@ -252,6 +283,8 @@ def build():
             files[os.path.join(ORE_OUT, f"{resource}_stage{stage}.png")] = image
     for name, pixels in item_sprites().items():
         files[os.path.join(ITEM_OUT, f"{name}.png")] = png(pixels)
+    files[os.path.join(BLOCK_OUT, "tar.png")] = png(tar_block())
+    files[os.path.join(ITEM_OUT, "tar.png")] = png(tar_item())
     return files
 
 
@@ -268,7 +301,7 @@ def main():
             print(f"FAIL: {os.path.relpath(path, ROOT)} is missing or stale")
         if stale:
             return 1
-        print(f"ok   {len(files)} sprites match amounts.json's stage ratios")
+        print(f"ok   {len(files)} sprites match the generator")
         return 0
 
     for path, image in sorted(files.items()):
