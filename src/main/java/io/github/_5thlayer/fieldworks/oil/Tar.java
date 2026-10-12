@@ -3,11 +3,18 @@
 
 package io.github._5thlayer.fieldworks.oil;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.github._5thlayer.fieldworks.Fieldworks;
+import io.github._5thlayer.fieldworks.FieldworksTags;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
@@ -34,6 +41,21 @@ public final class Tar {
     public static final DeferredItem<Item> ITEM = ITEMS.registerSimpleItem("tar");
 
     private Tar() {
+    }
+
+    /**
+     * Every source fluid in {@code c:crude_oil}, which is every fluid that sets as tar: flowing crude never does. Read
+     * from the bound tag, so only once the tags are loaded, as a recipe viewer's plugin is.
+     */
+    public static List<Fluid> crudeSources() {
+        List<Fluid> sources = new ArrayList<>();
+        for (Holder<Fluid> holder : BuiltInRegistries.FLUID.getTagOrEmpty(FieldworksTags.CRUDE_OIL)) {
+            Fluid fluid = holder.value();
+            if (fluid.defaultFluidState().isSource()) {
+                sources.add(fluid);
+            }
+        }
+        return sources;
     }
 
     public static void register(IEventBus modBus) {
