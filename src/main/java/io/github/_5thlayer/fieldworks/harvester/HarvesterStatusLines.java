@@ -42,7 +42,7 @@ public final class HarvesterStatusLines {
         return Component.translatable("fieldworks.harvester.energy", number.format(status.energy()), number.format(status.energyCapacity()));
     }
 
-    /** One of a Harvester's two tanks, as its line names it. */
+    /** One of a Harvester's two tanks, as its tooltip and Jade name it. */
     public enum Tank {
         DRILLING,
         PRODUCT;
@@ -51,15 +51,11 @@ public final class HarvesterStatusLines {
         public FluidStack stack(HarvesterStatus status) {
             return this == DRILLING ? status.drillingFluidStack() : status.productStack();
         }
-    }
 
-    /** A tank's line: the fluid's name and its mB of the capacity. */
-    public static Component tank(Tank tank, HarvesterStatus status) {
-        NumberFormat number = NumberFormat.getIntegerInstance();
-        FluidStack fluid = tank.stack(status);
-        return Component.translatable("fieldworks.harvester.tank." + tank.name().toLowerCase(Locale.ROOT),
-                fluid.isEmpty() ? Component.translatable("fieldworks.harvester.empty") : fluid.getHoverName(),
-                number.format(fluid.getAmount()), number.format(status.tankCapacity()));
+        /** The tank's name, such as "Drilling Fluid". */
+        public Component title() {
+            return Component.translatable("fieldworks.harvester.tank_title." + name().toLowerCase(Locale.ROOT));
+        }
     }
 
     public static Component heldName(Optional<HeldRecipeView> held) {

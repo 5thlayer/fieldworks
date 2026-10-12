@@ -167,7 +167,7 @@ public final class HarvesterScreen extends AbstractContainerScreen<HarvesterMenu
     }
 
     private void tankTooltip(GuiGraphicsExtractor graphics, HarvesterStatusLines.Tank tank, HarvesterStatus status, int mouseX, int mouseY) {
-        graphics.setComponentTooltipForNextFrame(font, List.of(HarvesterStatusLines.tank(tank, status)), mouseX, mouseY);
+        MachineDraw.fluidTooltip(graphics, font, tank.title(), tank.stack(status), status.tankCapacity(), mouseX, mouseY);
     }
 
     private static boolean overBar(int x, int y, int width, int mouseX, int mouseY) {
