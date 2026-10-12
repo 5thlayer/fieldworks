@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- With EMI installed, drilling mud's brewing shows as a water bottle with a clay ball, or with a slime ball, brewing into a drilling mud bottle. EMI showed each as an Uncraftable Potion brewing into nothing, and listed no brewing recipe under the mud bottle (#29).
+
 ## 0.2.3
 
 - The Harvester's screen and its Jade view are drawn by libworks-runtime's shared machine look, the same as the other mods' machines: a gauge writes its amount only when it fits, and a tank's tooltip names the tank, then its fluid or "Empty", then the amount, on three lines where it was one, as every machine's does. The nested libworks-runtime is now 0.1.4 up to but not including 0.2 (#30).

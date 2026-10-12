@@ -4,6 +4,7 @@
 package io.github._5thlayer.fieldworks.gametest;
 
 import io.github._5thlayer.fieldworks.fluid.DrillingMud;
+import io.github._5thlayer.fieldworks.fluid.DrillingMudBrewing;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -12,8 +13,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.alchemy.PotionContents;
-import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 import net.minecraft.world.level.material.Fluid;
@@ -35,20 +34,25 @@ final class DrillingMudTests {
 
     static void register(FieldworksGameTests.Registrar tests) {
         // A brew takes 400 ticks, run by the stand itself.
-        tests.test("a_water_bottle_brewed_with_a_clay_ball_gives_a_drilling_mud_bottle", 460, helper -> brews(helper, Items.CLAY_BALL));
-        tests.test("a_water_bottle_brewed_with_a_slime_ball_gives_a_drilling_mud_bottle", 460, helper -> brews(helper, Items.SLIME_BALL));
+        tests.test("a_water_bottle_brewed_with_a_clay_ball_gives_a_drilling_mud_bottle", 460, helper -> brews(helper, pairing(Items.CLAY_BALL)));
+        tests.test("a_water_bottle_brewed_with_a_slime_ball_gives_a_drilling_mud_bottle", 460, helper -> brews(helper, pairing(Items.SLIME_BALL)));
         tests.test("the_drilling_mud_bottle_and_bucket_expose_the_item_fluid_capability_and_mud_is_a_drilling_fluid", 1,
                 DrillingMudTests::exposesTheCapability);
     }
 
-    /** Three water bottles and the ingredient, with blaze powder to fuel the stand: three mud bottles come out. */
-    private static void brews(GameTestHelper helper, Item ingredient) {
+    /** The pairing the stand brews with {@code ingredient}. */
+    private static DrillingMudBrewing.Pairing pairing(Item ingredient) {
+        return DrillingMudBrewing.PAIRINGS.stream().filter(pairing -> pairing.ingredient() == ingredient).findFirst().orElseThrow();
+    }
+
+    /** Three of the pairing's bottles and its ingredient, with blaze powder to fuel the stand: three mud bottles come out. */
+    private static void brews(GameTestHelper helper, DrillingMudBrewing.Pairing pairing) {
         helper.setBlock(STAND, Blocks.BREWING_STAND);
         BrewingStandBlockEntity stand = helper.getBlockEntity(STAND, BrewingStandBlockEntity.class);
         for (int slot = 0; slot < 3; slot++) {
-            stand.setItem(slot, PotionContents.createItemStack(Items.POTION, Potions.WATER));
+            stand.setItem(slot, pairing.bottleStack());
         }
-        stand.setItem(3, new ItemStack(ingredient));
+        stand.setItem(3, new ItemStack(pairing.ingredient()));
         stand.setItem(4, new ItemStack(Items.BLAZE_POWDER));
 
         helper.succeedWhen(() -> {
