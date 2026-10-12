@@ -3,10 +3,10 @@
 
 package io.github._5thlayer.fieldworks.compat.jei;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
-import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
@@ -74,9 +74,14 @@ public final class HarvestingJeiPlugin implements IModPlugin {
         addCrudeInfo(registration, registration.getJeiHelpers().getPlatformFluidHelper());
     }
 
-    /** Crude as a fluid, not its bucket: JEI's fluid type is the platform's, so it is named only through the helper. */
+    /**
+     * Every crude as a fluid, not its bucket, a bucket each: JEI's fluid type is the platform's, so it is named only
+     * through the helper.
+     */
     private static <T> void addCrudeInfo(IRecipeRegistration registration, IPlatformFluidHelper<T> fluids) {
-        registration.addIngredientInfo(fluids.create(CrudeOil.SOURCE, fluids.bucketVolume()), fluids.getFluidIngredientType(), TAR_INFO);
+        List<T> crude = Tar.crudeSources().stream()
+                .map(fluid -> fluids.create(fluid.builtInRegistryHolder(), fluids.bucketVolume())).toList();
+        registration.addIngredientInfo(crude, fluids.getFluidIngredientType(), TAR_INFO);
     }
 
     @Override

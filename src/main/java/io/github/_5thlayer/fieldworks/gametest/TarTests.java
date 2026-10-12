@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * Crude meeting lava sets as tar (#22), through a NeoForge fluid interaction, whichever of the two arrives second
@@ -54,6 +55,8 @@ final class TarTests {
         tests.test("breaking_tar_drops_one_tar", 20, TarTests::brokenByHand);
         tests.test("piston_breaks_tar_into_one_tar", 40, TarTests::pushedByPiston);
         tests.test("tar_is_tagged_c_tar", 1, TarTests::isTagged);
+        tests.test("the_crude_sources_a_viewer_shows_are_every_source_in_c_crude_oil_and_no_flowing_one", 1,
+                TarTests::crudeSources);
     }
 
     /** The promise is for any fluid in {@code c:crude_oil}: the tests' own crude, in both orders, and flowing. */
@@ -136,6 +139,16 @@ final class TarTests {
     private static void isTagged(GameTestHelper helper) {
         if (!new ItemStack(Tar.ITEM.get()).is(FieldworksTags.TAR)) {
             helper.fail("tar is not in " + FieldworksTags.TAR.location());
+        }
+        helper.succeed();
+    }
+
+    /** What EMI and JEI show as crude: both sources in {@code c:crude_oil}, Fieldworks' and the tests' own. */
+    private static void crudeSources(GameTestHelper helper) {
+        List<Fluid> expected = List.of(CrudeOil.SOURCE.get(), TestCrude.SOURCE.get());
+        List<Fluid> sources = Tar.crudeSources();
+        if (sources.size() != expected.size() || !sources.containsAll(expected)) {
+            helper.fail("the crude sources are " + sources + ", not " + expected);
         }
         helper.succeed();
     }

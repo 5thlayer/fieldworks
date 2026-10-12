@@ -3,9 +3,6 @@
 
 package io.github._5thlayer.fieldworks.compat.emi;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
@@ -15,17 +12,13 @@ import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.EmiStackInteraction;
 import io.github._5thlayer.fieldworks.Fieldworks;
-import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
 import io.github._5thlayer.fieldworks.harvester.client.HarvesterScreen;
 import io.github._5thlayer.fieldworks.oil.Tar;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidType;
 
@@ -55,21 +48,12 @@ public final class HarvestingEmiPlugin implements EmiPlugin {
         registry.addStackProvider(HarvesterScreen.class, (screen, x, y) -> screen.ghostAt(x, y)
                 .map(ghost -> new EmiStackInteraction(EmiStack.of(ghost.stack()))).orElse(EmiStackInteraction.EMPTY));
         registry.addRecipe(EmiWorldInteractionRecipe.builder()
-                .leftInput(crudeSources())
+                .leftInput(EmiIngredient.of(Tar.crudeSources().stream()
+                        .map(fluid -> EmiStack.of(fluid, FluidType.BUCKET_VOLUME)).toList()))
                 .rightInput(EmiStack.of(Fluids.LAVA, FluidType.BUCKET_VOLUME), true)
                 .output(EmiStack.of(Tar.ITEM.get()))
                 .id(Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "/world/fluid_interaction/tar"))
                 .build());
     }
 
-    /** Every source fluid in {@code c:crude_oil}, a bucket each: flowing crude never sets. */
-    private static EmiIngredient crudeSources() {
-        List<EmiStack> sources = new ArrayList<>();
-        for (Holder<Fluid> fluid : BuiltInRegistries.FLUID.getTagOrEmpty(FieldworksTags.CRUDE_OIL)) {
-            if (fluid.value().isSource(fluid.value().defaultFluidState())) {
-                sources.add(EmiStack.of(fluid.value(), FluidType.BUCKET_VOLUME));
-            }
-        }
-        return EmiIngredient.of(sources);
-    }
 }
