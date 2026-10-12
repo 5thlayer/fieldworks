@@ -3,14 +3,17 @@
 
 package io.github._5thlayer.fieldworks.compat.jei;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
+import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
 import io.github._5thlayer.fieldworks.harvester.client.HarvesterScreen;
+import io.github._5thlayer.fieldworks.oil.Tar;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.gui.builder.IClickableIngredientFactory;
@@ -22,6 +25,7 @@ import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import mezz.jei.api.runtime.IClickableIngredient;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeMap;
@@ -30,7 +34,8 @@ import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * Puts {@code fieldworks:harvesting} in JEI, Default recipes and written ones in one tab, with every Harvester as a
- * catalyst, and its {@code +} on an open Harvester setting the Held recipe (#10).
+ * catalyst, and its {@code +} on an open Harvester setting the Held recipe (#10). Tar and the crude oil bucket carry an
+ * info page saying how tar is made, since a world interaction is no recipe (#22).
  *
  * <p>JEI finds this by its annotation and loads it only when JEI is installed; nothing outside this package names a
  * JEI type, so the Library loads without it.
@@ -63,6 +68,8 @@ public final class HarvestingJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         registration.addRecipes(TYPE, HarvestRecipeView.all(received));
+        registration.addItemStackInfo(List.of(new ItemStack(Tar.ITEM.get()), new ItemStack(CrudeOil.BUCKET.get())),
+                Component.translatable("info.fieldworks.tar"));
     }
 
     @Override

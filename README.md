@@ -29,7 +29,7 @@ I also wanted endgame mining that doesn’t mean strip-mining whole chunks. Patc
 
 ## For mod authors
 
-- Crude oil is `fieldworks:crude_oil` in `c:crude_oil`; sulfur is in `c:dusts/sulfur` and uranium ingots in `c:ingots/uranium`. The ore blocks are in `c:ores`.
+- Crude oil is `fieldworks:crude_oil` in `c:crude_oil`, and any fluid in that tag sets as tar against lava; tar is `fieldworks:tar` in `c:tar`. Sulfur is in `c:dusts/sulfur` and uranium ingots in `c:ingots/uranium`. The ore blocks are in `c:ores`.
 - The Harvester exposes NeoForge's item, fluid and energy capabilities on every block of its footprint. Its fluid face takes Drilling Fluids in and gives crude out.
 - `CHANGELOG.md` lists what each version changed for a mod building against it.
 
@@ -39,7 +39,7 @@ I also wanted endgame mining that doesn’t mean strip-mining whole chunks. Patc
 
 ## Art
 
-The coal, copper, iron, sulfur and uranium ore sprites, the sulfur, raw uranium and uranium ingot sprites, and the crude oil sprite are by Malcolm Riley ([unused-textures](https://github.com/malcolmriley/unused-textures)), under CC BY 4.0; the cover and icon are drawn from them. The stone sprites are Fieldworks' own. `NOTICE` and `REUSE.toml` record each file.
+The coal, copper, iron, sulfur and uranium ore sprites, the sulfur, raw uranium and uranium ingot sprites, and the crude oil sprite are by Malcolm Riley ([unused-textures](https://github.com/malcolmriley/unused-textures)), under CC BY 4.0; the cover and icon are drawn from them. The stone and tar sprites are Fieldworks' own. `NOTICE` and `REUSE.toml` record each file.
 
 ## Developing
 

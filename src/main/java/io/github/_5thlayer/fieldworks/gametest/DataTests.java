@@ -79,7 +79,7 @@ final class DataTests {
      * installed, Minecraft's or its own. A tag filled only by other mods would leave it inert.
      */
     private static void tagsPlayAlone(GameTestHelper helper) {
-        List<TagKey<?>> read = List.of(FieldworksTags.HARVESTABLE, FieldworksTags.DRILLING_FLUIDS,
+        List<TagKey<?>> read = List.of(FieldworksTags.HARVESTABLE, FieldworksTags.DRILLING_FLUIDS, FieldworksTags.CRUDE_OIL,
                 FieldworksTags.FLAT_WORLD_STRUCTURE_SETS,
                 TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_land")));
         var alone = Set.of("minecraft", Fieldworks.MOD_ID);
