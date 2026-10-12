@@ -4,6 +4,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- The iron, copper, coal, uranium and sulfur ore blocks are each in their `c:ores/<resource>` block tag, such as `c:ores/sulfur`; stone ore stays in plain `c:ores` only. Raw uranium is in `c:raw_materials/uranium` (#21).
 - Fieldworks' items moved from the vanilla tabs (Natural Blocks, Ingredients, Tools & Utilities, Functional Blocks) to the suite's shared Works tab, libworks-runtime's `WorksTab.KEY`, and are in no other tab. Within it they run Harvesters by tier, the ore blocks, sulfur, raw uranium, the uranium ingot and tar, then the crude oil bucket and the drilling mud bottle and bucket (#4).
 - Tar, `fieldworks:tar`, in `c:tar`: a source block of any fluid in `c:crude_oil` that touches lava, on any side, sets as a tar block, and the lava stays; flowing crude never sets. Breaking the tar block, or a piston pushing it, gives one tar, so a pipe outlet, a piston and a hopper can collect it. Nothing else makes tar: EMI shows it as a world interaction, and JEI as an info page on tar and on every crude source. Tar moves here from Wireworks, which takes `#c:tar` instead. Stand-in art (#22).
 - The game tests' datapack, `gametest_pack/`, no longer ships in the jar, so `-Dfieldworks.gametestPack` no longer turns its recipes on in a Consumer's game; it was only ever for Fieldworks' own game tests (libworks ADR 0004).
