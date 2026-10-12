@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+## 0.2.2
+
 - With EMI installed, a left click on an empty fuel, fill or drain slot of the Harvester reaches the slot, so a stack in hand goes in; EMI took the click on the slot's faded item to show its recipes. The recipe and usage keys still work on it.
 
 ## 0.2.1
