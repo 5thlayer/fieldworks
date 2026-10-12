@@ -3,7 +3,6 @@
 
 package io.github._5thlayer.fieldworks.compat.jei;
 
-import java.util.List;
 import java.util.Optional;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
@@ -18,6 +17,7 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.gui.builder.IClickableIngredientFactory;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
+import mezz.jei.api.helpers.IPlatformFluidHelper;
 import mezz.jei.api.recipe.types.IRecipeType;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
@@ -34,7 +34,7 @@ import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * Puts {@code fieldworks:harvesting} in JEI, Default recipes and written ones in one tab, with every Harvester as a
- * catalyst, and its {@code +} on an open Harvester setting the Held recipe (#10). Tar and the crude oil bucket carry an
+ * catalyst, and its {@code +} on an open Harvester setting the Held recipe (#10). Tar and crude oil carry an
  * info page saying how tar is made, since a world interaction is no recipe (#22).
  *
  * <p>JEI finds this by its annotation and loads it only when JEI is installed; nothing outside this package names a
@@ -48,6 +48,8 @@ import net.neoforged.neoforge.common.NeoForge;
 public final class HarvestingJeiPlugin implements IModPlugin {
 
     static final IRecipeType<HarvestRecipeView> TYPE = IRecipeType.create(HarvestRecipes.TYPE.getId(), HarvestRecipeView.class);
+
+    private static final Component TAR_INFO = Component.translatable("info.fieldworks.tar");
 
     private static volatile RecipeMap received = RecipeMap.EMPTY;
 
@@ -68,8 +70,13 @@ public final class HarvestingJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         registration.addRecipes(TYPE, HarvestRecipeView.all(received));
-        registration.addItemStackInfo(List.of(new ItemStack(Tar.ITEM.get()), new ItemStack(CrudeOil.BUCKET.get())),
-                Component.translatable("info.fieldworks.tar"));
+        registration.addItemStackInfo(new ItemStack(Tar.ITEM.get()), TAR_INFO);
+        addCrudeInfo(registration, registration.getJeiHelpers().getPlatformFluidHelper());
+    }
+
+    /** Crude as a fluid, not its bucket: JEI's fluid type is the platform's, so it is named only through the helper. */
+    private static <T> void addCrudeInfo(IRecipeRegistration registration, IPlatformFluidHelper<T> fluids) {
+        registration.addIngredientInfo(fluids.create(CrudeOil.SOURCE, fluids.bucketVolume()), fluids.getFluidIngredientType(), TAR_INFO);
     }
 
     @Override
