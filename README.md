@@ -10,6 +10,8 @@ I also wanted endgame mining that doesn’t mean strip-mining whole chunks. Patc
 
 **NeoForge, Minecraft 26.1.2 only.** Fieldworks is still young, so please report anything odd on [GitHub](https://github.com/5thlayer/fieldworks/issues).
 
+To play Fieldworks beside every other FactoryWorks mod, install the [FactoryWorks Showcase](https://www.curseforge.com/minecraft/modpacks/factoryworks-showcase) modpack from CurseForge.
+
 ## Features
 
 - **Ore patches.** Patches of iron, copper, coal, stone, uranium and sulfur generate in new land more than 150 blocks from the origin. A patch is a disc of ore blocks sharing one total, which grows the further out it lies.
