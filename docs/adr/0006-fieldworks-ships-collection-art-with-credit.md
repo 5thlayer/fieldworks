@@ -13,7 +13,7 @@ non-commercial licence, stays out.
 This is stricter than the suite's rule, which allows third-party art under any open licence that
 permits redistribution, from an art collection or another mod
 ([5thlayer/factoryworks ADR-0130](https://github.com/5thlayer/factoryworks/blob/main/docs/adr/0130-the-suite-ships-third-party-art-under-open-licences-with-credit.md),
-superseding ADR-0122). Fieldworks is a Library released on its own: art drawn for reuse, credited,
+superseding ADR-0122). Fieldworks is a Module released on its own: art drawn for reuse, credited,
 reads better than a generated stand-in, and art lifted from another mod reads as taken from it.
 
 ## Considered Options

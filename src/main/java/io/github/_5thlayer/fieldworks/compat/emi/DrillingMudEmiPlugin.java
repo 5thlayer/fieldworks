@@ -31,7 +31,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
  * <p>{@link EmiBrewingRecipe} is EMI's own class, outside its API, so an EMI update may change it.
  *
  * <p>EMI finds this by its annotation and loads it only when EMI is installed; nothing outside this package names an
- * EMI type, so the Library loads without it.
+ * EMI type, so the Module loads without it.
  */
 @EmiEntrypoint
 public final class DrillingMudEmiPlugin implements EmiPlugin {

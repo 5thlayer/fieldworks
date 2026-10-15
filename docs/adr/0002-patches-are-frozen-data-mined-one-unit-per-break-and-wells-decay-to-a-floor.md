@@ -50,7 +50,7 @@ wells and crude oil work, ported from FactoryWorks Core at commit `fb05f50`.
   well at a rate and tier nothing here has decided. The capability arrives with the Harvester that
   defines how a cycle is taken.
 
-**Considered: starting patches.** The Showcase's spawn area carried them. A Library cannot assume a
+**Considered: starting patches.** The Showcase's spawn area carried them. A Module cannot assume a
 spawn area, and a disc past 150 blocks gives the same play without one.
 
 **Considered: a block entity per ore block.** A patch is thousands of blocks, and a block entity

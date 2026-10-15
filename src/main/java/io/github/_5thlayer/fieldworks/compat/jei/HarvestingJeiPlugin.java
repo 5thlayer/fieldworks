@@ -38,7 +38,7 @@ import net.neoforged.neoforge.common.NeoForge;
  * info page saying how tar is made, since a world interaction is no recipe (#22).
  *
  * <p>JEI finds this by its annotation and loads it only when JEI is installed; nothing outside this package names a
- * JEI type, so the Library loads without it.
+ * JEI type, so the Module loads without it.
  *
  * <p>A Default recipe is no recipe holder, so the tab's type is the view both kinds share. JEI keeps the recipes the
  * server sends ({@link HarvestRecipes}) out of its API, so this keeps its own copy from the same event: JEI listens

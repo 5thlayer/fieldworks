@@ -30,7 +30,7 @@ import net.neoforged.neoforge.fluids.FluidType;
  * offers to EMI itself (libworks ADR 0007), so this registers no stack provider for them.
  *
  * <p>EMI finds this by its annotation and loads it only when EMI is installed; nothing outside this package names an
- * EMI type, so the Library loads without it. The recipes are the ones the server sends ({@link HarvestRecipes}).
+ * EMI type, so the Module loads without it. The recipes are the ones the server sends ({@link HarvestRecipes}).
  */
 @EmiEntrypoint
 public final class HarvestingEmiPlugin implements EmiPlugin {

@@ -5,15 +5,16 @@ and the crude oil under them, and one map marker per patch. It plays alone in va
 
 ## Language
 
-The Library's terms, each with what it is and the words to avoid. `/domain-modeling` adds them as they are resolved.
+The Module's terms, each with what it is and the words to avoid. `/domain-modeling` adds them as they are resolved.
 
 ### Parties
 
 **Fieldworks**:
-This Library.
+This Module.
+_Avoid_: Library, Binding
 
 **Consumer**:
-A mod that builds against this Library, such as another Library.
+A mod that builds against this Module, such as another Module.
 _Avoid_: client (collides with the game's client side), dependent, integration
 
 ### Resources

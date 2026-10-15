@@ -21,14 +21,14 @@ import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * The Library's game tests, run by the {@code gameTestServer} Gradle run: the Minecraft-integration
+ * The Module's game tests, run by the {@code gameTestServer} Gradle run: the Minecraft-integration
  * seam, with a real player on a real server. Each test stands on the {@code gametest/platform}
  * structure, a stone floor that {@code sh ./gradlew buildGametestStructures} writes, and sets up
  * what it needs itself, so the setup is in the diff.
  */
 public final class FieldworksGameTests {
 
-    /** Set by the Library's own {@code gameTestServer} run, which registers the tests' own block. */
+    /** Set by the Module's own {@code gameTestServer} run, which registers the tests' own block. */
     private static final String OWN_RUN = "fieldworks.gametest";
 
     private static final Identifier PLATFORM = id("gametest/platform");

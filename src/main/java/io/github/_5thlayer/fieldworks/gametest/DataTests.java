@@ -20,7 +20,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 
-/** The tags other mods find the Library's resources by. */
+/** The tags other mods find the Module's resources by. */
 final class DataTests {
 
     private DataTests() {

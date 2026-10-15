@@ -18,7 +18,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 
 /**
  * Both Harvesters are crafted at a crafting table (#24), from vanilla items and the tier below, on the solo run
- * where only Groundworks is beside the Library.
+ * where only Groundworks is beside the Module.
  */
 final class HarvesterCraftingTests {
 

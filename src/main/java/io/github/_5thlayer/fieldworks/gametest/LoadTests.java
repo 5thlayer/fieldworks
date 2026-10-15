@@ -10,9 +10,9 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.neoforged.fml.ModList;
 
 /**
- * The Library loads on a server with nothing else installed, at the version its build gave it. It
- * is the harness's own check too: a run that reports this test ran the Library's tests, not
- * vanilla's. The run has only Groundworks beside it, so it proves the Library plays alone (#20).
+ * The Module loads on a server with nothing else installed, at the version its build gave it. It
+ * is the harness's own check too: a run that reports this test ran the Module's tests, not
+ * vanilla's. The run has only Groundworks beside it, so it proves the Module plays alone (#20).
  */
 final class LoadTests {
 
@@ -31,7 +31,7 @@ final class LoadTests {
             return;
         }
         // processResources writes gradle.properties into neoforge.mods.toml; unexpanded, the Pack's
-        // pin and the loaded Library would disagree on what is running.
+        // pin and the loaded Module would disagree on what is running.
         String version = container.get().getModInfo().getVersion().toString();
         if (version.contains("$")) {
             helper.fail("neoforge.mods.toml's version was not expanded: " + version);

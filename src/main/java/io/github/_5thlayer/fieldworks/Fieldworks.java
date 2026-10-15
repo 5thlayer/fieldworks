@@ -28,7 +28,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
-/** The Library's entry point: ore patches, oil wells, crude oil and tar, their map markers, and the Harvester. */
+/** The Module's entry point: ore patches, oil wells, crude oil and tar, their map markers, and the Harvester. */
 @Mod(Fieldworks.MOD_ID)
 public final class Fieldworks {
 

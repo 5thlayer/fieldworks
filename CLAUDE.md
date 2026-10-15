@@ -1,12 +1,12 @@
 # Fieldworks
 
-A 5thlayer Library, released on its own to Modrinth and CurseForge. See `GLOSSARY.md` for the domain glossary.
+A 5thlayer Module, released on its own to Modrinth and CurseForge. See `GLOSSARY.md` for the domain glossary.
 
 ## Workflow
 
 Commit on the current branch; open a feature branch only when the user asks for one. Nothing is pushed without the user's word.
 
-Anything that changes the Library's behaviour gets a `/code-review`. Doc and plumbing changes skip it: that covers `CLAUDE.md`, `GLOSSARY.md`, ADRs, `docs/`, `.claude/`, and tooling or CI config.
+Anything that changes the Module's behaviour gets a `/code-review`. Doc and plumbing changes skip it: that covers `CLAUDE.md`, `GLOSSARY.md`, ADRs, `docs/`, `.claude/`, and tooling or CI config.
 
 ## Commits
 
@@ -14,7 +14,7 @@ Conventional commits: `<type>(<optional scope>): <summary>`, with the summary in
 
 ## Testing
 
-`sh ./gradlew build` runs the JUnit tests, on a plain JVM with no Minecraft. `sh ./gradlew runGameTestServer` runs the game tests headless, a real player on a real server with only Groundworks beside the Library, and names each one it ran; it fails if it ran none. FTB Chunks, Jade and EMI or JEI are on the dev client only. `python3 -m unittest discover scripts/tests` checks the committed sprites match `scripts/build-textures.py`. A new game test class is registered by a line in `FieldworksGameTests.registerTests`, and its tests stand on the `gametest/platform` structure that `sh ./gradlew buildGametestStructures` writes. CI (`.github/workflows/ci.yml`) runs all three on every push, the first two through the libworks plugin's shared `module-ci.yml`, and never publishes. The build, the game test server, publishing and the release tasks come from the libworks convention plugin (libworks ADR 0003); `libworks { }` in `build.gradle` names Groundworks' range and the nested libworks-runtime. Data only the Library's own runs load lives in `src/gametest/resources`, which never ships (libworks ADR 0004): `DevPacks` switches on `gametest_pack/` in the game tests and `dev_pack/` in the dev client, the datapacks that stand in for what a Consumer fills. Packs a test switches on itself, such as one per batch, go under `gametest_packs/<name>/`.
+`sh ./gradlew build` runs the JUnit tests, on a plain JVM with no Minecraft. `sh ./gradlew runGameTestServer` runs the game tests headless, a real player on a real server with only Groundworks beside the Module, and names each one it ran; it fails if it ran none. FTB Chunks, Jade and EMI or JEI are on the dev client only. `python3 -m unittest discover scripts/tests` checks the committed sprites match `scripts/build-textures.py`. A new game test class is registered by a line in `FieldworksGameTests.registerTests`, and its tests stand on the `gametest/platform` structure that `sh ./gradlew buildGametestStructures` writes. CI (`.github/workflows/ci.yml`) runs all three on every push, the first two through the libworks plugin's shared `module-ci.yml`, and never publishes. The build, the game test server, publishing and the release tasks come from the libworks convention plugin (libworks ADR 0003); `libworks { }` in `build.gradle` names Groundworks' range and the nested libworks-runtime. Data only the Module's own runs load lives in `src/gametest/resources`, which never ships (libworks ADR 0004): `DevPacks` switches on `gametest_pack/` in the game tests and `dev_pack/` in the dev client, the datapacks that stand in for what a Consumer fills. Packs a test switches on itself, such as one per batch, go under `gametest_packs/<name>/`.
 
 Vanilla's and NeoForge's own code is in `build/moddev/artifacts/minecraft-patched-*-sources.jar`, read with `unzip -p <jar> net/minecraft/.../X.java`. Check a claim about vanilla behaviour there before stating it.
 
@@ -24,7 +24,7 @@ The `skillworks:quicklaunch` skill opens the dev client into the most recent sav
 
 A change a Consumer can use or will notice adds its line under `## Unreleased` in `CHANGELOG.md` as it lands. Before bumping `mod_version`, publishing to `~/.m2`, tagging a release or uploading to Modrinth or CurseForge, read `docs/agents/releases.md`: releases go through the libworks plugin's `release` task, which uploads last with its `upload` task when `gradle.properties` names a project, and a published version never changes, in `~/.m2` or on either site. ADR 0001, inherited from 5thlayer/libworks, sets the version bumps.
 
-A release that must reach another Library follows the `release-train` skill: one owning session per checkout, and pushes only on the user's word.
+A release that must reach another Module follows the `release-train` skill: one owning session per checkout, and pushes only on the user's word.
 
 ## Agent skills
 

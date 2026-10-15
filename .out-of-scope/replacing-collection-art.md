@@ -8,7 +8,7 @@ reuse under CC BY 4.0, and they keep it.
 ## Why this is out of scope
 
 Fieldworks' own ADR 0006 (`docs/adr/0006-fieldworks-ships-collection-art-with-credit.md`) keeps it:
-Fieldworks is a Library released on its own, and art drawn for reuse, credited in `NOTICE` and
+Fieldworks is a Module released on its own, and art drawn for reuse, credited in `NOTICE` and
 `REUSE.toml`, reads better than a generated stand-in. The suite allows it too: it ships third-party
 art under any open licence that permits redistribution
 ([5thlayer/factoryworks ADR-0130](https://github.com/5thlayer/factoryworks/blob/main/docs/adr/0130-the-suite-ships-third-party-art-under-open-licences-with-credit.md)),

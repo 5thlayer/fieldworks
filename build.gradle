@@ -4,7 +4,7 @@ plugins {
     id 'io.github.5thlayer.libworks.module' version '0.3.0'
 }
 
-// What the Library requires of the other Libraries, each as a range whose lower bound is a released
+// What the Module requires of the other Modules, each as a range whose lower bound is a released
 // version: the one it is built and run against and the one CI builds from its tag. neoforge.mods.toml
 // names each as ${<name>_range}. Fieldworks' own tags are fieldworks-v<version>, the plugin's default.
 libworks {
@@ -29,7 +29,7 @@ def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
 def jei = '29.20.0.53'
 
 // Mods on the dev client that the published jar does not depend on. The game tests run on a source set
-// of their own, with no code and the Library's dependencies but not these, so they prove the Library
+// of their own, with no code and the Module's dependencies but not these, so they prove the Module
 // plays alone with Groundworks (#20).
 sourceSets {
     solo
@@ -47,7 +47,7 @@ neoForge {
         }
         gameTestServer {
             sourceSet = sourceSets.solo
-            // Marks this run as the Library's own, which is when it registers its test fluid-handler block.
+            // Marks this run as the Module's own, which is when it registers its test fluid-handler block.
             systemProperty 'fieldworks.gametest', 'true'
         }
     }
@@ -56,17 +56,17 @@ neoForge {
 }
 
 repositories {
-    // FTB Chunks, which the map markers draw on; the Library loads without it.
+    // FTB Chunks, which the map markers draw on; the Module loads without it.
     maven {
         url = 'https://cursemaven.com'
         content { includeGroup 'curse.maven' }
     }
-    // Jade, which shows an ore block's amount; the Library loads without it.
+    // Jade, which shows an ore block's amount; the Module loads without it.
     maven {
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
     }
-    // JEI, whose Harvest Recipe tab and transfer the Library adds; it loads without it.
+    // JEI, whose Harvest Recipe tab and transfer the Module adds; it loads without it.
     maven {
         url = 'https://maven.blamejared.com'
         content { includeGroup 'mezz.jei' }
