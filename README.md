@@ -24,7 +24,7 @@ To play Fieldworks beside every other FactoryWorks mod, install the [FactoryWork
 
 ## Gallery
 
-Fieldworks carries a gallery of its features: one working scene each, with a sign naming it, built in a row east of where you stand. It is a datapack in the jar, **Fieldworks Gallery**, off until you turn it on in a world's Data Packs screen or with `/datapack enable "mod/fieldworks:gallery_pack"`. Then `/function fieldworks:gallery/build` builds every scene, and `/function fieldworks:gallery/<scene>` one of them, such as `harvester`. A function needs cheats in single player (on at world creation, or Open to LAN with cheats) or operator rights on a server. The gallery clears the ground it builds on and changes nothing else; it adds no recipes, loot or worldgen.
+Fieldworks carries a gallery of its features: one working scene each, all but the map markers, which need FTB Chunks and a patch the world generated, with a sign naming it, built in a row east of where you stand. It is a datapack in the jar, **Fieldworks Gallery**, off until you turn it on in a world's Data Packs screen or with `/datapack enable "mod/fieldworks:gallery_pack"`. Then `/function fieldworks:gallery/build` builds every scene, and `/function fieldworks:gallery/<scene>` one of them, such as `harvester`. A function needs cheats in single player (on at world creation, or Open to LAN with cheats) or operator rights on a server. The gallery clears the ground it builds on and changes nothing else; it adds no recipes, loot or worldgen.
 
 ## For pack authors
 

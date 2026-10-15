@@ -16,8 +16,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
 
 /**
- * The Gallery pack builds a scene of each README feature, in README order, through libworks'
- * {@link GalleryCheck} (libworks ADR 0010).
+ * The Gallery pack builds a scene of each README feature but the map markers, in README order, through
+ * libworks' {@link GalleryCheck} (libworks ADR 0010). A marker needs FTB Chunks and a patch the world
+ * generated, neither of which a scene can place.
  */
 final class GalleryTests {
 
@@ -25,12 +26,11 @@ final class GalleryTests {
     }
 
     static void register(FieldworksGameTests.Registrar tests) {
-        tests.test("the_gallery_builds_a_scene_of_each_readme_feature", GalleryCheck.TICKS,
+        tests.test("the_gallery_builds_a_scene_of_each_feature_it_can_show", GalleryCheck.TICKS,
                 helper -> GalleryCheck.builds(helper, Fieldworks.MOD_ID, new BlockPos(0, 1, 8), List.of(
                         new Scene("ore_patches", new BlockPos(6, -1, -3), FieldworksRegistries.ore(OreResource.IRON).get()),
                         new Scene("ore_amounts", new BlockPos(18, -1, -6), FieldworksRegistries.ore(OreResource.URANIUM).get()),
                         new Scene("oil_fields", new BlockPos(13, -1, -6), FieldworksRegistries.OIL_WELL.get()),
-                        new Scene("map_markers", new BlockPos(13, -1, -6), FieldworksRegistries.ore(OreResource.COPPER).get()),
                         new Scene("harvester", new BlockPos(18, 0, -6), Harvesters.block(TierBlock.HARVESTER_2).get()),
                         new Scene("drilling_fluids", new BlockPos(8, 0, -3), Blocks.BREWING_STAND),
                         new Scene("hoppers", new BlockPos(13, 0, -6), Harvesters.block(TierBlock.HARVESTER_1).get()))));

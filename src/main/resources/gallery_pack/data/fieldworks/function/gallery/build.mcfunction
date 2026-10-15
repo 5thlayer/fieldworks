@@ -2,7 +2,6 @@
 function fieldworks:gallery/ore_patches
 execute positioned ~24 ~ ~ run function fieldworks:gallery/ore_amounts
 execute positioned ~48 ~ ~ run function fieldworks:gallery/oil_fields
-execute positioned ~72 ~ ~ run function fieldworks:gallery/map_markers
-execute positioned ~96 ~ ~ run function fieldworks:gallery/harvester
-execute positioned ~120 ~ ~ run function fieldworks:gallery/drilling_fluids
-execute positioned ~144 ~ ~ run function fieldworks:gallery/hoppers
+execute positioned ~72 ~ ~ run function fieldworks:gallery/harvester
+execute positioned ~96 ~ ~ run function fieldworks:gallery/drilling_fluids
+execute positioned ~120 ~ ~ run function fieldworks:gallery/hoppers
