@@ -1,5 +1,7 @@
 # A Burner Harvester fed coal by hopper and an Electric Harvester charged full of FE, each drawing a patch into a chest.
-# No Module the gallery may use generates FE, so the Electric Harvester runs on its own buffer until it is empty.
+# No Module the gallery may use generates FE, so the Electric Harvester runs on its own charge until it is empty,
+# unless a pack adds to #fieldworks:gallery/harvester_power, run here, a function that powers it: the Showcase
+# places a Wireworks Creative Pole at ~21 ~ ~-6.
 fill ~2 ~-1 ~-12 ~25 ~15 ~ minecraft:structure_void
 fill ~2 ~-1 ~-12 ~25 ~-1 ~ minecraft:stone
 fill ~2 ~ ~-12 ~25 ~15 ~ minecraft:air
@@ -105,5 +107,6 @@ setblock ~17 ~2 ~-5 fieldworks:harvester_2_part[facing=north,part=24] strict
 setblock ~18 ~2 ~-5 fieldworks:harvester_2_part[facing=north,part=25] strict
 setblock ~19 ~2 ~-5 fieldworks:harvester_2_part[facing=north,part=26] strict
 setblock ~18 ~ ~-8 minecraft:chest[facing=south]
+function #fieldworks:gallery/harvester_power
 
 setblock ~13 ~ ~ minecraft:oak_sign[rotation=0]{is_waxed:1b,front_text:{messages:[{translate:"fieldworks.gallery.harvester"},{translate:"fieldworks.gallery.harvester.1"},{translate:"fieldworks.gallery.harvester.2"},{translate:"fieldworks.gallery.harvester.3"}]}}
