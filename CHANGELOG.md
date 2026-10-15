@@ -4,6 +4,9 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- A Gallery pack in the jar, "Fieldworks Gallery", off by default: `/function fieldworks:gallery/build` builds a working scene of each feature (#31).
+- Nests libworks-runtime 0.1.9, which offers the Gallery pack.
+
 ## 0.2.5
 
 - Nests libworks-runtime 0.1.7, which offers the Harvester's ghosts to EMI in place of Fieldworks' own stack provider: the recipe and usage keys still work on a ghost and a click still reaches its empty slot (libworks#23).

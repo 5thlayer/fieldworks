@@ -17,6 +17,12 @@ _Avoid_: Library, Binding
 A mod that builds against this Module, such as another Module.
 _Avoid_: client (collides with the game's client side), dependent, integration
 
+**Gallery pack**:
+The datapack in this Module's jar, "Fieldworks Gallery", off until a player turns it on, whose
+functions build a working scene of each README feature, each with a sign naming it. Functions only
+(libworks ADR 0010).
+_Avoid_: demo pack, showcase pack, gallery datapack
+
 ### Resources
 
 **Patch**:

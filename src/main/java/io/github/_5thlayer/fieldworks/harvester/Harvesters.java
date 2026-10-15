@@ -93,6 +93,10 @@ public final class Harvesters {
         return FOOTPRINTS.get(tier);
     }
 
+    public static DeferredBlock<HarvesterBlock> block(TierBlock tier) {
+        return BLOCK_BY_TIER.get(tier);
+    }
+
     public static DeferredItem<FootprintItem> item(TierBlock tier) {
         return ITEM_BY_TIER.get(tier);
     }

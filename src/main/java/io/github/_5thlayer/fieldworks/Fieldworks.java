@@ -20,6 +20,7 @@ import io.github._5thlayer.fieldworks.network.PatchMarkersPacket;
 import io.github._5thlayer.fieldworks.oil.Tar;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.worldgen.FieldworksWorldgen;
+import io.github._5thlayer.libworks.gallery.GalleryPack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -45,6 +46,7 @@ public final class Fieldworks {
         Tar.register(modBus);
         Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);
+        GalleryPack.register(modBus, MOD_ID);
         modBus.addListener(WorksTabContents::add);
         modBus.addListener(Fieldworks::registerPayloads);
         NeoForge.EVENT_BUS.addListener(OreMining::onBreak);

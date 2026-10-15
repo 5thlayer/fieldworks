@@ -22,6 +22,10 @@ To play Fieldworks beside every other FactoryWorks mod, install the [FactoryWork
 - **Harvest Recipes and Drilling Fluids.** Every resource has a fluid-free default, so a Harvester works as soon as it is placed and powered. Recipes add Drilling Fluid variants: pick one in EMI or JEI and the Harvester holds it. Drilling mud, the first Drilling Fluid, is brewed in a brewing stand from a water bottle with a clay ball or a clay block, and keeps a decayed well pumping above its floor.
 - **Hoppers are enough.** Fuel, mud in bottles or buckets, and empty buckets go in by hopper. Results, emptied bottles and filled crude buckets are pushed out of the Harvester's front into a chest, a hopper or a belt, and crude into a pipe. Pipe mods can fill its mud tank and drain its crude too.
 
+## Gallery
+
+Fieldworks carries a gallery of its features: one working scene each, with a sign naming it, built in a row east of where you stand. It is a datapack in the jar, **Fieldworks Gallery**, off until you turn it on in a world's Data Packs screen or with `/datapack enable "mod/fieldworks:gallery_pack"`. Then `/function fieldworks:gallery/build` builds every scene, and `/function fieldworks:gallery/<scene>` one of them, such as `harvester`. A function needs cheats in single player (on at world creation, or Open to LAN with cheats) or operator rights on a server. The gallery clears the ground it builds on and changes nothing else; it adds no recipes, loot or worldgen.
+
 ## For pack authors
 
 - **Generation switches.** Each resource and oil fields have a switch in `fieldworks-common.toml`. Turning one off stops new patches; those already generated stay.
