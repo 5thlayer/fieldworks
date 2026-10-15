@@ -24,7 +24,7 @@ final class CreativeTabTests {
     static void register(FieldworksGameTests.Registrar tests) {
         tests.test("works_tab_holds_every_item_in_order", 1,
                 helper -> WorksTabCheck.inOrder(helper, Fieldworks.MOD_ID, WORKS_TAB_ORDER));
-        tests.test("no_other_tab_holds_a_library_item", 1,
+        tests.test("no_other_tab_holds_a_module_item", 1,
                 helper -> WorksTabCheck.noOtherTab(helper, Fieldworks.MOD_ID));
     }
 }
