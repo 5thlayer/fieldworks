@@ -32,7 +32,6 @@ final class GalleryTests {
                         new Scene("ore_amounts", new BlockPos(18, -1, -6), FieldworksRegistries.ore(OreResource.URANIUM).get()),
                         new Scene("oil_fields", new BlockPos(13, -1, -6), FieldworksRegistries.OIL_WELL.get()),
                         new Scene("harvester", new BlockPos(18, 0, -6), Harvesters.block(TierBlock.HARVESTER_2).get()),
-                        new Scene("drilling_fluids", new BlockPos(8, 0, -3), Blocks.BREWING_STAND),
-                        new Scene("hoppers", new BlockPos(13, 0, -6), Harvesters.block(TierBlock.HARVESTER_1).get()))));
+                        new Scene("drilling_fluids", new BlockPos(8, 0, -3), Blocks.BREWING_STAND))));
     }
 }

@@ -84,9 +84,5 @@
   "fieldworks.gallery.drilling_fluids": "Drilling Fluids",
   "fieldworks.gallery.drilling_fluids.1": "a held recipe",
   "fieldworks.gallery.drilling_fluids.2": "spends mud to",
-  "fieldworks.gallery.drilling_fluids.3": "beat a floor",
-  "fieldworks.gallery.hoppers": "Hoppers",
-  "fieldworks.gallery.hoppers.1": "fuel in on top,",
-  "fieldworks.gallery.hoppers.2": "ore out front:",
-  "fieldworks.gallery.hoppers.3": "nothing more"
+  "fieldworks.gallery.drilling_fluids.3": "beat a floor"
 }
