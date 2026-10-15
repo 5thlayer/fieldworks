@@ -4,7 +4,7 @@ A 5thlayer Module, released on its own to Modrinth and CurseForge. See `GLOSSARY
 
 ## Workflow
 
-Commit on the current branch; open a feature branch only when the user asks for one. Nothing is pushed without the user's word.
+Commit on the current branch; open a feature branch only when the user asks for one. Nothing is pushed without the user's word. Asking a session to steward a PR is the user's word for that PR's pushes, its rebases onto `main`, and its merge, under the `steward` skill.
 
 Anything that changes the Module's behaviour gets a `/code-review`. Doc and plumbing changes skip it: that covers `CLAUDE.md`, `GLOSSARY.md`, ADRs, `docs/`, `.claude/`, and tooling or CI config.
 
