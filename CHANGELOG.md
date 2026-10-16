@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+## 0.2.6
+
 - A Gallery pack in the jar, "Fieldworks Gallery", off by default: `/function fieldworks:gallery/build` builds a working scene of each feature (#31).
 - Nests libworks-runtime 0.1.9, which offers the Gallery pack.
 
