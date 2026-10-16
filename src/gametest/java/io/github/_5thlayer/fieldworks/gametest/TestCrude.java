@@ -20,7 +20,8 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 /**
  * A second crude for the tests, which keeps tar's promise for any fluid in {@code c:crude_oil}, not only
  * Fieldworks' own: a fluid of the tests' own, which the game-test pack ({@code gametest_pack/}, switched on
- * by DevPacks) puts in the tag. Registered only on the game test run, so no player's world has it.
+ * by DevPacks) puts in the tag. Registered only in the Module's own runs, from the {@code gametest}
+ * source set, so no player's world has it.
  */
 final class TestCrude {
 

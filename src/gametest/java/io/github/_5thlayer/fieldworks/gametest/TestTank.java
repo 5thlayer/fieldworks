@@ -23,7 +23,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * A plain fluid-handler block for the game tests: two 8,000 mB tanks, each of any fluid, open to insert and
  * extract on every face through NeoForge's fluid capability, as another mod's tank or pipe would be.
- * Registered only on the game test run, so no player's world has the block.
+ * Registered only in the Module's own runs, from the {@code gametest} source set, so no player's world
+ * has the block.
  */
 final class TestTank {
 

@@ -19,6 +19,7 @@ path = [
     "src/gametest/resources/**/*.json",
     "src/gametest/resources/**/*.mcmeta",
     "src/main/resources/**/*.nbt",
+    "src/gametest/resources/**/*.nbt",
     "src/main/resources/gallery_pack/**",
     "src/test/resources/**/*.json",
     "LICENSE",

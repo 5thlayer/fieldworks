@@ -4,6 +4,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Fieldworks' game-test code and structures no longer ship in its jar (libworks ADR 0011): a Consumer's game tests and dev client no longer register Fieldworks' test type `fieldworks:code`, nor carry its `gametest/platform` structure. Fieldworks builds on libworks-plugin 0.4.0.
 - Clicking a Gallery pack scene's sign builds that scene again from the start, so a scene that has played out, such as the Harvesters draining their patches, can be watched again. A replay leaves nothing loose in the plot. A pack hooked into `#fieldworks:gallery/harvester_power` is run again with its scene (#32).
 
 ## 0.2.6

@@ -1,7 +1,7 @@
 // ModDevGradle on Java 25, the game test server that names each test, the jar's licensing, ~/.m2-only
 // publishing and the release and upload tasks come from the libworks convention plugin (libworks ADR 0003).
 plugins {
-    id 'io.github.5thlayer.libworks.module' version '0.3.0'
+    id 'io.github.5thlayer.libworks.module' version '0.4.0'
 }
 
 // What the Module requires of the other Modules, each as a range whose lower bound is a released
@@ -47,8 +47,6 @@ neoForge {
         }
         gameTestServer {
             sourceSet = sourceSets.solo
-            // Marks this run as the Module's own, which is when it registers its test fluid-handler block.
-            systemProperty 'fieldworks.gametest', 'true'
         }
     }
 
@@ -70,15 +68,6 @@ repositories {
     maven {
         url = 'https://maven.blamejared.com'
         content { includeGroup 'mezz.jei' }
-    }
-    // Groundworks and libworks-runtime, from the local maven only, where their releases publish them.
-    // CI builds their tags there first.
-    mavenLocal {
-        content {
-            includeModule 'io.github.5thlayer', 'groundworks'
-            includeModule 'io.github.5thlayer', 'libworks-runtime'
-            includeModule 'io.github.5thlayer', 'libworks-gametest'
-        }
     }
 }
 

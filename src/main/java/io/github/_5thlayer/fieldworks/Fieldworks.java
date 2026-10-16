@@ -8,7 +8,6 @@ import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.fluid.DrillingMud;
 import io.github._5thlayer.fieldworks.fluid.client.CrudeOilClient;
 import io.github._5thlayer.fieldworks.fluid.client.DrillingMudClient;
-import io.github._5thlayer.fieldworks.gametest.FieldworksGameTests;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.client.HarvesterClient;
 import io.github._5thlayer.fieldworks.marker.MarkerEvents;
@@ -29,7 +28,10 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
-/** The Module's entry point: ore patches, oil wells, crude oil and tar, their map markers, and the Harvester. */
+/**
+ * The Module's entry point: ore patches, oil wells, crude oil and tar, their map markers, and the Harvester.
+ * The game tests hook themselves in from the {@code gametest} source set, which never ships (libworks ADR 0011).
+ */
 @Mod(Fieldworks.MOD_ID)
 public final class Fieldworks {
 
@@ -59,7 +61,6 @@ public final class Fieldworks {
             HarvesterClient.register(modBus);
             PatchMapClient.register();
         }
-        FieldworksGameTests.register(modBus);
     }
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
