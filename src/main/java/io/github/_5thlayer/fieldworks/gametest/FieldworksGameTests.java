@@ -58,9 +58,7 @@ public final class FieldworksGameTests {
         // Registered rather than borrowed, since the event hands out no lookup for vanilla's.
         var environment = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf(List.of()));
         var tests = new Registrar(event, environment);
-        // Turning the Gallery pack on reloads the server's data under every test in its batch (libworks ADR 0010).
-        var gallery = event.registerEnvironment(id("gallery"), new TestEnvironmentDefinition.AllOf(List.of()));
-        GalleryTests.register(new Registrar(event, gallery));
+        GalleryTests.register(tests);
         LoadTests.register(tests);
         DataTests.register(tests);
         PatchDiscTests.register(tests);
@@ -90,9 +88,21 @@ public final class FieldworksGameTests {
     record Registrar(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment) {
 
         void test(String name, int maxTicks, Consumer<GameTestHelper> body) {
+            register(name, maxTicks, body, environment);
+        }
+
+        /**
+         * A test in a batch of its own, for one that reloads the server's data, as turning the Gallery
+         * pack on does, under every test in its batch (libworks ADR 0010).
+         */
+        void testOnItsOwn(String name, int maxTicks, Consumer<GameTestHelper> body) {
+            register(name, maxTicks, body, event.registerEnvironment(id("on_its_own/" + name), new TestEnvironmentDefinition.AllOf(List.of())));
+        }
+
+        private void register(String name, int maxTicks, Consumer<GameTestHelper> body, Holder<TestEnvironmentDefinition<?>> batch) {
             var id = id(name);
             CodeGameTest.define(id, body);
-            event.registerTest(id, new CodeGameTest(id, new TestData<>(environment, PLATFORM, maxTicks, 0, true, Rotation.NONE)));
+            event.registerTest(id, new CodeGameTest(id, new TestData<>(batch, PLATFORM, maxTicks, 0, true, Rotation.NONE)));
         }
     }
 }

@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Clicking a Gallery pack scene's sign builds that scene again from the start, so a scene that has played out, such as the Harvesters draining their patches, can be watched again. A replay leaves nothing loose in the plot. A pack hooked into `#fieldworks:gallery/harvester_power` is run again with its scene (#32).
+
 ## 0.2.6
 
 - A Gallery pack in the jar, "Fieldworks Gallery", off by default: `/function fieldworks:gallery/build` builds a working scene of each feature (#31).

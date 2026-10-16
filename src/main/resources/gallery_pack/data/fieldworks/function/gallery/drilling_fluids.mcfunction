@@ -1,8 +1,6 @@
 # A well decayed to its floor, under a Burner Harvester holding the shipped drilling mud recipe, which beats the floor.
 # Mud goes in by hopper in bottles; the brewing stand beside brews more from water bottles and clay.
-fill ~2 ~-1 ~-12 ~25 ~15 ~ minecraft:structure_void
-fill ~2 ~-1 ~-12 ~25 ~-1 ~ minecraft:stone
-fill ~2 ~ ~-12 ~25 ~15 ~ minecraft:air
+function fieldworks:gallery/clear
 
 setblock ~13 ~-1 ~-6 fieldworks:oil_well{Amount:60000L,Initial:300000L}
 
@@ -39,4 +37,4 @@ setblock ~13 ~ ~-8 minecraft:chest[facing=south]
 
 setblock ~8 ~ ~-3 minecraft:brewing_stand{Items:[{Slot:0b,id:"minecraft:potion",count:1,components:{"minecraft:potion_contents":{potion:"minecraft:water"}}},{Slot:1b,id:"minecraft:potion",count:1,components:{"minecraft:potion_contents":{potion:"minecraft:water"}}},{Slot:2b,id:"minecraft:potion",count:1,components:{"minecraft:potion_contents":{potion:"minecraft:water"}}},{Slot:3b,id:"minecraft:clay_ball",count:3},{Slot:4b,id:"minecraft:blaze_powder",count:1}]}
 
-setblock ~13 ~ ~ minecraft:oak_sign[rotation=0]{is_waxed:1b,front_text:{messages:[{translate:"fieldworks.gallery.drilling_fluids"},{translate:"fieldworks.gallery.drilling_fluids.1"},{translate:"fieldworks.gallery.drilling_fluids.2"},{translate:"fieldworks.gallery.drilling_fluids.3"}]}}
+function fieldworks:gallery/sign {scene:"drilling_fluids"}

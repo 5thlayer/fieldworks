@@ -1,8 +1,5 @@
 # One small patch of each resource, as a world generates them: a disc of full ore blocks.
-# structure_void first: a fill that changes nothing fails the build (libworks ADR 0010).
-fill ~2 ~-1 ~-12 ~25 ~15 ~ minecraft:structure_void
-fill ~2 ~-1 ~-12 ~25 ~-1 ~ minecraft:stone
-fill ~2 ~ ~-12 ~25 ~15 ~ minecraft:air
+function fieldworks:gallery/clear
 
 setblock ~4 ~-1 ~-4 fieldworks:iron_ore
 setblock ~4 ~-1 ~-3 fieldworks:iron_ore
@@ -131,4 +128,4 @@ setblock ~22 ~-1 ~-10 fieldworks:sulfur_ore
 setblock ~22 ~-1 ~-9 fieldworks:sulfur_ore
 setblock ~22 ~-1 ~-8 fieldworks:sulfur_ore
 
-setblock ~13 ~ ~ minecraft:oak_sign[rotation=0]{is_waxed:1b,front_text:{messages:[{translate:"fieldworks.gallery.ore_patches"},{translate:"fieldworks.gallery.ore_patches.1"},{translate:"fieldworks.gallery.ore_patches.2"},{translate:"fieldworks.gallery.ore_patches.3"}]}}
+function fieldworks:gallery/sign {scene:"ore_patches"}

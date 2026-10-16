@@ -19,8 +19,8 @@ _Avoid_: client (collides with the game's client side), dependent, integration
 
 **Gallery pack**:
 The datapack in this Module's jar, "Fieldworks Gallery", off until a player turns it on, whose
-functions build a working scene of each README feature, each with a sign naming it. Functions only
-(libworks ADR 0010).
+functions build a working scene of each README feature, each with a sign naming it
+that builds the scene again when clicked. Functions only (libworks ADR 0010).
 _Avoid_: demo pack, showcase pack, gallery datapack
 
 ### Resources
