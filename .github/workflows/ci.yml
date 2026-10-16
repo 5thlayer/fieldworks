@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   ci:
-    uses: 5thlayer/libworks/.github/workflows/module-ci.yml@plugin-v0.4.1
+    uses: 5thlayer/libworks/.github/workflows/module-ci.yml@plugin-v0.4.2
 
   # The committed sprites match scripts/build-textures.py, which the shared CI knows nothing of.
   textures:
