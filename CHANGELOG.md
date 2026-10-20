@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+## 0.2.8
+
 - Fieldworks requires Groundworks 0.6.0 or later, below 0.7, whose `Rotate.press` takes the crosshair's hit in place of a block position (5thlayer/groundworks#72).
 
 ## 0.2.7
