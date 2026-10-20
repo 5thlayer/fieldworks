@@ -6,9 +6,9 @@ status: accepted
 
 Fieldworks wears art published for reuse in an art collection, under an open licence that allows
 commercial use, credited in `NOTICE` and annotated in `REUSE.toml`: today Malcolm Riley's
-unused-textures (CC BY 4.0) for the ores, crude oil, sulfur and the uranium items. Where no collection
-fits, `scripts/build-textures.py` generates the sprite. Art taken from another mod, and art under a
-non-commercial licence, stays out.
+unused-textures (CC BY 4.0) for the ores, crude oil, sulfur, the uranium items and the Harvesters.
+Where no collection fits, `scripts/build-textures.py` generates the sprite. Art taken from another
+mod, and art under a non-commercial licence, stays out.
 
 This is stricter than the suite's rule, which allows third-party art under any open licence that
 permits redistribution, from an art collection or another mod
