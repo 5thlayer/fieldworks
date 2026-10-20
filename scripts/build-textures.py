@@ -43,6 +43,7 @@ ORE_OUT = os.path.join(BLOCK_OUT, "ore")
 ITEM_OUT = os.path.join(TEXTURES, "item")
 HARVESTER_OUT = os.path.join(BLOCK_OUT, "harvester")
 MODELS = os.path.join(ROOT, "src", "main", "resources", "assets", "fieldworks", "models", "block")
+HARVESTER_SPRITE = "fieldworks:block/harvester/"
 ART = os.path.join(ROOT, "data", "art")
 
 SOURCED = {"coal": "ore_slade_coal.png", "copper": "ore_stone_copper_2.png",
@@ -66,6 +67,7 @@ HARVESTER_ART = {
     "band_2_vertical": "space-plating-stripe-yellow-vertical-undamaged.png",
 }
 # Each tier's default power, shown at eye height on its front: tier 1 burns fuel, tier 2 takes FE.
+# Its keys are the tiers a model is written for.
 HARVESTER_POWER = {1: "firebox", 2: "coil"}
 
 # The smelter's rim, where its brick shows: rows down to RIM_TOP, and the outer RIM_SIDE columns on each
@@ -372,6 +374,10 @@ def harvester_model(tier):
                         faces[name] = face("#band" if y == 2 else "#duct")
                 if (x, z) == (0, -1) and y < 2:
                     faces["north"] = face("#intake" if y == 0 else "#power")
+                # The block at the footprint's heart shows nothing, and Minecraft refuses an element
+                # with no faces.
+                if not faces:
+                    continue
                 low, high = [16 * x, 16 * y, 16 * z], [16 * x + 16, 16 * y + 16, 16 * z + 16]
                 moved = tuple(shift(low[axis], high[axis]) for axis in range(3))
                 children.setdefault(moved, []).append({
@@ -379,13 +385,12 @@ def harvester_model(tier):
                     "to": [high[axis] - 16 * moved[axis] for axis in range(3)],
                     "faces": faces,
                 })
-    sprite = "fieldworks:block/harvester/"
-    textures = {name: sprite + name for name in ("duct", "vent", "intake", "gearbox", "brace")}
-    textures.update(band=sprite + f"band_{tier}", band_vertical=sprite + f"band_{tier}_vertical",
-                    power=sprite + HARVESTER_POWER[tier])
+    textures = {name: HARVESTER_SPRITE + name for name in HARVESTER_ART if not name.startswith("band_")}
+    textures.update(band=HARVESTER_SPRITE + f"band_{tier}", band_vertical=HARVESTER_SPRITE + f"band_{tier}_vertical",
+                    power=HARVESTER_SPRITE + HARVESTER_POWER[tier])
     return {
         "ambientocclusion": False,
-        "textures": dict(textures, particle=sprite + "duct"),
+        "textures": dict(textures, particle=HARVESTER_SPRITE + "duct"),
         "loader": "neoforge:composite",
         "children": {
             "part_%d_%d_%d" % moved: {"textures": dict(textures), "transform": {"translation": list(moved)},
@@ -401,7 +406,7 @@ def harvester_models():
     models = {}
     for tier in HARVESTER_POWER:
         models[f"harvester_{tier}"] = harvester_model(tier)
-        models[f"harvester_{tier}_part"] = {"textures": {"particle": "fieldworks:block/harvester/duct"}}
+        models[f"harvester_{tier}_part"] = {"textures": {"particle": HARVESTER_SPRITE + "duct"}}
     return models
 
 
