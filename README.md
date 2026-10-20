@@ -41,7 +41,7 @@ Fieldworks carries a gallery of its features: one working scene each, all but th
 
 ## Dependencies
 
-**Groundworks** is required. **FTB Chunks**, **Jade**, **EMI** and **JEI** are optional.
+**Groundworks** is required and is a separate download. **FTB Chunks**, **Jade**, **EMI** and **JEI** are optional.
 
 ## Art
 
