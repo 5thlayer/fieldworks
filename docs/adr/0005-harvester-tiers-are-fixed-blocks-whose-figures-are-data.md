@@ -26,3 +26,6 @@ The ids are numbered rather than named for their power because the power is data
 - The block ids are saved into worlds, so renumbering or merging them breaks saves (ADR 0001).
 - A Harvest Recipe's minimum tier names a tier id and compares ranks, so a recipe written for
   `harvester_1` runs on every tier ranked at or above it.
+- The art shows each tier's default power, a firebox on `harvester_1` and a copper coil on
+  `harvester_2`, though the power is data: textures are cheap to change where ids are not, and a Pack
+  that re-powers a tier ships a resource pack with it.
