@@ -4,6 +4,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Both Harvester tiers wear art of their own in place of stretched vanilla sprites, one sprite to each block as the other mods' machines do: an iron-duct body, the tier's stripe round the top (light grey for `harvester_1`, yellow for `harvester_2`), a gearbox on the roof, and on the front the output port at the foot and the tier's default power above it, a firebox or a copper coil. The block-break particles are the duct (#33).
 - Fieldworks requires Groundworks 0.6.0 or later, below 0.7, whose `Rotate.press` takes the crosshair's hit in place of a block position (5thlayer/groundworks#72).
 
 ## 0.2.7

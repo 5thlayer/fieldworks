@@ -41,14 +41,20 @@ SPDX-FileCopyrightText = "Gradle"
 SPDX-License-Identifier = "Apache-2.0"
 
 # Malcolm Riley's unused textures: the coal, copper, iron, sulfur and uranium ore sprites, the item
-# sprites and the crude oil sprite, with the unmodified copies the ore and item sprites are built
-# from (NOTICE).
+# sprites, the crude oil sprite and the Harvester sprites, with the unmodified copies the ore, item
+# and Harvester sprites are built from (NOTICE).
 [[annotations]]
 path = [
     "data/art/ore_*.png",
     "data/art/material_crystal_sulfur_fancy.png",
     "data/art/material_crystal_greenish.png",
     "data/art/ingot_lead.png",
+    "data/art/industrial_metal_duct_*.png",
+    "data/art/device_gearbox_ends.png",
+    "data/art/device_smelter_front.png",
+    "data/art/copper_coil_side.png",
+    "data/art/space-plating-*.png",
+    "src/main/resources/assets/fieldworks/textures/block/harvester/*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/coal_stage*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/copper_stage*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/iron_stage*.png",

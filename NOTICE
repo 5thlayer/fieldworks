@@ -41,6 +41,32 @@ Source:  https://github.com/malcolmriley/unused-textures
 Licence: Creative Commons Attribution 4.0 International
          https://creativecommons.org/licenses/by/4.0/
 
+Harvester sprites
+-----------------
+
+Files:   data/art/industrial_metal_duct_flat_1.png
+         data/art/industrial_metal_duct_vent.png
+         data/art/industrial_metal_duct_intake.png
+         data/art/device_gearbox_ends.png
+         data/art/space-plating-square.png
+         data/art/space-plating-stripe-light-gray-horizontal-undamaged.png
+         data/art/space-plating-stripe-light-gray-vertical-undamaged.png
+         data/art/space-plating-stripe-yellow-horizontal-undamaged.png
+         data/art/space-plating-stripe-yellow-vertical-undamaged.png
+         data/art/device_smelter_front.png
+         data/art/copper_coil_side.png
+         src/main/resources/assets/fieldworks/textures/block/harvester/*.png
+Author:  Malcolm Riley
+Source:  https://github.com/malcolmriley/unused-textures
+         blocks/ at commit c89604ea49c0fc5470c5849f39cd5df1d497b0fb, the files named above. The files
+         under data/art/ are the unmodified copies. scripts/build-textures.py writes them unchanged as
+         duct.png, vent.png, intake.png, gearbox.png, brace.png, band_1.png, band_1_vertical.png,
+         band_2.png and band_2_vertical.png. firebox.png is the smelter's front with the brick round
+         its rim painted over with the duct; coil.png is the copper coil's side turned and mirrored so
+         its dark band runs down both edges.
+Licence: Creative Commons Attribution 4.0 International
+         https://creativecommons.org/licenses/by/4.0/
+
 Crude oil sprite
 ----------------
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 5thlayer
 # SPDX-License-Identifier: MIT
-"""Build the ore blocks' stage sprites, the item sprites and tar's.
+"""Build the ore blocks' stage sprites, the item sprites, tar's, and the Harvesters' sprites and models.
 
 A block shows one of eight sprites for what is left in it. The ratios at which a block changes
 stage are in fieldworks/ore/amounts.json; what each stage draws is an even step: stage `i` of `n`
@@ -13,6 +13,15 @@ NOTICE), committed unmodified under data/art/. Stone is generated: tan boulders 
 ground, from a fixed seed. The items are his too: sulfur and raw uranium as they are, and the uranium
 ingot his lead ingot in the green of the uranium ore's crystals. Tar's block and item are drawn here:
 Fieldworks' own stand-ins until real art is drawn.
+
+The Harvesters wear his sprites too, one to each block of the footprint, as Craftworks' Assemblers
+do: his iron duct for the body, the tier's stripe round the top and across the roof (light grey for
+tier 1, yellow for 2, the Assemblers' colours by rank), and a gearbox at the roof's centre. The
+front, the output face, has the duct intake at its foot and the tier's default power at eye height
+(ADR 0005): the smelter's front let into the duct for tier 1, as Craftworks' Refiner front is let
+into its plating, and the copper coil for tier 2, made symmetric as Wireworks' Steam Turbine wears
+it. The Harvesters' block models are written here as well, so --check also catches a hand edit to
+one.
 
     scripts/build-textures.py
     scripts/build-textures.py --check    # regenerate and diff
@@ -32,6 +41,8 @@ TEXTURES = os.path.join(ROOT, "src", "main", "resources", "assets", "fieldworks"
 BLOCK_OUT = os.path.join(TEXTURES, "block")
 ORE_OUT = os.path.join(BLOCK_OUT, "ore")
 ITEM_OUT = os.path.join(TEXTURES, "item")
+HARVESTER_OUT = os.path.join(BLOCK_OUT, "harvester")
+MODELS = os.path.join(ROOT, "src", "main", "resources", "assets", "fieldworks", "models", "block")
 ART = os.path.join(ROOT, "data", "art")
 
 SOURCED = {"coal": "ore_slade_coal.png", "copper": "ore_stone_copper_2.png",
@@ -41,6 +52,35 @@ SOURCED = {"coal": "ore_slade_coal.png", "copper": "ore_stone_copper_2.png",
 # The items wear his sprites too. The uranium ingot's is recoloured to the uranium ore's green.
 ITEM_ART = {"sulfur": "material_crystal_sulfur_fancy.png", "raw_uranium": "material_crystal_greenish.png",
             "uranium_ingot": "ingot_lead.png"}
+
+# The Harvesters' sprites, written from his unchanged, by name under textures/block/harvester/.
+HARVESTER_ART = {
+    "duct": "industrial_metal_duct_flat_1.png",
+    "vent": "industrial_metal_duct_vent.png",
+    "intake": "industrial_metal_duct_intake.png",
+    "gearbox": "device_gearbox_ends.png",
+    "brace": "space-plating-square.png",
+    "band_1": "space-plating-stripe-light-gray-horizontal-undamaged.png",
+    "band_1_vertical": "space-plating-stripe-light-gray-vertical-undamaged.png",
+    "band_2": "space-plating-stripe-yellow-horizontal-undamaged.png",
+    "band_2_vertical": "space-plating-stripe-yellow-vertical-undamaged.png",
+}
+# Each tier's default power, shown at eye height on its front: tier 1 burns fuel, tier 2 takes FE.
+HARVESTER_POWER = {1: "firebox", 2: "coil"}
+
+# The smelter's rim, where its brick shows: rows down to RIM_TOP, and the outer RIM_SIDE columns on each
+# side down to RIM_UPPER, the bottom of the firebox; below it the grate's iron reaches the edge.
+RIM_TOP = 1
+RIM_SIDE = 2
+RIM_UPPER = 7
+# How much redder than blue a pixel is to be the smelter's brick, against the grey of its cold iron.
+BRICK_RED = 18
+# Half the width of the dark band down the copper coil side's left edge.
+COIL_BAND_HALF = 2
+
+# The bounds Minecraft allows an element's from and to (CuboidModelElement): a block and a half either
+# way from the one block the model is placed on.
+LOW, HIGH = -16, 32
 
 # A source pixel is ore above the HSV saturation or below the value. The value catches a dark ore
 # and a crystal's shadow, which must go with the crystal or a spent block keeps a dark hole. Coal
@@ -269,6 +309,102 @@ def tar_item():
     return pixels
 
 
+def firebox():
+    """The smelter's front let into the duct: the brick showing round its rim is painted over with the
+    duct, so the iron firebox and grate sit in the Harvester's casing."""
+    smelter, duct = art("device_smelter_front.png"), art(HARVESTER_ART["duct"])
+    for y in range(16):
+        for x in range(16):
+            r, g, b, _ = smelter[y][x]
+            on_rim = y <= RIM_TOP or (y <= RIM_UPPER and (x < RIM_SIDE or x >= 16 - RIM_SIDE))
+            if on_rim and r > g and r - b >= BRICK_RED:
+                smelter[y][x] = duct[y][x]
+    return smelter
+
+
+def coil():
+    """The copper coil's side turned half its dark band over, so the band's darker half runs down the
+    left edge, and then its left half mirrored onto its right: the same dark half band down either
+    edge and the coil's shine in the middle."""
+    turned = [row[COIL_BAND_HALF:] + row[:COIL_BAND_HALF] for row in art("copper_coil_side.png")]
+    return [row[:8] + row[7::-1] for row in turned]
+
+
+def harvester_sprites():
+    """Each Harvester sprite, by name."""
+    sprites = {name: art(source) for name, source in HARVESTER_ART.items()}
+    sprites["firebox"] = firebox()
+    sprites["coil"] = coil()
+    return sprites
+
+
+def face(texture):
+    return {"uv": [0, 0, 16, 16], "texture": texture}
+
+
+def shift(low, high):
+    """The whole blocks to translate by, so that low..high, less that, is inside the bounds."""
+    for blocks in (0, -1, 1, -2, 2):
+        if low - 16 * blocks >= LOW and high - 16 * blocks <= HIGH:
+            return blocks
+    sys.exit(f"no translation brings {low}..{high} inside {LOW}..{HIGH}")
+
+
+def harvester_model(tier):
+    """A Harvester's 3x3x3 casing, facing north: one element per footprint block with only its
+    outward faces. The duct all round the lower two rows and underneath; the tier's band round the
+    top row and down the roof's centre line, with braced corners, vents at its east and west edges and
+    the gearbox at its centre; on the front, the intake at the foot and the tier's power above it. The
+    top row is above the bounds, so the model is a NeoForge composite whose children are translated
+    by whole blocks when it bakes, before the blockstate turns it to each facing."""
+    children = {}
+    for x in (-1, 0, 1):
+        for y in (0, 1, 2):
+            for z in (-1, 0, 1):
+                faces = {}
+                if y == 0:
+                    faces["down"] = face("#duct")
+                if y == 2:
+                    faces["up"] = face("#gearbox" if (x, z) == (0, 0) else "#band_vertical" if x == 0
+                                       else "#vent" if z == 0 else "#brace")
+                for outward, name in ((x == -1, "west"), (x == 1, "east"), (z == -1, "north"), (z == 1, "south")):
+                    if outward:
+                        faces[name] = face("#band" if y == 2 else "#duct")
+                if (x, z) == (0, -1) and y < 2:
+                    faces["north"] = face("#intake" if y == 0 else "#power")
+                low, high = [16 * x, 16 * y, 16 * z], [16 * x + 16, 16 * y + 16, 16 * z + 16]
+                moved = tuple(shift(low[axis], high[axis]) for axis in range(3))
+                children.setdefault(moved, []).append({
+                    "from": [low[axis] - 16 * moved[axis] for axis in range(3)],
+                    "to": [high[axis] - 16 * moved[axis] for axis in range(3)],
+                    "faces": faces,
+                })
+    sprite = "fieldworks:block/harvester/"
+    textures = {name: sprite + name for name in ("duct", "vent", "intake", "gearbox", "brace")}
+    textures.update(band=sprite + f"band_{tier}", band_vertical=sprite + f"band_{tier}_vertical",
+                    power=sprite + HARVESTER_POWER[tier])
+    return {
+        "ambientocclusion": False,
+        "textures": dict(textures, particle=sprite + "duct"),
+        "loader": "neoforge:composite",
+        "children": {
+            "part_%d_%d_%d" % moved: {"textures": dict(textures), "transform": {"translation": list(moved)},
+                                      "elements": elements}
+            for moved, elements in sorted(children.items())
+        },
+    }
+
+
+def harvester_models():
+    """Each Harvester model, by name: the casing on the origin, and a part block's, which draws nothing
+    and lends its breaking particles the duct."""
+    models = {}
+    for tier in HARVESTER_POWER:
+        models[f"harvester_{tier}"] = harvester_model(tier)
+        models[f"harvester_{tier}_part"] = {"textures": {"particle": "fieldworks:block/harvester/duct"}}
+    return models
+
+
 def build():
     with open(AMOUNTS, encoding="utf-8") as handle:
         by_key = json.load(handle)["resources"]
@@ -285,6 +421,10 @@ def build():
         files[os.path.join(ITEM_OUT, f"{name}.png")] = png(pixels)
     files[os.path.join(BLOCK_OUT, "tar.png")] = png(tar_block())
     files[os.path.join(ITEM_OUT, "tar.png")] = png(tar_item())
+    for name, pixels in harvester_sprites().items():
+        files[os.path.join(HARVESTER_OUT, f"{name}.png")] = png(pixels)
+    for name, model in harvester_models().items():
+        files[os.path.join(MODELS, f"{name}.json")] = (json.dumps(model, indent=2) + "\n").encode()
     return files
 
 
@@ -301,13 +441,13 @@ def main():
             print(f"FAIL: {os.path.relpath(path, ROOT)} is missing or stale")
         if stale:
             return 1
-        print(f"ok   {len(files)} sprites match the generator")
+        print(f"ok   {len(files)} sprites and models match the generator")
         return 0
 
     for path, image in sorted(files.items()):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         open(path, "wb").write(image)
-    print(f"wrote {len(files)} sprites")
+    print(f"wrote {len(files)} sprites and models")
     return 0
 
 
