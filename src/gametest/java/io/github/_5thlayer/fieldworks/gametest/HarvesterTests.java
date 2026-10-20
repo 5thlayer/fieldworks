@@ -67,7 +67,8 @@ final class HarvesterTests {
         helper.setBlock(ORIGIN.below(), Blocks.STONE);
         FakePlayer player = place(helper, Direction.NORTH);
 
-        Rotate.press(player, helper.absolutePos(ORIGIN.above().west()), false);
+        BlockPos aimed = helper.absolutePos(ORIGIN.above().west());
+        Rotate.press(player, new BlockHitResult(Vec3.atCenterOf(aimed).relative(Direction.WEST, 0.5), Direction.WEST, aimed, false), false);
         Direction turned = helper.getBlockState(ORIGIN).getValue(Footprint.FACING);
         helper.assertTrue(turned != Direction.NORTH, "Rotate in Place left the Harvester facing north");
         expectStanding(helper, turned, TierBlock.HARVESTER_1);

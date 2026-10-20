@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Fieldworks requires Groundworks 0.6.0 or later, below 0.7, whose `Rotate.press` takes the crosshair's hit in place of a block position (5thlayer/groundworks#72).
+
 ## 0.2.7
 
 - Fieldworks' game-test code and structures no longer ship in its jar (libworks ADR 0011): a Consumer's game tests and dev client no longer register Fieldworks' test type `fieldworks:code`, nor carry its `gametest/platform` structure. Fieldworks builds on libworks-plugin 0.4.0.
