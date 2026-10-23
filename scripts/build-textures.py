@@ -22,7 +22,7 @@ tier 1, yellow for 2, the Assemblers' colours by rank), and a gearbox at the roo
 front, the output face, has the duct intake at its foot and the tier's default power at eye height
 (ADR 0005): the smelter's front let into the duct for tier 1, as Craftworks' Refiner front is let
 into its plating, and the copper coil for tier 2, made symmetric as Wireworks' Steam Turbine wears
-it. Each has a lit twin, the firebox ablaze and the coil glowing hot, which the origin draws at full
+it. Each has a lit twin, his animated lit smelter front for the firebox and the coil glowing hot, which the origin draws at full
 brightness while the Harvester works. The Harvesters' block models are written here as well, so
 --check also catches a hand edit to one.
 
@@ -86,6 +86,8 @@ HARVESTER_ART = {
 # Each tier's default power, shown at eye height on its front: tier 1 burns fuel, tier 2 takes FE.
 # Its keys are the tiers a model is written for.
 HARVESTER_POWER = {1: "firebox", 2: "coil"}
+# The sprites that play an animation, with their .mcmeta: the lit firebox's frames at his timing.
+HARVESTER_ANIMATIONS = {"firebox_lit": {"animation": {"frametime": 37, "interpolate": True}}}
 # The block light the lit power face is drawn with: full brightness.
 LIT_FACE_LIGHT = 15
 
@@ -96,11 +98,6 @@ RIM_SIDE = 2
 RIM_UPPER = 7
 # How much redder than blue a pixel is to be the smelter's brick, against the grey of its cold iron.
 BRICK_RED = 18
-# A lit firebox: the grate's gaps are the dark brown pixels (red over blue by this much), drawn in two
-# alternating flame colours; the rest of the dark inside blends toward ember.
-FIRE_GAP = 8
-FIRE_BLAZE = [(255, 176, 46, 255), (255, 138, 26, 255)]
-EMBER = (122, 46, 12, 255)
 # A copper pixel of the coil is one whose red leads its blue by more than this.
 COPPER_REDNESS = 40
 
@@ -163,7 +160,7 @@ CLEAR = (0, 0, 0, 0)
 
 
 def png(pixels):
-    """A 16x16 RGBA PNG, as bytes."""
+    """A 16-wide RGBA PNG, as bytes; taller than 16 rows, an animation's frames stacked."""
     raw = b"".join(b"\x00" + b"".join(bytes(p) for p in row) for row in pixels)
 
     def chunk(tag, body):
@@ -172,18 +169,18 @@ def png(pixels):
 
     return (
         b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", struct.pack(">IIBBBBB", 16, 16, 8, 6, 0, 0, 0))
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", 16, len(pixels), 8, 6, 0, 0, 0))
         + chunk(b"IDAT", zlib.compress(raw, 9))
         + chunk(b"IEND", b"")
     )
 
 
 def read_png(path):
-    """A 16x16 8-bit RGBA PNG's pixels, as rows of [r, g, b, a]."""
+    """A 16-wide 8-bit RGBA PNG's pixels, as rows of [r, g, b, a]: 16 rows, or an animation's frames stacked."""
     data = open(path, "rb").read()
     width, height, depth, kind = struct.unpack(">IIBB", data[16:26])
-    if (width, height, depth, kind) != (16, 16, 8, 6):
-        sys.exit(f"{path} is not a 16x16 8-bit RGBA PNG")
+    if (width, depth, kind) != (16, 8, 6) or height % 16:
+        sys.exit(f"{path} is not a 16-wide 8-bit RGBA PNG of whole frames")
     idat, i = b"", 8
     while i < len(data):
         (length,) = struct.unpack(">I", data[i:i + 4])
@@ -191,7 +188,7 @@ def read_png(path):
             idat += data[i + 8:i + 8 + length]
         i += 12 + length
     raw, stride, rows, prev = zlib.decompress(idat), 64, [], bytearray(64)
-    for y in range(16):
+    for y in range(height):
         kind, line = raw[y * (stride + 1)], bytearray(raw[y * (stride + 1) + 1:(y + 1) * (stride + 1)])
         for x in range(stride):
             a = line[x - 4] if x >= 4 else 0
@@ -370,10 +367,10 @@ def tar_item():
     return pixels
 
 
-def firebox():
-    """The smelter's front let into the duct: the brick showing round its rim is painted over with the
-    duct, so the iron firebox and grate sit in the Harvester's casing."""
-    smelter, duct = art("device_smelter_front.png"), art(HARVESTER_ART["duct"])
+def inlaid(smelter):
+    """The smelter's front, or one frame of it, let into the duct: the brick showing round its rim is
+    painted over with the duct, so the iron firebox and grate sit in the Harvester's casing."""
+    duct = art(HARVESTER_ART["duct"])
     for y in range(16):
         for x in range(16):
             r, g, b, _ = smelter[y][x]
@@ -383,25 +380,24 @@ def firebox():
     return smelter
 
 
+def firebox():
+    """The smelter's front let into the duct."""
+    return inlaid(art("device_smelter_front.png"))
+
+
+def firebox_lit():
+    """The smelter's lit front, its three frames of fire, let into the duct as the cold one is, stacked
+    into the animation the sprite's .mcmeta plays."""
+    frames = art("device_smelter_front_lit.png")
+    return [row for frame in range(0, len(frames), 16) for row in inlaid(frames[frame:frame + 16])]
+
+
 def coil():
     """The copper coil's side turned half its dark band over, so the band's darker half runs down the
     left edge, and then its left half mirrored onto its right: the same dark half band down either
     edge and the coil's shine in the middle."""
     turned = [row[COIL_BAND_HALF:] + row[:COIL_BAND_HALF] for row in art("copper_coil_side.png")]
     return [row[:8] + row[7::-1] for row in turned]
-
-
-def firebox_lit():
-    """The firebox with its fire lit: the grate's dark gaps blaze orange, and the dark inside the firebox
-    round them is warmed toward ember."""
-    pixels = firebox()
-    for y in range(2, 16):
-        for x in range(2, 14):
-            r, g, b, a = pixels[y][x]
-            if r < 0x40 and g < 0x40 and b < 0x40:
-                gap = r - b >= FIRE_GAP
-                pixels[y][x] = FIRE_BLAZE[(x + y) % 2] if gap else blend(pixels[y][x], EMBER, 0.45)
-    return pixels
 
 
 def coil_lit():
@@ -413,10 +409,6 @@ def coil_lit():
             if r > b + COPPER_REDNESS:
                 row[x] = (min(255, int(r * 1.1) + 35), min(255, int(g * 1.05) + 15), int(b * 0.7), a)
     return pixels
-
-
-def blend(pixel, towards, amount):
-    return tuple(round(c + (t - c) * amount) for c, t in zip(pixel, towards))
 
 
 def harvester_sprites():
@@ -621,6 +613,8 @@ def build():
     files[os.path.join(ITEM_OUT, "tar.png")] = png(tar_item())
     for name, pixels in harvester_sprites().items():
         files[os.path.join(HARVESTER_OUT, f"{name}.png")] = png(pixels)
+    for name, meta in HARVESTER_ANIMATIONS.items():
+        files[os.path.join(HARVESTER_OUT, f"{name}.png.mcmeta")] = (json.dumps(meta, indent=2) + "\n").encode()
     for name, model in harvester_models().items():
         files[os.path.join(MODELS, f"{name}.json")] = (json.dumps(model, indent=2) + "\n").encode()
     for name, state in harvester_blockstates().items():

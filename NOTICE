@@ -66,10 +66,12 @@ Files:   data/art/industrial_metal_duct_flat_1.png
          data/art/space-plating-stripe-yellow-horizontal-undamaged.png
          data/art/space-plating-stripe-yellow-vertical-undamaged.png
          data/art/device_smelter_front.png
+         data/art/device_smelter_front_lit.png
          data/art/copper_coil_side.png
          data/art/steel_block.png
          data/art/metal_pipes_copper.png
          src/main/resources/assets/fieldworks/textures/block/harvester/*.png
+         src/main/resources/assets/fieldworks/textures/block/harvester/*.png.mcmeta
 Author:  Malcolm Riley
 Source:  https://github.com/malcolmriley/unused-textures
          blocks/ at commit c89604ea49c0fc5470c5849f39cd5df1d497b0fb, the files named above. The files
