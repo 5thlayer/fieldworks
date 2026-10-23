@@ -14,6 +14,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -25,7 +26,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * A Harvester lit while it works (#42): its origin carries {@code LIT} while an operation progresses, goes unlit on
+ * A Harvester lit while it works ([#42 "light the power face"](https://github.com/5thlayer/fieldworks/issues/42)): its origin carries {@code LIT} while an operation progresses, goes unlit on
  * any idle reason, and gives off block light 13 while lit. Ticks are run by hand, so the counts are exact.
  */
 final class HarvesterLitTests {
@@ -117,8 +118,8 @@ final class HarvesterLitTests {
         BlockPos origin = helper.absolutePos(ORIGIN);
         var level = helper.getLevel();
         helper.assertValueEqual(level.getBlockState(origin).getLightEmission(), 0, "light of an unlit Harvester");
-        level.setBlock(origin, level.getBlockState(origin).setValue(HarvesterBlock.LIT, true), 3);
-        helper.assertValueEqual(level.getBlockState(origin).getLightEmission(), 13, "light of a lit Harvester");
+        level.setBlock(origin, level.getBlockState(origin).setValue(HarvesterBlock.LIT, true), Block.UPDATE_ALL);
+        helper.assertValueEqual(level.getBlockState(origin).getLightEmission(), HarvesterBlock.LIT_LIGHT, "light of a lit Harvester");
         helper.succeed();
     }
 

@@ -23,8 +23,8 @@ front, the output face, has the duct intake at its foot and the tier's default p
 (ADR 0005): the smelter's front let into the duct for tier 1, as Craftworks' Refiner front is let
 into its plating, and the copper coil for tier 2, made symmetric as Wireworks' Steam Turbine wears
 it. Each has a lit twin, the firebox ablaze and the coil glowing hot, which the origin draws at full
-brightness while the Harvester works. The Harvesters' block models are written here as well, so --check also catches a hand edit to
-one.
+brightness while the Harvester works. The Harvesters' block models are written here as well, so
+--check also catches a hand edit to one.
 
     scripts/build-textures.py
     scripts/build-textures.py --check    # regenerate and diff
