@@ -56,6 +56,13 @@ _Avoid_: oil spring, pumpjack site
 **Oil field**:
 A group of oil wells placed together on land, spaced apart and never on a patch's ore.
 
+**Clearance**:
+The open land a patch or an oil field keeps round itself, in which nothing of another kind generates: no patch of
+another resource, and no oil field round a patch or patch round an oil field. It is a gap between edges, not a
+distance between centres. Where two would be too close, the rarer one keeps its place. Patches of one resource,
+and oil fields among themselves, are kept apart by their spacing instead.
+_Avoid_: exclusion zone, buffer, spacing (the gap between patches of one resource)
+
 **Crude oil**:
 The fluid an oil well yields, in the `c:crude_oil` tag, carried in its own bucket.
 
