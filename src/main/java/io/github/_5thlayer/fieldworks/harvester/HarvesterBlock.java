@@ -57,6 +57,11 @@ public final class HarvesterBlock extends HorizontalDirectionalBlock implements 
     }
 
     @Override
+    protected boolean skipRendering(BlockState state, BlockState neighborState, Direction direction) {
+        return HarvesterPartBlock.hidesFace(state, neighborState, direction);
+    }
+
+    @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new HarvesterBlockEntity(pos, state);
     }

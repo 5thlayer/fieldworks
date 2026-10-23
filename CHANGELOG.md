@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Two adjacent drill heads no longer draw a wall between them. A casing block at a Harvester's bottom layer draws its own inner faces, which show only toward a drill head, and a drill head draws only the underside of the block above ([#39](https://github.com/5thlayer/fieldworks/issues/39)).
+
 ## 0.3.0
 
 - A Harvester reaches down, never out ([ADR 0008](docs/adr/0008-a-harvester-reaches-down-never-out.md), [#34](https://github.com/5thlayer/fieldworks/issues/34)). Each of the nine columns under its footprint looks down from the block directly under it through air, replaceable blocks and fluids, up to the tier's new `reach` figure in `data/fieldworks/harvester_tier/` (0 when absent, no cap; `harvester_1` 1, `harvester_2` 2), and works the first other block it meets: an ore block, a harvestable block or an oil well. Reach is counted from the Harvester, so a column opened by a broken harvestable block looks further down but never past reach, and a spent ore block (stone) leaves it with no source.

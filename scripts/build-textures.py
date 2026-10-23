@@ -471,42 +471,39 @@ def column_of(x, z):
 
 
 def foot_model(tier, column):
-    """The bottom block of one column, drawn on its own: its casing, where it is no drill head."""
+    """The bottom block of one column, drawn on its own: its casing, where it is no drill head, and a face
+    toward each neighbour inside the footprint. Each of those is culled toward its neighbour, which the
+    Harvester's blocks hide (skipRendering) when the neighbour is casing too, so it shows only toward a
+    drill head, where the neighbour draws no casing of its own."""
     x, z = column // 3 - 1, column % 3 - 1
     textures = harvester_textures(tier)
+    faces = casing_faces(x, 0, z)
+    for inside, name in ((x < 1, "east"), (x > -1, "west"), (z < 1, "south"), (z > -1, "north")):
+        if inside:
+            faces[name] = dict(face("#duct"), cullface=name)
     return {
         "ambientocclusion": False,
         "textures": {"duct": textures["duct"], "intake": textures["intake"], "particle": HARVESTER_SPRITE + "duct"},
-        "elements": [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": casing_faces(x, 0, z)}],
+        "elements": [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": faces}],
     }
 
 
 def head_cell_model(tier, column):
     """The bottom block of one column where it is the drill head: its casing gone for the renderer to draw
-    the head, it draws the walls the hole would open into the machine, which has no faces inside, so
-    the casing reads as solid round it. Each wall is the face of the neighbour's cell, or of the block
-    above, turned into this one; the footprint's outer sides stay open, showing the head."""
-    x, z = column // 3 - 1, column % 3 - 1
+    the head, it draws only the underside of the block above, which has no faces inside the machine to
+    cover the hole. The neighbours' walls are their own faces (see foot_model); the footprint's outer
+    sides stay open, showing the head."""
     textures = harvester_textures(tier)
-    walls = [((0, 16, 0), (16, 32, 16), "down")]
-    if x > -1:
-        walls.append(((-16, 0, 0), (0, 16, 16), "east"))
-    if x < 1:
-        walls.append(((16, 0, 0), (32, 16, 16), "west"))
-    if z > -1:
-        walls.append(((0, 0, -16), (16, 16, 0), "south"))
-    if z < 1:
-        walls.append(((0, 0, 16), (16, 16, 32), "north"))
     return {
         "ambientocclusion": False,
         "textures": {"duct": textures["duct"], "particle": HARVESTER_SPRITE + "duct"},
-        "elements": [{"from": list(low), "to": list(high), "faces": {name: face("#duct")}} for low, high, name in walls],
+        "elements": [{"from": [0, 16, 0], "to": [16, 32, 16], "faces": {"down": face("#duct")}}],
     }
 
 
 def harvester_models():
     """Each Harvester model, by name: the casing above the bottom row on the origin, the whole casing for
-    its item, a bottom block's casing for each of the nine columns and the walls round it as a drill head, and a part block's, which draws nothing
+    its item, a bottom block's casing for each of the nine columns and the underside above it as a drill head, and a part block's, which draws nothing
     and lends its breaking particles the duct."""
     models = {}
     for tier in HARVESTER_POWER:

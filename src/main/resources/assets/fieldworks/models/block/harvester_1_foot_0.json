@@ -44,6 +44,26 @@
             16
           ],
           "texture": "#duct"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#duct",
+          "cullface": "east"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#duct",
+          "cullface": "south"
         }
       }
     }

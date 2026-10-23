@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 import com.mojang.serialization.MapCodec;
 import io.github._5thlayer.groundworks.Footprint;
 import io.github._5thlayer.groundworks.FootprintPartBlock;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
@@ -43,6 +44,28 @@ public final class HarvesterPartBlock extends FootprintPartBlock {
     /** Whether the part numbered {@code part} stands in the bottom layer. */
     static boolean inBottomLayer(int part) {
         return Harvesters.SHAPE.hasPart(part) && Harvesters.SHAPE.offsetOfPart(part).y() == 0;
+    }
+
+    /**
+     * Whether {@code state} is a Harvester's bottom block drawn as casing: the origin or a bottom-layer part, no drill
+     * head. Such a block draws a face toward each neighbour inside the footprint, which shows only toward a drill head.
+     */
+    static boolean isCasingFoot(BlockState state) {
+        if (state.getBlock() instanceof HarvesterBlock) {
+            return !state.getValue(HarvesterBlock.DRILL_HEAD);
+        }
+        return state.getBlock() instanceof HarvesterPartBlock
+                && inBottomLayer(state.getValue(PART)) && !state.getValue(HarvesterBlock.DRILL_HEAD);
+    }
+
+    /** Whether a casing bottom block's side face toward {@code neighbor} is hidden: the neighbour is casing too. */
+    static boolean hidesFace(BlockState state, BlockState neighbor, Direction direction) {
+        return direction.getAxis().isHorizontal() && isCasingFoot(state) && isCasingFoot(neighbor);
+    }
+
+    @Override
+    protected boolean skipRendering(BlockState state, BlockState neighborState, Direction direction) {
+        return hidesFace(state, neighborState, direction);
     }
 
     @Override
