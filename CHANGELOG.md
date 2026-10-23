@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+## 0.3.2
+
 - A Harvester lights its power face, the Burner's firebox or the Electric's coil, and gives off light 13 while it works, and goes dark on any idle reason ([#42](https://github.com/5thlayer/fieldworks/issues/42)).
 
 ## 0.3.1
