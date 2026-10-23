@@ -517,7 +517,7 @@ def harvester_blockstates():
         part = [{"apply": {"model": f"fieldworks:block/harvester_{tier}_part"}}]
         for facing, turn in FACING_TURNS.items():
             origin.append({"when": {"facing": facing}, "apply": turned(f"harvester_{tier}", turn)})
-            origin.append({"when": {"facing": facing, "drill": "false"},
+            origin.append({"when": {"facing": facing, "drill_head": "false"},
                            "apply": turned(f"harvester_{tier}_foot_{column_of(0, 0)}", turn)})
             number = 0
             for lx in (-1, 0, 1):
@@ -527,7 +527,7 @@ def harvester_blockstates():
                     number += 1
                     # A part's offset is in the origin's frame, x forward and z to the side; facing
                     # north that is the world's dz = lx and dx = lz (Groundworks' FootprintShape).
-                    part.append({"when": {"facing": facing, "part": str(number), "drill": "false"},
+                    part.append({"when": {"facing": facing, "part": str(number), "drill_head": "false"},
                                  "apply": turned(f"harvester_{tier}_foot_{column_of(lz, lx)}", turn)})
         states[f"harvester_{tier}"] = {"multipart": origin}
         states[f"harvester_{tier}_part"] = {"multipart": part}

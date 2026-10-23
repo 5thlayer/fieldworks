@@ -29,7 +29,7 @@ import org.jspecify.annotations.Nullable;
 public final class HarvesterBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
     /** Whether this bottom-layer block is its column's drill head, the source lying directly under the Harvester. */
-    public static final BooleanProperty DRILL = BooleanProperty.create("drill");
+    public static final BooleanProperty DRILL = BooleanProperty.create("drill_head");
 
     private final TierBlock tier;
     private final MapCodec<HarvesterBlock> codec;

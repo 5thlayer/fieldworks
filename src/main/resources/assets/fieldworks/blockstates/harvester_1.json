@@ -11,7 +11,7 @@
     {
       "when": {
         "facing": "north",
-        "drill": "false"
+        "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_1_foot_4"
@@ -29,7 +29,7 @@
     {
       "when": {
         "facing": "east",
-        "drill": "false"
+        "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_1_foot_4",
@@ -48,7 +48,7 @@
     {
       "when": {
         "facing": "south",
-        "drill": "false"
+        "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_1_foot_4",
@@ -67,7 +67,7 @@
     {
       "when": {
         "facing": "west",
-        "drill": "false"
+        "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_1_foot_4",

@@ -82,9 +82,10 @@ public final class DrillHeadBlock extends Block implements SimpleWaterloggedBloc
 
     /** The origin of the Harvester whose column the head at {@code head} stands in, or null where none reaches it. */
     static @Nullable BlockPos ownerOf(Level level, BlockPos head) {
+        int farthest = HarvesterTiers.snapshot().values().stream().mapToInt(HarvesterTier::reach).max().orElse(0);
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                for (int up = 1; head.getY() + up < level.getMaxY(); up++) {
+                for (int up = 1; up <= farthest && head.getY() + up < level.getMaxY(); up++) {
                     BlockPos at = head.offset(dx, up, dz);
                     if (level.getBlockState(at).getBlock() instanceof HarvesterBlock harvester) {
                         HarvesterTier tier = HarvesterTiers.get(harvester.tier());
