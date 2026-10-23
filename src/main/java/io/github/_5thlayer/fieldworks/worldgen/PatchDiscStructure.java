@@ -32,7 +32,7 @@ import net.minecraft.world.level.levelgen.synth.ImprovedNoise;
 
 /**
  * One resource's patch: a disc at the radius its law gives for a size factor at its centre's
- * distance from origin, in the one dimension its resource lies in (ADR-0132). Nothing excludes the ground near origin: a disc there has no quantity, so
+ * distance from origin, in the one dimension its resource lies in (ADR 0007). Nothing excludes the ground near origin: a disc there has no quantity, so
  * its radius rounds below one block and nothing generates. The resource's generation switch
  * (ADR-0002) is read here, at generation.
  */
@@ -81,7 +81,7 @@ public final class PatchDiscStructure extends Structure {
         boolean nether = resource.dimension() == PatchDimension.NETHER;
         int y;
         if (nether) {
-            // The Nether has no surface to read: the centre stands on its open floor, never on a lava sea (ADR-0132).
+            // The Nether has no surface to read: the centre stands on its open floor, never on a lava sea (ADR 0007).
             OptionalInt floor = netherFloor(context, x, z);
             if (floor.isEmpty()) {
                 return Optional.empty();

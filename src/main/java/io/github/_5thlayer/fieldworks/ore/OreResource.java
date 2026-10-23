@@ -4,7 +4,7 @@
 package io.github._5thlayer.fieldworks.ore;
 
 /**
- * The twelve resources a patch holds (ADR-0132), the item one draw pays out and the block's vanilla
+ * The twelve resources a patch holds (ADR 0007), the item one draw pays out and the block's vanilla
  * hardness. The pickaxe tier each needs is in the {@code needs_*_tool} tags, and the dimension and
  * minimum distance of its patches are in its Patch numbers.
  */

@@ -41,7 +41,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * A well at its floor and the oil well recipe Fieldworks ships (#12, ADR-0132): a well pumps at its floor for good and
+ * A well at its floor and the oil well recipe Fieldworks ships (#12, ADR 0007): a well pumps at its floor for good and
  * nothing raises it (ADR-0081), and a recipe's crude is fixed or the well's own cycle. The viewer's data for the oil
  * well's and the harvestable blocks' recipes is checked here too.
  */

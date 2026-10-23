@@ -20,10 +20,10 @@ public final class FieldworksTags {
     /** The fluids a Harvest Recipe may consume, and so the only ones a Harvester's Drilling Fluid tank takes (#1). */
     public static final TagKey<Fluid> DRILLING_FLUIDS = TagKey.create(Registries.FLUID, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "drilling_fluids"));
 
-    /** The Overworld's Drilling Fluids: drilling mud, and any a pack adds for a recipe that names this tag (ADR-0132). */
+    /** The Overworld's Drilling Fluids: drilling mud, and any a pack adds for a recipe that names this tag (ADR 0007). */
     public static final TagKey<Fluid> DRILLING_FLUIDS_OVERWORLD = TagKey.create(Registries.FLUID, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "drilling_fluids/overworld"));
 
-    /** The Nether's Drilling Fluids: magma slurry, and any a pack adds (ADR-0132). */
+    /** The Nether's Drilling Fluids: magma slurry, and any a pack adds (ADR 0007). */
     public static final TagKey<Fluid> DRILLING_FLUIDS_NETHER = TagKey.create(Registries.FLUID, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "drilling_fluids/nether"));
 
     /** Crude: any fluid here whose source block touches lava sets as tar (#22). */

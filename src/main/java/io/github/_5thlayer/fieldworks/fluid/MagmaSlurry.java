@@ -26,7 +26,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
- * Magma slurry, the Nether Drilling Fluid (ADR-0132): the fluid type, still and flowing fluids, a liquid block and
+ * Magma slurry, the Nether Drilling Fluid (ADR 0007): the fluid type, still and flowing fluids, a liquid block and
  * a bucket, and no bottles. It is in {@code #fieldworks:drilling_fluids/nether}. It flows at lava's pace, faster in
  * a dimension where lava does, but it is not lava: it is not in {@code #minecraft:lava}, so it burns nothing, fuels
  * no furnace and sets no crude into tar. Like a bucket of any fluid it is reachable through NeoForge's fluid

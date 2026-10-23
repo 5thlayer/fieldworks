@@ -4,7 +4,7 @@
 package io.github._5thlayer.fieldworks.ore;
 
 /**
- * The one dimension a resource's Patches lie in (ADR-0132). Distances are in Overworld-equivalent
+ * The one dimension a resource's Patches lie in (ADR 0007). Distances are in Overworld-equivalent
  * blocks, so a Nether centre counts for {@link #distanceScale()} times its distance from origin and
  * one set of law numbers serves both dimensions. Free of Minecraft so it loads in a plain unit test.
  */

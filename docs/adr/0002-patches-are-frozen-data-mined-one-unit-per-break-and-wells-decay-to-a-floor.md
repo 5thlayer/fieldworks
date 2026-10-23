@@ -7,6 +7,10 @@ status: accepted
 Fieldworks holds the world's resources (FactoryWorks ADR-0127). This records how its patches, oil
 wells and crude oil work, ported from FactoryWorks Core at commit `fb05f50`.
 
+ADR 0007 supersedes its resource list (twelve resources, each with a dimension and a minimum
+distance in place of the one 150-block hole) and the drilling mud bonus on wells: a well's floor is
+final.
+
 **Decision.**
 
 - **The numbers are Fieldworks' own, frozen.** A patch's size law, its edge noise and each

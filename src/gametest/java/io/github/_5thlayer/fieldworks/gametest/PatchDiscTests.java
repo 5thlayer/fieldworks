@@ -64,7 +64,7 @@ final class PatchDiscTests {
     static final TagKey<Biome> LAND = TagKey.create(Registries.BIOME,
             Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_land"));
 
-    /** The Nether biomes a Nether patch may lie in (ADR-0132). */
+    /** The Nether biomes a Nether patch may lie in (ADR 0007). */
     static final TagKey<Biome> NETHER_LAND = TagKey.create(Registries.BIOME,
             Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_nether"));
 
@@ -392,7 +392,7 @@ final class PatchDiscTests {
 
     /**
      * An ore block whose last unit is drawn becomes stone, or netherrack for a Nether resource, so a
-     * patch lies flush with the ground it was dealt on (ADR-0132).
+     * patch lies flush with the ground it was dealt on (ADR 0007).
      */
     private static void exhaustedBlocks(GameTestHelper helper) {
         for (OreResource resource : List.of(OreResource.IRON, OreResource.QUARTZ, OreResource.NETHERITE, OreResource.DIAMOND)) {

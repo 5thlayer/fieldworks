@@ -128,7 +128,7 @@ public final class OreCorpus {
 
     /**
      * @param defaultAmount what an ore block no patch placed starts with (ADR-0002)
-     * @param dimension the one dimension its Patches lie in (ADR-0132)
+     * @param dimension the one dimension its Patches lie in (ADR 0007)
      * @param minDistance the distance from origin, in Overworld-equivalent blocks, below which none of its Patches generate
      * @param stageRatios fractions of a block's own initial amount at which each stage begins, richest first
      */

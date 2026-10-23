@@ -59,7 +59,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * What a Patch resource asks of the Harvester and the world around it (ADR-0132, fieldworks#35): the Burner works every
+ * What a Patch resource asks of the Harvester and the world around it (ADR 0007, fieldworks#35): the Burner works every
  * common resource with no fluid and is refused on uranium, diamond, netherite and an oil well; the Electric works
  * them, the first three only with the Drilling Fluid of their dimension; a block takes the pickaxe tier of its vanilla
  * counterpart; and magma slurry is a fluid of its own that is not lava. The Patch discs themselves are in

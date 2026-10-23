@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Where a Nether patch lies in a column: the open floor, found by scanning down from under the bedrock
  * roof to the first solid block with nothing solid above it. The heightmaps are no use there, since the
  * topmost solid block of a Nether column is the roof. A floor under lava is no floor: the column is
- * rejected, so a patch never lies on a lava sea (ADR-0132).
+ * rejected, so a patch never lies on a lava sea (ADR 0007).
  */
 final class NetherFloor {
 

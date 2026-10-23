@@ -310,7 +310,7 @@ final class DrillingFluidTests {
         HarvestRecipeView muddy = views.stream().filter(view -> view.id().equals(MUDDY_IRON)).findFirst()
                 .orElseThrow(() -> helper.assertionException("the viewer does not list the muddy_iron recipe"));
 
-        // The recipe names #fieldworks:drilling_fluids, which holds both dimensions' fluids (ADR-0132).
+        // The recipe names #fieldworks:drilling_fluids, which holds both dimensions' fluids (ADR 0007).
         helper.assertValueEqual(muddy.fluids(), List.of(DrillingMud.SOURCE.get(), io.github._5thlayer.fieldworks.fluid.MagmaSlurry.SOURCE.get()),
                 "the fluids the viewer lists");
         helper.assertValueEqual(muddy.fluidAmount(), 250, "the mB the viewer lists");

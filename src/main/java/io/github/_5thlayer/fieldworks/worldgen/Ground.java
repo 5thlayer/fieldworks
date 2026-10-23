@@ -32,7 +32,7 @@ final class Ground {
     }
 
     /**
-     * The y of the open floor in a Nether column, or empty where it lies under lava (ADR-0132). Plants and
+     * The y of the open floor in a Nether column, or empty where it lies under lava (ADR 0007). Plants and
      * fire standing on it do not make it less open.
      */
     static OptionalInt nether(LevelReader level, int x, int z) {

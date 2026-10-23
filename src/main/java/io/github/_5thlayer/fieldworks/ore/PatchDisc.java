@@ -8,7 +8,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 /**
  * One generated patch, as its structure piece records it: the size factor it drew, the blocks it
  * placed and its centre column. Every block holds the amount at the centre's distance from origin, which
- * in the Nether counts eight times over (ADR-0132).
+ * in the Nether counts eight times over (ADR 0007).
  */
 public record PatchDisc(OreResource resource, double sizeFactor, int blockCount, int centreX,
         int centreZ) {

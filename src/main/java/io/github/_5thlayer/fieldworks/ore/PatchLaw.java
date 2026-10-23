@@ -7,7 +7,7 @@ package io.github._5thlayer.fieldworks.ore;
  * A patch's law for one resource: a spot's quantity, size and edge, and a block's richness, by
  * distance from world origin. The quantity stops growing at 1600 blocks because density does;
  * richness has no cap. Distance is the centre's, in Overworld-equivalent blocks ({@link
- * PatchDimension}), and nothing generates below {@code minDistance} of it (ADR-0132).
+ * PatchDimension}), and nothing generates below {@code minDistance} of it (ADR 0007).
  */
 public record PatchLaw(OreCorpus.Patch spot, OreCorpus.DensityLaw density,
         OreCorpus.DistanceLaw richnessLaw, OreCorpus.Edge edge, PatchDimension dimension, int minDistance) {
