@@ -55,10 +55,10 @@ SOURCED = {"coal": "ore_slade_coal.png", "copper": "ore_stone_copper_2.png",
            "quartz": "ore_stone_saltpeter.png"}
 
 # Ores the collection has no sprite for, turned from another: the source, the hue the ore takes
-# (0 to 1 round the colour wheel), the saturation it is given where it has none, and the brightness
+# (0 to 1 round the colour wheel), the least saturation its pixels are given, and the brightness
 # range its pixels are mapped into. A pixel is ore by the same test as in ORE_PIXEL, on the source.
 RECOLOURED = {
-    "redstone": ("ore_slade_lapis.png", 0.0, 0.85, (0.0, 1.0)),
+    "redstone": ("ore_slade_lapis.png", 0.0, 0.0, (0.0, 1.0)),
     "netherite": ("ore_stone_anthracite.png", 0.06, 0.5, (0.3, 0.55)),
 }
 
@@ -216,7 +216,7 @@ def recoloured_art(resource):
         for p in row:
             h, s, v = to_hsv(p)
             if s > test_saturation or v < test_value:
-                r, g, b = colorsys.hsv_to_rgb(hue, max(s, saturation) if resource == "netherite" else s, low + (high - low) * v)
+                r, g, b = colorsys.hsv_to_rgb(hue, max(s, saturation), low + (high - low) * v)
                 p = [round(r * 255), round(g * 255), round(b * 255), p[3]]
             out.append(p)
         pixels.append(out)
