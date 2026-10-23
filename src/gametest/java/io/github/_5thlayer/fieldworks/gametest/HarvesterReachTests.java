@@ -285,7 +285,7 @@ final class HarvesterReachTests {
     }
 
     private static boolean drill(GameTestHelper helper, BlockPos rel) {
-        return helper.getBlockState(rel).getValue(HarvesterBlock.DRILL);
+        return helper.getBlockState(rel).getValue(HarvesterBlock.DRILL_HEAD);
     }
 
     private static Footprint footprint() {

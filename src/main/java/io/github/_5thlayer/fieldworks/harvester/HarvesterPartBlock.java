@@ -25,7 +25,7 @@ public final class HarvesterPartBlock extends FootprintPartBlock {
     public HarvesterPartBlock(Properties properties, Supplier<Footprint> footprint) {
         super(properties, footprint);
         this.footprint = footprint;
-        registerDefaultState(defaultBlockState().setValue(HarvesterBlock.DRILL, false));
+        registerDefaultState(defaultBlockState().setValue(HarvesterBlock.DRILL_HEAD, false));
     }
 
     @Override
@@ -36,7 +36,7 @@ public final class HarvesterPartBlock extends FootprintPartBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(HarvesterBlock.DRILL);
+        builder.add(HarvesterBlock.DRILL_HEAD);
     }
 
     /** Whether the part numbered {@code part} stands in the bottom layer. */

@@ -19,11 +19,11 @@ import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreMining;
-import io.github._5thlayer.libworks.transfer.GuardedResourceHandler;
 import com.mojang.serialization.Codec;
+import io.github._5thlayer.libworks.transfer.GuardedResourceHandler;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -32,6 +32,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -45,7 +46,6 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -77,8 +77,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     private static final String PROGRESS_KEY = "progress";
     private static final String CURSOR_KEY = "cursor";
     private static final String HELD_KEY = "held_recipe";
-    private static final String DRILLS_KEY = "drills";
-    private static final Codec<List<Integer>> DRILLS_CODEC = Codec.INT.listOf();
+    private static final String HEADS_KEY = "drill_heads";
+    private static final Codec<List<Integer>> HEADS_CODEC = Codec.INT.listOf();
 
     private final ItemStacksResourceHandler buffer = new HarvesterSlots(BUFFER_SLOTS, this::setChanged);
     private final HarvesterPower power = new HarvesterPower(buffer, this::setChanged);
@@ -99,7 +99,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
      * stands in the cell above it. Saved, so a head placed before a reload is taken away when its source changes, and
      * sent to watchers, who draw it.
      */
-    private int[] drills = new int[DrillParts.COLUMNS];
+    private int[] heads = new int[DrillParts.COLUMNS];
 
     /** The Held recipe's id, resolved on each tick: a block entity loads before the recipes do. */
     private @Nullable Identifier held;
@@ -355,7 +355,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
      */
     record Column(BlockPos pos, int depth, boolean source) {
 
-        /** What the column shows (see {@code drills}). */
+        /** What the column shows (see {@code heads}). */
         int shown() {
             return source ? depth : Reach.NONE;
         }
@@ -395,14 +395,14 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             int shown = columns.get(index).shown();
             int dx = DrillParts.dx(index);
             int dz = DrillParts.dz(index);
-            if (drills[index] != shown) {
-                if (drills[index] >= 2) {
-                    DrillHeadBlock.removeAll(level, List.of(headCell(dx, dz, drills[index])));
+            if (heads[index] != shown) {
+                if (DrillParts.placesHead(heads[index])) {
+                    DrillHeadBlock.removeAll(level, List.of(headCell(dx, dz, heads[index])));
                 }
-                drills[index] = shown;
+                heads[index] = shown;
                 changed = true;
             }
-            if (shown >= 2) {
+            if (DrillParts.placesHead(shown)) {
                 BlockPos cell = headCell(dx, dz, shown);
                 if (!(level.getBlockState(cell).getBlock() instanceof DrillHeadBlock)) {
                     level.setBlock(cell, DrillHeadBlock.placedAt(level, cell), Block.UPDATE_ALL);
@@ -410,8 +410,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             }
             BlockPos bottom = worldPosition.offset(dx, 0, dz);
             BlockState state = level.getBlockState(bottom);
-            if (state.hasProperty(HarvesterBlock.DRILL) && state.getValue(HarvesterBlock.DRILL) != (shown == 1)) {
-                level.setBlock(bottom, state.setValue(HarvesterBlock.DRILL, shown == 1), Block.UPDATE_CLIENTS);
+            if (state.hasProperty(HarvesterBlock.DRILL_HEAD) && state.getValue(HarvesterBlock.DRILL_HEAD) != (shown == DrillParts.UNDER)) {
+                level.setBlock(bottom, state.setValue(HarvesterBlock.DRILL_HEAD, shown == DrillParts.UNDER), Block.UPDATE_CLIENTS);
             }
         }
         if (changed) {
@@ -427,17 +427,23 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
 
     /** Whether this Harvester shows a placed drill head at {@code pos}. */
     boolean shows(BlockPos pos) {
+        return placedHeads().contains(pos);
+    }
+
+    /** Where this Harvester's placed drill heads stand. */
+    private List<BlockPos> placedHeads() {
+        List<BlockPos> placed = new ArrayList<>();
         for (int index = 0; index < DrillParts.COLUMNS; index++) {
-            if (drills[index] >= 2 && headCell(DrillParts.dx(index), DrillParts.dz(index), drills[index]).equals(pos)) {
-                return true;
+            if (DrillParts.placesHead(heads[index])) {
+                placed.add(headCell(DrillParts.dx(index), DrillParts.dz(index), heads[index]));
             }
         }
-        return false;
+        return placed;
     }
 
     /** What each column shows, for the renderer; see {@link DrillParts}. */
-    public int[] drills() {
-        return drills.clone();
+    public int[] drillHeads() {
+        return heads.clone();
     }
 
     private static List<Source> sources(ServerLevel level, List<BlockPos> layer) {
@@ -512,14 +518,14 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         if (held != null) {
             output.store(HELD_KEY, Identifier.CODEC, held);
         }
-        output.store(DRILLS_KEY, DRILLS_CODEC, Arrays.stream(drills).boxed().toList());
+        output.store(HEADS_KEY, HEADS_CODEC, Arrays.stream(heads).boxed().toList());
     }
 
     /** Only what its watchers draw: the drill heads. */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registries);
-        output.store(DRILLS_KEY, DRILLS_CODEC, Arrays.stream(drills).boxed().toList());
+        output.store(HEADS_KEY, HEADS_CODEC, Arrays.stream(heads).boxed().toList());
         return output.buildResult();
     }
 
@@ -537,7 +543,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         progress = input.getIntOr(PROGRESS_KEY, 0);
         cursor = input.getIntOr(CURSOR_KEY, 0);
         held = input.read(HELD_KEY, Identifier.CODEC).orElse(null);
-        drills = input.read(DRILLS_KEY, DRILLS_CODEC).filter(saved -> saved.size() == DrillParts.COLUMNS)
+        heads = input.read(HEADS_KEY, HEADS_CODEC).filter(saved -> saved.size() == DrillParts.COLUMNS)
                 .map(saved -> saved.stream().mapToInt(Integer::intValue).toArray()).orElseGet(() -> new int[DrillParts.COLUMNS]);
     }
 
@@ -546,13 +552,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);
         if (level != null) {
-            List<BlockPos> heads = new ArrayList<>();
-            for (int index = 0; index < DrillParts.COLUMNS; index++) {
-                if (drills[index] >= 2) {
-                    heads.add(headCell(DrillParts.dx(index), DrillParts.dz(index), drills[index]));
-                }
-            }
-            DrillHeadBlock.removeAll(level, heads);
+            DrillHeadBlock.removeAll(level, placedHeads());
             for (ItemStacksResourceHandler slots : List.of(power.fuel(), fluids.fill(), fluids.drain(), buffer)) {
                 for (ItemStack stack : slots.copyToList()) {
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);

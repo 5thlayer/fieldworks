@@ -7,7 +7,8 @@ import java.util.function.IntPredicate;
 
 /**
  * How a Harvester's column looks down (ADR 0008), with no Minecraft in it: from the block directly under the
- * Harvester, depth 1, through what it passes, down to {@code reach} blocks past that one.
+ * Harvester through what it passes, down to {@code reach} blocks past that one. A block's depth is where it stands,
+ * counted down from 1 for the block directly under the Harvester; reach is the tier's figure that bounds it.
  */
 final class Reach {
 

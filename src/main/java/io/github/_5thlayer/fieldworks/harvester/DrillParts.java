@@ -20,6 +20,8 @@ public final class DrillParts {
     private static final double PX = 1 / 16d;
     /** Columns under the footprint: {@code dx} then {@code dz} from -1 to 1, the order the Harvester's cursor counts in. */
     public static final int COLUMNS = 9;
+    /** The depth of a source directly under the Harvester, whose column's bottom block is its drill head. */
+    public static final int UNDER = 1;
 
     // The head: a housing with the bit under it, in the middle of its cell.
     private static final double BODY_LOW = 6 * PX;
@@ -53,6 +55,11 @@ public final class DrillParts {
         return index % 3 - 1;
     }
 
+    /** Whether a column of this depth has a drill head placed in the world, over a source lower than {@link #UNDER}. */
+    public static boolean placesHead(int depth) {
+        return depth > UNDER;
+    }
+
     /** The cells, in blocks under the origin block, a column of this depth places a drill head in: 0 for the bottom block's own. */
     public static int headBelow(int depth) {
         return depth - 1;
@@ -71,7 +78,7 @@ public final class DrillParts {
     }
 
     private static void column(List<Box> boxes, int dx, int dz, int depth) {
-        if (depth < 1) {
+        if (depth < UNDER) {
             return;
         }
         int head = -headBelow(depth);

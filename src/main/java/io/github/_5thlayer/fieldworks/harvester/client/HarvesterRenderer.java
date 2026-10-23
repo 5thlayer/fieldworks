@@ -3,7 +3,9 @@
 
 package io.github._5thlayer.fieldworks.harvester.client;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -37,9 +39,11 @@ import org.jspecify.annotations.Nullable;
  */
 public class HarvesterRenderer implements BlockEntityRenderer<HarvesterBlockEntity, HarvesterRenderer.RenderState> {
 
-    private static final Identifier BODY = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "block/harvester/drill_body");
-    private static final Identifier BIT = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "block/harvester/gearbox");
-    private static final Identifier LEG = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "block/harvester/drill_leg");
+    // The housing wears steel, the bit the casing's gearbox and the legs copper pipe.
+    private static final Map<Kind, Identifier> SPRITES = new EnumMap<>(Map.of(
+            Kind.BODY, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "block/harvester/drill_body"),
+            Kind.BIT, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "block/harvester/gearbox"),
+            Kind.LEG, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "block/harvester/drill_leg")));
 
     /** A part, lit by {@code light}. */
     record Lit(Box box, int light) {
@@ -60,7 +64,7 @@ public class HarvesterRenderer implements BlockEntityRenderer<HarvesterBlockEnti
             return;
         }
         var pos = entity.getBlockPos();
-        state.parts = DrillParts.of(entity.drills()).stream()
+        state.parts = DrillParts.of(entity.drillHeads()).stream()
                 .map(box -> new Lit(box, LevelRenderer.getLightCoords(level, pos.offset(box.dx(), box.dy(), box.dz())))).toList();
     }
 
@@ -70,11 +74,11 @@ public class HarvesterRenderer implements BlockEntityRenderer<HarvesterBlockEnti
             return;
         }
         var atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
-        var sprites = new TextureAtlasSprite[] {atlas.getSprite(BODY), atlas.getSprite(BIT), atlas.getSprite(LEG)};
+        var sprites = new EnumMap<Kind, TextureAtlasSprite>(Kind.class);
+        SPRITES.forEach((kind, id) -> sprites.put(kind, atlas.getSprite(id)));
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
             for (var lit : state.parts) {
-                var sprite = sprites[lit.box.kind() == Kind.BODY ? 0 : lit.box.kind() == Kind.BIT ? 1 : 2];
-                box(lit.box, new Face(sprite, pose, consumer, lit.light));
+                box(lit.box(), new Face(sprites.get(lit.box().kind()), pose, consumer, lit.light()));
             }
         });
     }
@@ -85,17 +89,12 @@ public class HarvesterRenderer implements BlockEntityRenderer<HarvesterBlockEnti
         double y0 = box.dy() + box.y0(), y1 = box.dy() + box.y1();
         double z0 = box.dz() + box.z0(), z1 = box.dz() + box.z1();
         double u0 = box.x0(), u1 = box.x1(), w0 = box.z0(), w1 = box.z1(), v0 = 1 - box.y1(), v1 = 1 - box.y0();
-        // down
         face.quad(0, -1, 0, new double[][] {{x0, y0, z1, u0, w1}, {x0, y0, z0, u0, w0}, {x1, y0, z0, u1, w0}, {x1, y0, z1, u1, w1}});
-        // up
         face.quad(0, 1, 0, new double[][] {{x0, y1, z0, u0, w0}, {x0, y1, z1, u0, w1}, {x1, y1, z1, u1, w1}, {x1, y1, z0, u1, w0}});
-        // north: u runs against x, seen from outside
+        // Seen from outside, u runs against x on the north face and against z on the east.
         face.quad(0, 0, -1, new double[][] {{x1, y1, z0, 1 - u1, v0}, {x1, y0, z0, 1 - u1, v1}, {x0, y0, z0, 1 - u0, v1}, {x0, y1, z0, 1 - u0, v0}});
-        // south
         face.quad(0, 0, 1, new double[][] {{x0, y1, z1, u0, v0}, {x0, y0, z1, u0, v1}, {x1, y0, z1, u1, v1}, {x1, y1, z1, u1, v0}});
-        // west: u runs along z
         face.quad(-1, 0, 0, new double[][] {{x0, y1, z0, w0, v0}, {x0, y0, z0, w0, v1}, {x0, y0, z1, w1, v1}, {x0, y1, z1, w1, v0}});
-        // east: u runs against z
         face.quad(1, 0, 0, new double[][] {{x1, y1, z1, 1 - w1, v0}, {x1, y0, z1, 1 - w1, v1}, {x1, y0, z0, 1 - w0, v1}, {x1, y1, z0, 1 - w0, v0}});
     }
 
@@ -118,7 +117,7 @@ public class HarvesterRenderer implements BlockEntityRenderer<HarvesterBlockEnti
     @Override
     public AABB getRenderBoundingBox(HarvesterBlockEntity entity) {
         int deepest = 0;
-        for (int depth : entity.drills()) {
+        for (int depth : entity.drillHeads()) {
             deepest = Math.max(deepest, DrillParts.headBelow(depth));
         }
         BlockPos pos = entity.getBlockPos();

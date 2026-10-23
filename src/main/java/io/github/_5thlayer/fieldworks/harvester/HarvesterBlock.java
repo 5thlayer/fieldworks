@@ -24,12 +24,13 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A Harvester's origin block: the footprint's block that holds the block entity and the facing, which
- * is the output face, and, being the bottom centre, one of the nine bottom blocks that can draw a drill head. Its other 26 positions are Groundworks' part blocks.
+ * is the output face. Standing at the bottom centre, it is one of the nine bottom blocks that can be
+ * drawn as a drill head. Its other 26 positions are Groundworks' part blocks.
  */
 public final class HarvesterBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
-    /** Whether this bottom-layer block is its column's drill head, the source lying directly under the Harvester. */
-    public static final BooleanProperty DRILL = BooleanProperty.create("drill_head");
+    /** Whether this bottom-layer block is its column's drill head, its source lying directly under the Harvester. */
+    public static final BooleanProperty DRILL_HEAD = BooleanProperty.create("drill_head");
 
     private final TierBlock tier;
     private final MapCodec<HarvesterBlock> codec;
@@ -38,7 +39,7 @@ public final class HarvesterBlock extends HorizontalDirectionalBlock implements 
         super(properties);
         this.tier = tier;
         this.codec = simpleCodec(props -> new HarvesterBlock(props, tier));
-        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH).setValue(DRILL, false));
+        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH).setValue(DRILL_HEAD, false));
     }
 
     public TierBlock tier() {
@@ -52,7 +53,7 @@ public final class HarvesterBlock extends HorizontalDirectionalBlock implements 
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, DRILL);
+        builder.add(FACING, DRILL_HEAD);
     }
 
     @Override
