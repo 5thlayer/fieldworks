@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- The Jade config entries for the Harvester and ore amount providers have names in lang, so a dev client with assertions on no longer crashes on the title screen with "Missing config translation".
+
 ## 0.2.9
 
 - Both Harvester tiers wear art of their own in place of stretched vanilla sprites, one sprite to each block as the other mods' machines do: an iron-duct body, the tier's stripe round the top (light grey for `harvester_1`, yellow for `harvester_2`), a gearbox on the roof, and on the front the output port at the foot and the tier's default power above it, a firebox or a copper coil. The block-break particles are the duct (#33).
