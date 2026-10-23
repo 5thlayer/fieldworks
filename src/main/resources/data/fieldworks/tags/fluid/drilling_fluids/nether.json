@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "fieldworks:magma_slurry",
+    "fieldworks:flowing_magma_slurry"
+  ]
+}

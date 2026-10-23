@@ -14,7 +14,6 @@ import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Kind;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
-import io.github._5thlayer.fieldworks.harvester.OperationChoice.YieldCondition;
 import io.github._5thlayer.fieldworks.oil.OilWellBlock;
 import io.github._5thlayer.fieldworks.oil.WellYield;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
@@ -36,16 +35,12 @@ import net.minecraft.world.level.material.Fluid;
  *
  * <p>The result is an item stack, or {@code crude} mB for a well (#12). A well's Default recipe lists the crude of a
  * cycle at a normal well and, in {@code crudeAtFloor}, what its yield decays to; a harvestable block's lists no result
- * at all, since it breaks for its loot, which the loot table decides ({@link #breaksForLoot}). A written well recipe
- * lists its {@code yieldCondition}, and one that restores a share of its well's starting yield lists that share in
- * {@code restores} and, in {@code crude}, what it restores a normal well to.
- *
+ * at all, since it breaks for its loot, which the loot table decides ({@link #breaksForLoot}). *
  * <p>EMI and JEI both list from {@link #all}, over the recipes the client was sent, so neither names a Harvester
  * rule of its own.
  */
 public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> sources, ItemStack result, int duration,
-        Optional<Identifier> minimumTier, List<Fluid> fluids, int fluidAmount, Optional<YieldCondition> yieldCondition,
-        int crude, int crudeAtFloor, double restores) {
+        Optional<Identifier> minimumTier, List<Fluid> fluids, int fluidAmount, int crude, int crudeAtFloor) {
 
     public HarvestRecipeView {
         sources = List.copyOf(sources);
@@ -61,44 +56,44 @@ public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> so
         List<HarvestRecipeView> views = new ArrayList<>();
         for (OreResource resource : OreResource.values()) {
             OreBlock ore = FieldworksRegistries.ore(resource).get();
-            Source source = HarvestSources.of(ore.defaultBlockState(), false);
+            Source source = HarvestSources.of(ore.defaultBlockState());
             if (choices.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
                 views.add(new HarvestRecipeView(defaultId(ore), true, List.of(ore), HarvesterBlockEntity.drop(ore),
-                        OperationChoice.ORE_DRAW_TICKS, Optional.empty(), List.of(), 0, Optional.empty(), 0, 0, 0));
+                        OperationChoice.ORE_DRAW_TICKS, Optional.empty(), List.of(), 0, 0, 0));
             }
         }
         OilWellBlock well = FieldworksRegistries.OIL_WELL.get();
-        Source wellSource = HarvestSources.of(well.defaultBlockState(), false);
+        Source wellSource = HarvestSources.of(well.defaultBlockState());
         WellYield yield = WellYield.fromCorpus();
         if (choices.stream().noneMatch(recipe -> recipe.replacesDefaultOf(wellSource))) {
             views.add(new HarvestRecipeView(defaultId(well), true, List.of(well), ItemStack.EMPTY, OperationChoice.WELL_PUMP_TICKS,
-                    Optional.empty(), List.of(), 0, Optional.empty(),
-                    yield.cycle(yield.normal(), yield.normal(), 0).crude(), yield.cycle(yield.minimum(), yield.minimum(), 0).crude(), 0));
+                    Optional.empty(), List.of(), 0,
+                    yield.cycle(yield.normal(), yield.normal(), 0).crude(), yield.cycle(yield.minimum(), yield.minimum(), 0).crude()));
         }
         for (Holder<Block> holder : BuiltInRegistries.BLOCK.getTagOrEmpty(FieldworksTags.HARVESTABLE)) {
             Block block = holder.value();
-            Source source = HarvestSources.of(block.defaultBlockState(), false);
+            Source source = HarvestSources.of(block.defaultBlockState());
             // Ore blocks and the well are listed above; a block with no item has nothing to show.
             if (source.kind() != Kind.HARVESTABLE || block.asItem() == Items.AIR) {
                 continue;
             }
             if (choices.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
                 views.add(new HarvestRecipeView(defaultId(block), true, List.of(block), ItemStack.EMPTY, OperationChoice.BREAK_TICKS,
-                        Optional.empty(), List.of(), 0, Optional.empty(), 0, 0, 0));
+                        Optional.empty(), List.of(), 0, 0, 0));
             }
         }
         for (RecipeHolder<HarvestRecipe> holder : written) {
             HarvestRecipe recipe = holder.value();
             int crude = switch (recipe.result()) {
                 case HarvestRecipe.Result.Crude fixed -> fixed.millibuckets();
-                case HarvestRecipe.Result.Restored restored -> yield.restored(yield.normal(), restored.fraction());
+                case HarvestRecipe.Result.Cycle cycle -> yield.cycle(yield.normal(), yield.normal(), 0).crude();
                 case HarvestRecipe.Result.Item item -> 0;
             };
             views.add(new HarvestRecipeView(holder.id().identifier(), false, recipe.source().stream().map(Holder::value).toList(),
                     recipe.result().stack(), recipe.duration(), recipe.minimumTier(),
                     recipe.drillingFluid().map(input -> servingFluids(input)).orElse(List.of()),
-                    recipe.drillingFluid().map(HarvestRecipe.FluidInput::amount).orElse(0), recipe.yieldCondition(),
-                    crude, 0, recipe.result() instanceof HarvestRecipe.Result.Restored restored ? restored.fraction() : 0));
+                    recipe.drillingFluid().map(HarvestRecipe.FluidInput::amount).orElse(0), crude,
+                    recipe.result() instanceof HarvestRecipe.Result.Cycle ? yield.cycle(yield.minimum(), yield.minimum(), 0).crude() : 0));
         }
         return List.copyOf(views);
     }

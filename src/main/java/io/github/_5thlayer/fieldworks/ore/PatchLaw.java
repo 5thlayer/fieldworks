@@ -6,15 +6,27 @@ package io.github._5thlayer.fieldworks.ore;
 /**
  * A patch's law for one resource: a spot's quantity, size and edge, and a block's richness, by
  * distance from world origin. The quantity stops growing at 1600 blocks because density does;
- * richness has no cap.
+ * richness has no cap. Distance is the centre's, in Overworld-equivalent blocks ({@link
+ * PatchDimension}), and nothing generates below {@code minDistance} of it (ADR-0132).
  */
 public record PatchLaw(OreCorpus.Patch spot, OreCorpus.DensityLaw density,
-        OreCorpus.DistanceLaw richnessLaw, OreCorpus.Edge edge) {
+        OreCorpus.DistanceLaw richnessLaw, OreCorpus.Edge edge, PatchDimension dimension, int minDistance) {
 
     public static PatchLaw of(OreResource resource) {
         OreCorpus corpus = OreCorpus.get();
-        return new PatchLaw(resource.corpus().patch(), corpus.densityLaw(), corpus.distanceLaw(),
-                corpus.edge());
+        OreCorpus.Resource entry = resource.corpus();
+        return new PatchLaw(entry.patch(), corpus.densityLaw(), corpus.distanceLaw(), corpus.edge(),
+                entry.dimension(), entry.minDistance());
+    }
+
+    /** A column's distance from origin as the laws count it: Nether blocks count eight times over. */
+    public double distance(int x, int z) {
+        return dimension.distance(x, z);
+    }
+
+    /** Whether a centre at that distance is far enough out for the resource to generate. */
+    public boolean generatesAt(double distance) {
+        return distance >= minDistance;
     }
 
     public double density(double distance) {

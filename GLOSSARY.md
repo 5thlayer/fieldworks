@@ -1,7 +1,7 @@
 # Fieldworks
 
-The resources of the world: ore patches of iron, copper, coal, stone, uranium and sulfur, oil wells
-and the crude oil under them, and one map marker per patch. It plays alone in vanilla.
+The resources of the world: ore patches of every mineral a Module's recipes use in bulk, in the Overworld
+and the Nether, oil wells and the crude oil under them, and one map marker per patch. It plays alone in vanilla.
 
 ## Language
 
@@ -26,20 +26,27 @@ _Avoid_: demo pack, showcase pack, gallery datapack
 ### Resources
 
 **Patch**:
-A disc of ore blocks of one resource, generated in new land beyond the spawn area. It holds a total
-that its blocks share equally, and it is found, marked and mined as a whole. Its size law and ragged
+A disc of ore blocks of one resource, generated in new land beyond the spawn area and beyond its resource's
+minimum distance. It holds a total that its blocks share equally, and it is found, marked and mined as a whole. Its size law and ragged
 edge are shared with the oil field, which lays its wells over the same kind of disc.
 _Avoid_: deposit, vein, outfield, field (an oil field is a different thing)
 
 **Ore block**:
 One block of a patch. It holds an amount, shows it as one of eight stages, and gives up one unit per
-break until the last, when it becomes stone.
+break until the last, when it becomes stone, or netherrack in the Nether.
 _Avoid_: ore node, tile
 
 **Generation switch**:
-The config entry that stops new patches of one resource from generating. Patches already in the
+The config entry that stops new patches of one resource from generating, one for each of the twelve. Patches already in the
 world stay.
 _Avoid_: toggle, spawn rate
+
+**Resource**:
+One of the twelve minerals a patch holds, bound to exactly one dimension: iron, copper, coal, stone, sulfur,
+uranium, redstone, gold and diamond in the Overworld; quartz, glowstone and netherite in the Nether. Its
+dimension and **minimum distance**, the distance from origin below which none of its patches generate, are in
+the Patch numbers. Distance is in Overworld-equivalent blocks: in the Nether a block counts eight times over.
+_Avoid_: ore type, material
 
 **Oil well**:
 A block that holds an amount of crude and cannot be broken. Its amount decays by a fixed step per
@@ -93,7 +100,7 @@ What one Harvester operation takes and yields: a source, an optional Drilling Fl
 _Avoid_: mining recipe, drill recipe
 
 **Default recipe**:
-The fluid-free Harvest Recipe every source has without one being written: a draw of an ore block, the loot of a harvestable block, crude from an oil well.
+The fluid-free Harvest Recipe every source has without one being written: a draw of an ore block, the loot of a harvestable block, crude from an oil well. A written recipe with `replaces_default` takes it away: uranium, diamond, netherite and the oil well have one, which needs the Electric Harvester.
 _Avoid_: base recipe, fallback
 
 **Held recipe**:
@@ -101,5 +108,12 @@ The Harvest Recipe a player has set on a Harvester, which restricts it to the so
 _Avoid_: selected recipe, filter
 
 **Drilling Fluid**:
-A fluid in `#fieldworks:drilling_fluids` that a Harvest Recipe consumes.
+A fluid in `#fieldworks:drilling_fluids` that a Harvest Recipe consumes. Each belongs to a dimension through
+the tag its recipes name: `#fieldworks:drilling_fluids/overworld` (drilling mud) or
+`#fieldworks:drilling_fluids/nether` (magma slurry). The Harvester checks no dimension.
 _Avoid_: lubricant, mud (for the general case)
+
+**Magma slurry**:
+The Nether's Drilling Fluid, crafted from a lava bucket and soul soil. It flows at lava's pace but is not
+lava: it is not in `#minecraft:lava`, burns nothing, fuels no furnace and sets no crude into tar.
+_Avoid_: lava, nether mud

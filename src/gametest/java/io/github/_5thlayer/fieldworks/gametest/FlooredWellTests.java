@@ -22,7 +22,6 @@ import io.github._5thlayer.fieldworks.harvester.HarvestRecipeView;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
 import io.github._5thlayer.fieldworks.harvester.HarvesterBlockEntity;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.IdleReason;
-import io.github._5thlayer.fieldworks.harvester.OperationChoice.YieldCondition;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -42,9 +41,9 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * A well at its floor and the drilling mud recipe Fieldworks ships (#12): the Default recipe pumps the floor rate
- * and never stops, the mud recipe beats it, and a recipe's yield condition is respected. The viewer's data for the
- * oil well's and the harvestable blocks' Default recipes is checked here too.
+ * A well at its floor and the oil well recipe Fieldworks ships (#12, ADR-0132): a well pumps at its floor for good and
+ * nothing raises it (ADR-0081), and a recipe's crude is fixed or the well's own cycle. The viewer's data for the oil
+ * well's and the harvestable blocks' recipes is checked here too.
  */
 final class FlooredWellTests {
 
@@ -52,8 +51,8 @@ final class FlooredWellTests {
     private static final BlockPos CHEST = ORIGIN.relative(Direction.NORTH, 2);
     private static final BlockPos HOPPER = ORIGIN.relative(Direction.WEST, 2);
 
-    /** The recipe Fieldworks ships: crude at the floor for drilling mud. */
-    private static final Identifier MUD_CRUDE = id("crude_from_drilling_mud");
+    /** The recipe Fieldworks ships: the well's own cycle, for the Electric Harvester and no fluid. */
+    private static final Identifier WELL_CRUDE = id("crude_from_oil_well");
     /** A game-test recipe pumping 40 mB a cycle at any yield. */
     private static final Identifier FLAT_CRUDE = id("gametest/crude_flat");
 
@@ -69,91 +68,40 @@ final class FlooredWellTests {
     }
 
     static void register(FieldworksGameTests.Registrar tests) {
-        tests.test("a_floored_well_that_started_at_300000_is_restored_to_10_mb_per_operation_by_the_drilling_mud_recipe", 20,
-                FlooredWellTests::mudBeatsTheFloor);
-        tests.test("a_floored_well_that_started_at_1500000_is_restored_to_50_mb_per_operation_by_the_drilling_mud_recipe", 20,
-                FlooredWellTests::mudRestoresARichWell);
-        tests.test("a_well_above_its_floor_ignores_the_drilling_mud_recipe_that_needs_it_at_the_floor", 20, FlooredWellTests::aboveTheFloor);
-        tests.test("a_held_well_recipe_with_no_drilling_mud_in_the_tank_idles_and_pumps_nothing", 20, FlooredWellTests::noMud);
+        tests.test("patches_a_decayed_oil_well_pumps_its_floor_rate_for_good_and_neither_mud_nor_a_held_recipe_lifts_it", 400,
+                helper -> floorIsFinal(helper, NORMAL_START, 2));
+        tests.test("patches_a_decayed_rich_oil_well_pumps_its_own_higher_floor_rate_for_good", 400,
+                helper -> floorIsFinal(helper, RICH_START, 10));
         tests.test("a_held_crude_recipe_pumps_its_own_amount_and_the_well_still_decays", 20, FlooredWellTests::flatRecipeStillDecays);
         tests.test("one_hopper_of_mud_bottles_and_empty_buckets_keeps_both_slots_fed_with_glass_bottles_and_crude_buckets_in_the_chest", 300,
                 FlooredWellTests::mixedHopper);
-        tests.test("a_well_recipe_loads_a_crude_result_and_a_yield_condition_and_a_bad_one_is_refused", 1, FlooredWellTests::loadsAndRefuses);
-        tests.test("the_viewer_lists_the_oil_wells_default_recipe_with_the_crude_oil_bucket_as_its_icon_and_its_crude_decaying_to_a_floor", 1,
+        tests.test("patches_the_shipped_oil_well_recipe_loads_and_a_restoring_crude_result_is_refused", 1, FlooredWellTests::loadsAndRefuses);
+        tests.test("patches_the_viewer_lists_the_oil_wells_recipe_in_place_of_its_default_with_the_crude_oil_bucket_as_its_icon", 1,
                 FlooredWellTests::viewerListsTheWell);
-        tests.test("the_viewer_lists_the_drilling_mud_recipes_crude_fluid_and_yield_condition", 1, FlooredWellTests::viewerListsTheMudRecipe);
         tests.test("the_viewer_lists_each_harvestable_blocks_default_recipe_as_a_forty_tick_break_for_its_loot", 1,
                 FlooredWellTests::viewerListsBreaks);
     }
 
     /**
-     * At its floor the well pumps 2 mB a cycle with nothing held, mud in the tank or not. Held to the shipped recipe it
-     * pumps the 10 it started at and takes 25 mB of mud, and the well stays at its floor (ADR 0002).
+     * An Electric Harvester holding the shipped recipe pumps what the well's own cycle gives: at the floor 2 mB for a
+     * well that started at a normal amount, 10 for one five times richer. Drilling mud in the tank is taken by nothing,
+     * and the well stays at its floor however long it is pumped (ADR-0081).
      */
-    private static void mudBeatsTheFloor(GameTestHelper helper) {
-        OilWellBlockEntity well = flooredWell(helper, NORMAL_START);
-        HarvesterBlockEntity machine = harvester(helper);
+    private static void floorIsFinal(GameTestHelper helper, long initial, int perOperation) {
+        OilWellBlockEntity well = flooredWell(helper, initial);
+        long floor = well.amount();
+        HarvesterBlockEntity machine = PatchGateTests.electric(helper);
         fillMud(helper, 1_000);
+        machine.setHeldRecipe(WELL_CRUDE);
 
-        HarvesterTests.tick(helper, machine, 20);
-        int byDefault = crude(helper);
-        helper.assertValueEqual(byDefault, 2, "crude from one Default operation at the floor");
-        helper.assertValueEqual(mud(helper), 1_000, "mud taken by a Default operation");
+        HarvesterTests.tick(helper, machine, 200);
 
-        machine.setHeldRecipe(MUD_CRUDE);
-        HarvesterTests.tick(helper, machine, 20);
-        int byMud = crude(helper) - byDefault;
-        helper.assertTrue(byMud > byDefault, "the mud recipe pumped " + byMud + " mB, the Default " + byDefault);
-        helper.assertValueEqual(byMud, 10, "crude from one operation of the mud recipe");
-        helper.assertValueEqual(mud(helper), 975, "mud left after one operation");
-        helper.assertValueEqual(well.amount(), FLOOR, "the well's amount, at its floor");
-        helper.assertValueEqual(machine.idleReason(), Optional.empty(), "the idle reason");
-        helper.succeed();
-    }
-
-    /** A well five times richer floors at five times the crude, and the recipe restores five times as much. */
-    private static void mudRestoresARichWell(GameTestHelper helper) {
-        OilWellBlockEntity well = flooredWell(helper, RICH_START);
-        HarvesterBlockEntity machine = harvester(helper);
-        fillMud(helper, 1_000);
-
-        HarvesterTests.tick(helper, machine, 20);
-        int byDefault = crude(helper);
-        helper.assertValueEqual(byDefault, 10, "crude from one Default operation at the floor");
-
-        machine.setHeldRecipe(MUD_CRUDE);
-        HarvesterTests.tick(helper, machine, 20);
-        helper.assertValueEqual(crude(helper) - byDefault, 50, "crude from one operation of the mud recipe");
-        helper.assertValueEqual(well.amount(), RICH_START / 5, "the well's amount, at its floor");
-        helper.succeed();
-    }
-
-    /** The recipe's yield condition is at the floor: a well still decaying is not matched, and the Default is not run in its place. */
-    private static void aboveTheFloor(GameTestHelper helper) {
-        OilWellBlockEntity well = well(helper, ABOVE_FLOOR);
-        HarvesterBlockEntity machine = harvester(helper);
-        fillMud(helper, 1_000);
-        machine.setHeldRecipe(MUD_CRUDE);
-
-        HarvesterTests.tick(helper, machine, 40);
-
-        helper.assertValueEqual(crude(helper), 0, "crude pumped");
+        int pumped = crude(helper);
+        helper.assertTrue(pumped >= 10 * perOperation, "crude pumped in 200 ticks: " + pumped);
+        helper.assertValueEqual(pumped % perOperation, 0, "crude pumped, in whole operations of " + perOperation + " mB");
         helper.assertValueEqual(mud(helper), 1_000, "mud taken");
-        helper.assertValueEqual(well.amount(), ABOVE_FLOOR, "the well's amount");
-        helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.NOTHING_MATCHING), "the idle reason");
-        helper.succeed();
-    }
-
-    private static void noMud(GameTestHelper helper) {
-        OilWellBlockEntity well = flooredWell(helper, NORMAL_START);
-        HarvesterBlockEntity machine = harvester(helper);
-        machine.setHeldRecipe(MUD_CRUDE);
-
-        HarvesterTests.tick(helper, machine, 40);
-
-        helper.assertValueEqual(crude(helper), 0, "crude pumped");
-        helper.assertValueEqual(well.amount(), FLOOR, "the well's amount");
-        helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.NO_FLUID), "the idle reason");
+        helper.assertValueEqual(well.amount(), floor, "the well's amount, at its floor");
+        helper.assertValueEqual(machine.idleReason(), Optional.empty(), "the idle reason");
         helper.succeed();
     }
 
@@ -180,8 +128,8 @@ final class FlooredWellTests {
         helper.setBlock(CHEST, Blocks.CHEST);
         HarvesterBlockEntity machine = harvester(helper);
         fillMud(helper, 3_000);
-        machine.setHeldRecipe(MUD_CRUDE);
-        // 100 operations of 10 mB: a bucket of crude in the tank before the hopper moves anything.
+        machine.setHeldRecipe(FLAT_CRUDE);
+        // 25 operations of 40 mB: a bucket of crude in the tank before the hopper moves anything.
         HarvesterTests.tick(helper, machine, 2_000);
         helper.assertTrue(crude(helper) >= 1_000, "crude pumped: " + crude(helper));
 
@@ -203,65 +151,52 @@ final class FlooredWellTests {
     }
 
     private static void loadsAndRefuses(GameTestHelper helper) {
-        HarvestRecipe mud = HarvestRecipes.find(helper.getLevel(), MUD_CRUDE)
-                .orElseThrow(() -> helper.assertionException("the shipped drilling mud recipe did not load"));
-        helper.assertValueEqual(mud.yieldCondition(), Optional.of(YieldCondition.AT_FLOOR), "the shipped recipe's yield condition");
-        helper.assertValueEqual(mud.result(), new HarvestRecipe.Result.Restored(1.0), "the shipped recipe's crude");
-        helper.assertValueEqual(mud.drillingFluid().orElseThrow().amount(), 25, "the shipped recipe's mud per operation");
-        helper.assertValueEqual(mud.replacesDefault(), false, "whether the shipped recipe replaces the Default");
-        HarvestRecipe flat = HarvestRecipes.find(helper.getLevel(), FLAT_CRUDE).orElseThrow();
-        helper.assertValueEqual(flat.yieldCondition(), Optional.empty(), "a recipe with no yield condition");
+        HarvestRecipe crude = HarvestRecipes.find(helper.getLevel(), WELL_CRUDE)
+                .orElseThrow(() -> helper.assertionException("the shipped oil well recipe did not load"));
+        helper.assertValueEqual(crude.result(), new HarvestRecipe.Result.Cycle(), "the shipped recipe's crude");
+        helper.assertValueEqual(crude.minimumTier(), Optional.of(id("harvester_2")), "the shipped recipe's minimum tier");
+        helper.assertValueEqual(crude.drillingFluid(), Optional.empty(), "the shipped recipe's fluid");
+        helper.assertValueEqual(crude.replacesDefault(), true, "whether the shipped recipe replaces the Default");
+        helper.assertTrue(HarvestRecipes.find(helper.getLevel(), id("crude_from_drilling_mud")).isEmpty(),
+                "the drilling mud well recipe still loads");
 
-        expectRefused(helper, "a yield condition that is neither", "yield_condition", """
-                {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": {"crude_oil": 10}, "duration": 20,
-                 "yield_condition": "sometimes"}""");
         expectRefused(helper, "no crude", "crude_oil", """
                 {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": {"crude_oil": 0}, "duration": 20}""");
-        expectRefused(helper, "a crude result restoring none of the yield", "restores", """
-                {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": {"crude_oil": {"restores": 0}}, "duration": 20}""");
-        expectRefused(helper, "a crude result restoring more than the yield", "restores", """
-                {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": {"crude_oil": {"restores": 1.5}}, "duration": 20}""");
+        expectRefused(helper, "a crude result that restores a share of the yield", "", """
+                {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": {"crude_oil": {"restores": 1.0}}, "duration": 20}""");
+        expectRefused(helper, "a crude result that is neither a number nor the well's cycle", "crude_oil", """
+                {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": {"crude_oil": "plenty"}, "duration": 20}""");
         expectRefused(helper, "a crude result from an ore block", "crude", """
                 {"type": "fieldworks:harvesting", "source": "fieldworks:iron_ore", "result": {"crude_oil": 10}, "duration": 20}""");
+        expectRefused(helper, "the well's cycle from an ore block", "crude", """
+                {"type": "fieldworks:harvesting", "source": "fieldworks:iron_ore", "result": {"crude_oil": "cycle"}, "duration": 20}""");
         expectRefused(helper, "an item result from an oil well", "oil", """
                 {"type": "fieldworks:harvesting", "source": "fieldworks:oil_well", "result": "minecraft:iron_nugget", "duration": 20}""");
-        expectRefused(helper, "a yield condition on an ore block", "yield_condition", """
-                {"type": "fieldworks:harvesting", "source": "fieldworks:iron_ore", "result": "minecraft:iron_nugget", "duration": 20,
-                 "yield_condition": "at_floor"}""");
         helper.succeed();
     }
 
-    /** The well has no item, so its slot shows the crude oil bucket; its output is crude per cycle at a normal well, and where it falls to. */
+    /**
+     * The well has no item, so its slot shows the crude oil bucket. The shipped recipe replaces its Default, so the
+     * viewer lists that and no Default; it lists the crude per cycle at a normal well, where that falls to, and the
+     * Electric Harvester it needs.
+     */
     private static void viewerListsTheWell(GameTestHelper helper) {
-        HarvestRecipeView well = views(helper).stream()
-                .filter(view -> view.isDefault() && view.sources().contains(FieldworksRegistries.OIL_WELL.get())).findFirst()
-                .orElseThrow(() -> helper.assertionException("the viewer does not list the oil well's Default recipe"));
+        List<HarvestRecipeView> wells = views(helper).stream()
+                .filter(view -> view.sources().contains(FieldworksRegistries.OIL_WELL.get())).toList();
+        helper.assertValueEqual(wells.stream().filter(HarvestRecipeView::isDefault).count(), 0L, "Default recipes listed for the oil well");
+        HarvestRecipeView well = wells.stream().filter(view -> view.id().equals(WELL_CRUDE)).findFirst()
+                .orElseThrow(() -> helper.assertionException("the viewer does not list the oil well's recipe"));
 
         helper.assertValueEqual(well.sourceIcons().stream().map(ItemStack::getItem).toList(), List.of(CrudeOil.BUCKET.get()),
                 "the oil well's icon");
         helper.assertValueEqual(well.crude(), 10, "crude per cycle at a normal well");
         helper.assertValueEqual(well.crudeAtFloor(), 2, "crude per cycle at the floor");
-        helper.assertTrue(well.result().isEmpty(), "the oil well's Default lists an item result");
-        helper.assertValueEqual(well.duration(), 20, "the oil well's Default duration");
-        helper.assertValueEqual(well.minimumTier(), Optional.empty(), "the oil well's Default minimum tier");
-        helper.succeed();
-    }
-
-    private static void viewerListsTheMudRecipe(GameTestHelper helper) {
-        HarvestRecipeView mud = views(helper).stream().filter(view -> view.id().equals(MUD_CRUDE)).findFirst()
-                .orElseThrow(() -> helper.assertionException("the viewer does not list the drilling mud recipe"));
-
-        helper.assertFalse(mud.isDefault(), "the drilling mud recipe is listed as a Default recipe");
-        helper.assertValueEqual(mud.crude(), 10, "the recipe's crude at a normal well");
-        helper.assertValueEqual(mud.restores(), 1.0, "the share of its starting yield the recipe restores");
-        helper.assertValueEqual(HarvestRecipeLines.restores(mud), Component.translatable("fieldworks.harvesting.restores", "100"),
-                "the line saying what the recipe restores");
-        helper.assertValueEqual(mud.crudeAtFloor(), 0, "a written recipe lists no floor figure");
-        helper.assertValueEqual(mud.yieldCondition(), Optional.of(YieldCondition.AT_FLOOR), "the recipe's yield condition");
-        helper.assertValueEqual(mud.fluids(), List.of(DrillingMud.SOURCE.get()), "the recipe's fluids");
-        helper.assertValueEqual(mud.fluidAmount(), 25, "the recipe's mud per operation");
-        helper.assertValueEqual(mud.sourceIcons().stream().map(ItemStack::getItem).toList(), List.of(CrudeOil.BUCKET.get()),
-                "the recipe's source icon");
+        helper.assertTrue(well.result().isEmpty(), "the oil well's recipe lists an item result");
+        helper.assertValueEqual(well.duration(), 20, "the oil well's recipe duration");
+        helper.assertValueEqual(well.minimumTier(), Optional.of(id("harvester_2")), "the oil well's minimum tier");
+        helper.assertValueEqual(well.fluids(), List.of(), "the oil well's fluids");
+        helper.assertValueEqual(HarvestRecipeLines.detail(well), Component.translatable("fieldworks.harvesting.falls_to", 2),
+                "the line under the oil well's recipe");
         helper.succeed();
     }
 

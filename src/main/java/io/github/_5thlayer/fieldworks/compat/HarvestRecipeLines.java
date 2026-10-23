@@ -40,22 +40,10 @@ public final class HarvestRecipeLines {
                 .orElse(Component.empty());
     }
 
-    /**
-     * A third line for what the first two do not say (#12): a well Default's crude falling to its floor, or the floor
-     * state a well recipe needs. Empty for any other recipe.
-     */
+    /** A third line for what the first two do not say (#12): a well Default's crude falling to its floor. Empty for any other recipe. */
     public static Component detail(HarvestRecipeView view) {
-        if (view.crudeAtFloor() > 0) {
-            return Component.translatable("fieldworks.harvesting.falls_to", view.crudeAtFloor());
-        }
-        return view.yieldCondition().map(condition -> (Component) Component.translatable("fieldworks.harvesting." + condition.id()))
-                .orElse(Component.empty());
-    }
-
-    /** A fourth line for a well recipe that restores a share of its well's starting yield, as a percentage; empty for any other. */
-    public static Component restores(HarvestRecipeView view) {
-        return view.restores() > 0
-                ? Component.translatable("fieldworks.harvesting.restores", String.format(Locale.ROOT, "%.0f", view.restores() * 100))
+        return view.crudeAtFloor() > 0
+                ? Component.translatable("fieldworks.harvesting.falls_to", view.crudeAtFloor())
                 : Component.empty();
     }
 

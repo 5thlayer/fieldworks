@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "fieldworks:uranium_ore"
+    "fieldworks:uranium_ore",
+    "fieldworks:redstone_ore",
+    "fieldworks:gold_ore",
+    "fieldworks:diamond_ore"
   ]
 }

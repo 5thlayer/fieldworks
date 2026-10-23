@@ -56,7 +56,8 @@ final class GalleryTests {
                         new Scene("ore_amounts", new BlockPos(18, -1, -6), FieldworksRegistries.ore(OreResource.URANIUM).get()),
                         new Scene("oil_fields", new BlockPos(13, -1, -6), FieldworksRegistries.OIL_WELL.get()),
                         new Scene("harvester", ELECTRIC_HARVESTER, Harvesters.block(TierBlock.HARVESTER_2).get()),
-                        new Scene("drilling_fluids", new BlockPos(8, 0, -3), Blocks.BREWING_STAND))));
+                        new Scene("drilling_fluids", new BlockPos(8, 0, -3), Blocks.BREWING_STAND),
+                        new Scene("nether", new BlockPos(13, -1, -6), FieldworksRegistries.ore(OreResource.NETHERITE).get()))));
         tests.testOnItsOwn("the_gallery_scenes_sign_clicked_builds_the_scene_again_and_leaves_nothing_loose", GalleryCheck.TICKS,
                 GalleryTests::signReplays);
     }

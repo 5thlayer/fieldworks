@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "fieldworks:drilling_mud",
+    "fieldworks:flowing_drilling_mud"
+  ]
+}

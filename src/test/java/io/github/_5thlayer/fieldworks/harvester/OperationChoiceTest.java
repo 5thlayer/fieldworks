@@ -19,7 +19,8 @@ import io.github._5thlayer.fieldworks.harvester.OperationChoice.Operation;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Recipe;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Tank;
-import io.github._5thlayer.fieldworks.harvester.OperationChoice.YieldCondition;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
 
 /** The choice of the Harvester's next operation over the layer under its footprint. */
@@ -31,7 +32,6 @@ class OperationChoiceTest {
     private static final Source DIAMOND = Source.harvestable("minecraft:diamond_ore", Set.of("c:ores"));
     private static final Source NONE = Source.NONE;
     private static final Source WELL = Source.well("fieldworks:oil_well");
-    private static final Source FLOORED_WELL = Source.flooredWell("fieldworks:oil_well");
 
     @Test
     void oreBlocksAreWorkedInTurnInTheLayersOrder() {
@@ -411,81 +411,116 @@ class OperationChoiceTest {
                 OperationChoice.choose(layer, 0, List.of(), Optional.empty(), new Machine<String>(1, Tank.EMPTY, any -> false, true)));
     }
 
-    private static Recipe<String> wellRecipe(Optional<YieldCondition> condition, boolean replacesDefault) {
-        return recipe("test:crude", Set.of("fieldworks:oil_well"), Set.of(), 20, OptionalInt.empty(), replacesDefault,
-                Optional.empty(), condition);
-    }
-
     @Test
-    void aHeldRecipeConditionedAtTheFloorWorksAWellAtItsFloor() {
-        List<Source> layer = List.of(FLOORED_WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
-        Recipe<String> held = wellRecipe(Optional.of(YieldCondition.AT_FLOOR), false);
-
-        Operation<String> operation = (Operation<String>) OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), ready(1));
-
-        assertEquals(held, operation.recipe().orElseThrow());
-    }
-
-    @Test
-    void aHeldRecipeConditionedAtTheFloorIdlesOnAWellAboveItAndNeverFallsBackToTheDefault() {
+    void aWrittenRecipeThatReplacesTheDefaultLeavesAWellWithNothingToWorkUntilItIsHeld() {
         List<Source> layer = List.of(WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
-        Recipe<String> held = wellRecipe(Optional.of(YieldCondition.AT_FLOOR), false);
-
-        assertEquals(new OperationChoice.Idle<>(IdleReason.NOTHING_MATCHING),
-                OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), ready(1)));
-    }
-
-    @Test
-    void aHeldRecipeConditionedAboveTheFloorWorksAWellAboveItAndIdlesOnAFlooredOne() {
-        Recipe<String> held = wellRecipe(Optional.of(YieldCondition.ABOVE_FLOOR), false);
-        List<Source> above = List.of(WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
-        List<Source> floored = List.of(FLOORED_WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
-
-        assertEquals(held, ((Operation<String>) OperationChoice.choose(above, 0, List.of(held), Optional.of(held), ready(1))).recipe().orElseThrow());
-        assertEquals(new OperationChoice.Idle<>(IdleReason.NOTHING_MATCHING),
-                OperationChoice.choose(floored, 0, List.of(held), Optional.of(held), ready(1)));
-    }
-
-    @Test
-    void aHeldRecipeWithNoYieldConditionWorksAWellAboveItsFloorAndAtIt() {
-        Recipe<String> held = wellRecipe(Optional.empty(), false);
-
-        for (Source well : List.of(WELL, FLOORED_WELL)) {
-            List<Source> layer = List.of(well, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
-            assertEquals(Operation.class, OperationChoice.choose(layer, 0, List.of(held), Optional.of(held), ready(1)).getClass());
-        }
-    }
-
-    @Test
-    void aYieldConditionedRecipeNotHeldNeverRunsAndALoneWellIsPumpedByItsDefault() {
-        List<Source> layer = List.of(FLOORED_WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
-        Recipe<String> atFloor = wellRecipe(Optional.of(YieldCondition.AT_FLOOR), false);
-
-        Operation<String> operation = (Operation<String>) OperationChoice.choose(layer, 0, List.of(atFloor), Optional.empty(), ready(1));
-
-        assertEquals(Optional.empty(), operation.recipe());
-        assertEquals(OperationChoice.WELL_PUMP_TICKS, operation.ticks());
-    }
-
-    @Test
-    void aRecipeThatReplacesTheDefaultReplacesItOnlyWhereItsYieldConditionHolds() {
-        Recipe<String> replaces = wellRecipe(Optional.of(YieldCondition.AT_FLOOR), true);
-        List<Source> floored = List.of(FLOORED_WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
-        List<Source> above = List.of(WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe<String> crude = shipped("crude_from_oil_well");
 
         assertEquals(new OperationChoice.Idle<>(IdleReason.NOTHING_TO_WORK),
-                OperationChoice.choose(floored, 0, List.of(replaces), Optional.empty(), ready(1)));
-        assertEquals(Operation.class, OperationChoice.choose(above, 0, List.of(replaces), Optional.empty(), ready(1)).getClass());
+                OperationChoice.choose(layer, 0, List.of(crude), Optional.empty(), ready(2)));
+        assertEquals(crude, ((Operation<String>) OperationChoice.choose(layer, 0, List.of(crude), Optional.of(crude), ready(2))).recipe().orElseThrow());
     }
 
     @Test
-    void aYieldConditionMatchesNoSourceButAWell() {
-        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
-        Recipe<String> odd = recipe("test:odd", Set.of("fieldworks:iron_ore"), Set.of(), 20, OptionalInt.empty(), false,
-                Optional.empty(), Optional.of(YieldCondition.ABOVE_FLOOR));
+    void theShippedOilWellRecipeNeedsTheElectricHarvesterAndNoFluid() {
+        List<Source> layer = List.of(WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        Recipe<String> crude = shipped("crude_from_oil_well");
 
-        assertEquals(new OperationChoice.Idle<>(IdleReason.NOTHING_MATCHING),
-                OperationChoice.choose(layer, 0, List.of(odd), Optional.of(odd), ready(1)));
+        assertEquals(OptionalInt.of(2), crude.minimumRank());
+        assertEquals(Optional.empty(), crude.drillingFluid());
+        assertEquals(new OperationChoice.Idle<>(IdleReason.TIER_TOO_LOW),
+                OperationChoice.choose(layer, 0, List.of(crude), Optional.of(crude), ready(1)));
+    }
+
+    @Test
+    void theBurnerIsRefusedOnTheGatedOresAndTheElectricNeedsItsFluid() {
+        Recipe<String> uranium = shipped("uranium_from_ore");
+        Recipe<String> diamond = shipped("diamond_from_ore");
+        Recipe<String> netherite = shipped("netherite_scrap_from_ore");
+        Machine<String> electricWithMud = machine(2, new Tank("fieldworks:drilling_mud", 10));
+        Machine<String> electricWithSlurry = machine(2, new Tank("fieldworks:magma_slurry", 25));
+
+        for (Recipe<String> gated : List.of(uranium, diamond, netherite)) {
+            List<Source> layer = List.of(Source.oreBlock(gated.blocks().iterator().next(), Set.of()), NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+            assertEquals(OptionalInt.of(2), gated.minimumRank());
+            assertEquals(new OperationChoice.Idle<>(IdleReason.TIER_TOO_LOW),
+                    OperationChoice.choose(layer, 0, List.of(gated), Optional.of(gated), ready(1)), gated.id());
+            assertEquals(new OperationChoice.Idle<>(IdleReason.NO_FLUID),
+                    OperationChoice.choose(layer, 0, List.of(gated), Optional.of(gated), ready(2)), gated.id());
+            // Without the recipe held, the Default recipe it replaces is not there to run.
+            assertEquals(new OperationChoice.Idle<>(IdleReason.NOTHING_TO_WORK),
+                    OperationChoice.choose(layer, 0, List.of(gated), Optional.empty(), electricWithMud), gated.id());
+        }
+        assertEquals(10, shipped("uranium_from_ore").drillingFluid().orElseThrow().amount());
+        assertEquals(10, diamond.drillingFluid().orElseThrow().amount());
+        assertEquals(25, netherite.drillingFluid().orElseThrow().amount());
+        assertEquals(20, uranium.duration());
+        assertEquals(60, diamond.duration());
+        assertEquals(100, netherite.duration());
+
+        List<Source> diamondOre = List.of(Source.oreBlock("fieldworks:diamond_ore", Set.of()), NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        List<Source> netheriteOre = List.of(Source.oreBlock("fieldworks:netherite_ore", Set.of()), NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        assertEquals(diamond, ((Operation<String>) OperationChoice.choose(diamondOre, 0, List.of(diamond), Optional.of(diamond), electricWithMud)).recipe().orElseThrow());
+        assertEquals(netherite, ((Operation<String>) OperationChoice.choose(netheriteOre, 0, List.of(netherite), Optional.of(netherite), electricWithSlurry)).recipe().orElseThrow());
+    }
+
+    @Test
+    void theOverworldFluidDoesNotServeTheNetherRecipeNorTheNetherFluidTheOverworldOne() {
+        Recipe<String> netherite = shipped("netherite_scrap_from_ore");
+        Recipe<String> diamond = shipped("diamond_from_ore");
+        List<Source> netheriteOre = List.of(Source.oreBlock("fieldworks:netherite_ore", Set.of()), NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        List<Source> diamondOre = List.of(Source.oreBlock("fieldworks:diamond_ore", Set.of()), NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+
+        assertEquals(new OperationChoice.Idle<>(IdleReason.NO_FLUID), OperationChoice.choose(netheriteOre, 0, List.of(netherite),
+                Optional.of(netherite), machine(2, new Tank("fieldworks:drilling_mud", 1_000))));
+        assertEquals(new OperationChoice.Idle<>(IdleReason.NO_FLUID), OperationChoice.choose(diamondOre, 0, List.of(diamond),
+                Optional.of(diamond), machine(2, new Tank("fieldworks:magma_slurry", 1_000))));
+    }
+
+    @Test
+    void theCommonResourcesKeepTheirDefaultRecipeForTheBurnerAndNoGatedRecipeTouchesThem() {
+        List<Source> layer = List.of(IRON, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
+        List<Recipe<String>> shipped = List.of(shipped("uranium_from_ore"), shipped("diamond_from_ore"),
+                shipped("netherite_scrap_from_ore"), shipped("crude_from_oil_well"));
+
+        Operation<String> operation = (Operation<String>) OperationChoice.choose(layer, 0, shipped, Optional.empty(), ready(1));
+
+        assertEquals(Optional.empty(), operation.recipe());
+        assertEquals(OperationChoice.ORE_DRAW_TICKS, operation.ticks());
+    }
+
+    private static Machine<String> machine(int tierRank, Tank tank) {
+        return new Machine<>(tierRank, tank, any -> true, true);
+    }
+
+    /** A shipped Harvest Recipe as the choice reads it, from its file: its block, its minimum tier's rank and its fluid's tag. */
+    private static Recipe<String> shipped(String name) {
+        JsonObject json = json("/data/fieldworks/recipe/" + name + ".json");
+        OptionalInt minimum = OptionalInt.empty();
+        if (json.has("minimum_tier")) {
+            String tier = json.get("minimum_tier").getAsString();
+            minimum = OptionalInt.of(json("/data/fieldworks/harvester_tier/" + tier.substring(tier.indexOf(':') + 1) + ".json").get("rank").getAsInt());
+        }
+        Optional<DrillingFluid> fluid = Optional.empty();
+        if (json.has("drilling_fluid")) {
+            JsonObject input = json.getAsJsonObject("drilling_fluid");
+            String tag = input.get("fluid").getAsString();
+            Set<String> fluids = new java.util.HashSet<>();
+            json("/data/fieldworks/tags/fluid/" + tag.substring(tag.indexOf(':') + 1) + ".json").getAsJsonArray("values")
+                    .forEach(value -> fluids.add(value.getAsString()));
+            fluid = Optional.of(new DrillingFluid(fluids, input.get("amount").getAsInt()));
+        }
+        return new Recipe<>(name, Set.of(json.get("source").getAsString()), Set.of(), json.get("duration").getAsInt(), minimum,
+                json.has("replaces_default") && json.get("replaces_default").getAsBoolean(), fluid, name);
+    }
+
+    private static JsonObject json(String path) {
+        try (var stream = OperationChoiceTest.class.getResourceAsStream(path)) {
+            return new Gson().fromJson(new java.io.InputStreamReader(java.util.Objects.requireNonNull(stream, path)), JsonObject.class);
+        } catch (java.io.IOException broken) {
+            throw new java.io.UncheckedIOException(broken);
+        }
     }
 
     /** A powered Harvester of this rank with an empty tank and room for anything. */
@@ -500,13 +535,8 @@ class OperationChoiceTest {
 
     /** A recipe whose result, which the choice only carries, is its id. */
     private static Recipe<String> recipe(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank,
-            boolean replacesDefault, Optional<DrillingFluid> drillingFluid, Optional<YieldCondition> yieldCondition) {
-        return new Recipe<>(id, blocks, tags, duration, minimumRank, replacesDefault, drillingFluid, yieldCondition, id);
-    }
-
-    private static Recipe<String> recipe(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank,
             boolean replacesDefault, Optional<DrillingFluid> drillingFluid) {
-        return recipe(id, blocks, tags, duration, minimumRank, replacesDefault, drillingFluid, Optional.empty());
+        return new Recipe<>(id, blocks, tags, duration, minimumRank, replacesDefault, drillingFluid, id);
     }
 
     private static Recipe<String> recipe(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank,

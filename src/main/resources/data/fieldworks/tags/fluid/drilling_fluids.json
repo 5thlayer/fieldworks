@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "fieldworks:drilling_mud",
-    "fieldworks:flowing_drilling_mud"
+    "#fieldworks:drilling_fluids/overworld",
+    "#fieldworks:drilling_fluids/nether"
   ]
 }

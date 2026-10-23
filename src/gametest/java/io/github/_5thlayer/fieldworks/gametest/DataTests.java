@@ -104,7 +104,9 @@ final class DataTests {
     private static void tagsPlayAlone(GameTestHelper helper) {
         List<TagKey<?>> read = List.of(FieldworksTags.HARVESTABLE, FieldworksTags.DRILLING_FLUIDS, FieldworksTags.CRUDE_OIL,
                 FieldworksTags.FLAT_WORLD_STRUCTURE_SETS,
-                TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_land")));
+                FieldworksTags.DRILLING_FLUIDS_OVERWORLD, FieldworksTags.DRILLING_FLUIDS_NETHER,
+                TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_land")),
+                TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_nether")));
         var alone = Set.of("minecraft", Fieldworks.MOD_ID);
         for (TagKey<?> tag : read) {
             if (!reachesAlone(helper, tag, alone)) {

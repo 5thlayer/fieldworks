@@ -228,14 +228,15 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
 
     /**
      * One cycle of the well's yield and decay (ADR 0002), or null while the product tank has no room for it. A recipe
-     * with a crude result pumps that many mB, or that share of the well's starting yield, in place of the cycle's
+     * with a fixed crude result pumps that many mB in place of the cycle's
      * yield; the cycle still takes its step off the well, so a well above its floor goes on decaying (#12). A recipe
-     * whose result is an item, which only a block tag naming the well could give it, pumps the cycle's own yield.
+     * whose result is the well's own cycle, or an item, which only a block tag naming the well could give it, pumps the
+     * cycle's own yield, which never rises above the well's floor (ADR 0081).
      */
     private @Nullable Runnable pump(OilWellBlockEntity well, Optional<Result> recipeResult) {
         OptionalInt recipeCrude = switch (recipeResult.orElse(null)) {
             case Result.Crude fixed -> OptionalInt.of(fixed.millibuckets());
-            case Result.Restored restored -> OptionalInt.of(well.restored(restored.fraction()));
+            case Result.Cycle cycle -> OptionalInt.empty();
             case Result.Item item -> OptionalInt.empty();
             case null -> OptionalInt.empty();
         };

@@ -1,0 +1,10 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "fieldworks:oil_well",
+  "result": {
+    "crude_oil": "cycle"
+  },
+  "duration": 20,
+  "minimum_tier": "fieldworks:harvester_2",
+  "replaces_default": true
+}

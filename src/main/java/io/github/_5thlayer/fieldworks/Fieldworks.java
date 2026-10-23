@@ -6,8 +6,10 @@ package io.github._5thlayer.fieldworks;
 import io.github._5thlayer.fieldworks.config.FieldworksConfig;
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.fluid.DrillingMud;
+import io.github._5thlayer.fieldworks.fluid.MagmaSlurry;
 import io.github._5thlayer.fieldworks.fluid.client.CrudeOilClient;
 import io.github._5thlayer.fieldworks.fluid.client.DrillingMudClient;
+import io.github._5thlayer.fieldworks.fluid.client.MagmaSlurryClient;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.client.HarvesterClient;
 import io.github._5thlayer.fieldworks.marker.MarkerEvents;
@@ -45,6 +47,7 @@ public final class Fieldworks {
         FieldworksRegistries.register(modBus);
         CrudeOil.register(modBus);
         DrillingMud.register(modBus);
+        MagmaSlurry.register(modBus);
         Tar.register(modBus);
         Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);
@@ -58,6 +61,7 @@ public final class Fieldworks {
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
             CrudeOilClient.register(modBus);
             DrillingMudClient.register(modBus);
+            MagmaSlurryClient.register(modBus);
             HarvesterClient.register(modBus);
             PatchMapClient.register();
         }

@@ -40,7 +40,7 @@ precedence = "override"
 SPDX-FileCopyrightText = "Gradle"
 SPDX-License-Identifier = "Apache-2.0"
 
-# Malcolm Riley's unused textures: the coal, copper, iron, sulfur and uranium ore sprites, the item
+# Malcolm Riley's unused textures: the ore sprites, the item
 # sprites, the crude oil sprite and the Harvester sprites, with the unmodified copies the ore, item
 # and Harvester sprites are built from (NOTICE).
 [[annotations]]
@@ -60,6 +60,12 @@ path = [
     "src/main/resources/assets/fieldworks/textures/block/ore/iron_stage*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/sulfur_stage*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/uranium_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/redstone_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/gold_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/diamond_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/quartz_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/glowstone_stage*.png",
+    "src/main/resources/assets/fieldworks/textures/block/ore/netherite_stage*.png",
     "src/main/resources/assets/fieldworks/textures/item/sulfur.png",
     "src/main/resources/assets/fieldworks/textures/item/raw_uranium.png",
     "src/main/resources/assets/fieldworks/textures/item/uranium_ingot.png",

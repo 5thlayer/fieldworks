@@ -31,8 +31,16 @@ class PatchAmountTest {
 
         assertEquals(5000, diagonal.distance(), 1e-9);
         assertEquals(east.amountPerBlock(), diagonal.amountPerBlock());
-        // 1e6 / 2.5 × 20 × (1000 + 5000) / 2600 over 1000 blocks
-        assertEquals(18_461, east.amountPerBlock());
+        // 1e6 / 2.5 × 16 × (1000 + 5000) / 2600 over 1000 blocks
+        assertEquals(14_769, east.amountPerBlock());
+    }
+
+    @Test
+    void aNetherDiscIsReadAtEightTimesItsDistanceFromOrigin() {
+        PatchDisc nether = new PatchDisc(OreResource.QUARTZ, 1.0, 1000, 375, 500);
+
+        assertEquals(5000, nether.distance(), 1e-9);
+        assertEquals(PatchLaw.of(OreResource.QUARTZ).total(1.0, 5000) / 1000, nether.amountPerBlock(), 1);
     }
 
     @Test

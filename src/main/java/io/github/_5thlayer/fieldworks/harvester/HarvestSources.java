@@ -10,7 +10,6 @@ import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Kind;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
 import io.github._5thlayer.fieldworks.oil.OilWellBlock;
-import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -36,17 +35,17 @@ final class HarvestSources {
                 : Kind.NONE;
     }
 
-    /** The source the block at {@code pos} is, with a well's floor state. */
+    /** The source the block at {@code pos} is. */
     static Source at(Level level, BlockPos pos) {
-        return of(level.getBlockState(pos), level.getBlockEntity(pos) instanceof OilWellBlockEntity well && well.atFloor());
+        return of(level.getBlockState(pos));
     }
 
-    /** The source a block in {@code state} is, {@code atFloor} being a well's floor state. */
-    static Source of(BlockState state, boolean atFloor) {
+    /** The source a block in {@code state} is. */
+    static Source of(BlockState state) {
         Block block = state.getBlock();
         String id = BuiltInRegistries.BLOCK.getKey(block).toString();
         return switch (kindOf(state)) {
-            case WELL -> atFloor ? Source.flooredWell(id) : Source.well(id);
+            case WELL -> Source.well(id);
             case ORE_BLOCK -> Source.oreBlock(id, tagsOf(block));
             case HARVESTABLE -> Source.harvestable(id, tagsOf(block));
             case NONE -> Source.NONE;

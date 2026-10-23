@@ -43,7 +43,7 @@ final class FlatWorldTests {
                 .createState(structureSets, level.getChunkSource().randomState(), level.getSeed())
                 .possibleStructureSets();
         for (String path : List.of("patch_iron", "patch_copper", "patch_coal", "patch_stone", "patch_sulfur",
-                "patch_uranium", "oil_field")) {
+                "patch_uranium", "patch_redstone", "patch_gold", "patch_diamond", "oil_field")) {
             ResourceKey<StructureSet> key = ResourceKey.create(Registries.STRUCTURE_SET,
                     Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, path));
             helper.assertTrue(placed.stream().anyMatch(set -> set.is(key)), "a superflat world does not place " + key);

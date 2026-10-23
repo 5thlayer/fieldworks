@@ -43,9 +43,9 @@ public final class PatchShape {
 
     public static PatchShape of(PatchLaw law, double sizeFactor, int centreX, int centreZ, Noise noise,
             Land land) {
-        double distance = Math.sqrt((double) centreX * centreX + (double) centreZ * centreZ);
+        double distance = law.distance(centreX, centreZ);
         double radius = law.radius(sizeFactor, distance);
-        if (Math.round(radius) < 1) {
+        if (!law.generatesAt(distance) || Math.round(radius) < 1) {
             return new PatchShape(centreX, centreZ, radius, 0, new BitSet());
         }
         double height = law.height(sizeFactor, distance);

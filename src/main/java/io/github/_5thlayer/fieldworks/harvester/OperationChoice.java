@@ -3,7 +3,6 @@
 
 package io.github._5thlayer.fieldworks.harvester;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -133,11 +132,10 @@ public final class OperationChoice {
 
     /**
      * One position of the layer under the footprint: what stands there, its block id and the block tags it is in.
-     * {@code atFloor} is a well's floor state (ADR 0002): true once its amount has decayed to its floor.
      */
-    public record Source(Kind kind, String block, Set<String> tags, boolean atFloor) {
+    public record Source(Kind kind, String block, Set<String> tags) {
 
-        public static final Source NONE = new Source(Kind.NONE, "", Set.of(), false);
+        public static final Source NONE = new Source(Kind.NONE, "", Set.of());
 
         public Source {
             Objects.requireNonNull(kind);
@@ -146,79 +144,42 @@ public final class OperationChoice {
         }
 
         public static Source oreBlock(String block, Set<String> tags) {
-            return new Source(Kind.ORE_BLOCK, block, tags, false);
+            return new Source(Kind.ORE_BLOCK, block, tags);
         }
 
         public static Source harvestable(String block, Set<String> tags) {
-            return new Source(Kind.HARVESTABLE, block, tags, false);
+            return new Source(Kind.HARVESTABLE, block, tags);
         }
 
-        /** A well above its floor. */
         public static Source well(String block) {
-            return new Source(Kind.WELL, block, Set.of(), false);
-        }
-
-        /** A well that has decayed to its floor, and pumps at the floor rate from here on. */
-        public static Source flooredWell(String block) {
-            return new Source(Kind.WELL, block, Set.of(), true);
+            return new Source(Kind.WELL, block, Set.of());
         }
     }
 
     /**
      * A Harvest Recipe as the choice reads it: the blocks and block tags it matches, its duration in ticks at
      * speed ×1, the lowest tier rank that may run it if it names one, whether it removes its sources'
-     * Default recipes, the Drilling Fluid it consumes, if any, and for a well the floor state it needs, if any.
+     * Default recipes, the Drilling Fluid it consumes, if any.
      * {@code result} is what it yields, which the choice carries to the operation and never reads.
      */
     public record Recipe<R>(String id, Set<String> blocks, Set<String> tags, int duration, OptionalInt minimumRank,
-            boolean replacesDefault, Optional<DrillingFluid> drillingFluid, Optional<YieldCondition> yieldCondition, R result) {
+            boolean replacesDefault, Optional<DrillingFluid> drillingFluid, R result) {
 
         public Recipe {
             Objects.requireNonNull(id);
             blocks = Set.copyOf(blocks);
             tags = Set.copyOf(tags);
             Objects.requireNonNull(drillingFluid);
-            Objects.requireNonNull(yieldCondition);
             Objects.requireNonNull(result);
         }
 
         boolean matches(Source source) {
             return source.kind() != Kind.NONE
-                    && (blocks.contains(source.block()) || source.tags().stream().anyMatch(tags::contains))
-                    && yieldCondition.map(condition -> source.kind() == Kind.WELL && condition.holds(source.atFloor())).orElse(true);
+                    && (blocks.contains(source.block()) || source.tags().stream().anyMatch(tags::contains));
         }
 
         boolean replacesDefaultOf(Source source) {
             return replacesDefault && matches(source);
-        }
-    }
-
-    /**
-     * What a well recipe asks of its well's yield (#12): that it is still decaying, or that it has reached its floor
-     * (ADR 0002). A recipe with no condition works a well either way.
-     */
-    public enum YieldCondition {
-        ABOVE_FLOOR("above_floor"),
-        AT_FLOOR("at_floor");
-
-        private final String id;
-
-        YieldCondition(String id) {
-            this.id = id;
-        }
-
-        /** The name a recipe file gives it. */
-        public String id() {
-            return id;
-        }
-
-        public static Optional<YieldCondition> byId(String id) {
-            return Arrays.stream(values()).filter(condition -> condition.id.equals(id)).findFirst();
-        }
-
-        /** Whether a well in this floor state meets the condition. */
-        public boolean holds(boolean atFloor) {
-            return atFloor ? this == AT_FLOOR : this == ABOVE_FLOOR;
         }
     }
 

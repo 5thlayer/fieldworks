@@ -1,0 +1,12 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "fieldworks:diamond_ore",
+  "drilling_fluid": {
+    "fluid": "#fieldworks:drilling_fluids/overworld",
+    "amount": 10
+  },
+  "result": "minecraft:diamond",
+  "duration": 60,
+  "minimum_tier": "fieldworks:harvester_2",
+  "replaces_default": true
+}

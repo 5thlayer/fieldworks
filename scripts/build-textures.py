@@ -8,8 +8,10 @@ stage are in fieldworks/ore/amounts.json; what each stage draws is an even step:
 keeps `(n - i) / n` of the full sprite's ore, from the outside in, so a thinning block keeps its
 core and each stage is a subset of the one before.
 
-Coal, copper, iron, sulfur and uranium wear Malcolm Riley's unused textures (CC BY 4.0, credited in
-NOTICE), committed unmodified under data/art/. Stone is generated: tan boulders standing on the
+Coal, copper, iron, sulfur, uranium, diamond, gold, glowstone and quartz (his saltpeter ore, white
+like it) wear Malcolm Riley's unused textures (CC BY 4.0, credited in NOTICE), committed unmodified
+under data/art/. Redstone is his lapis ore turned red and netherite his anthracite ore turned a dark
+brown, since the collection has neither. Stone is generated: tan boulders standing on the
 ground, from a fixed seed. The items are his too: sulfur and raw uranium as they are, and the uranium
 ingot his lead ingot in the green of the uranium ore's crystals. Tar's block and item are drawn here:
 Fieldworks' own stand-ins until real art is drawn.
@@ -48,7 +50,17 @@ ART = os.path.join(ROOT, "data", "art")
 
 SOURCED = {"coal": "ore_slade_coal.png", "copper": "ore_stone_copper_2.png",
            "iron": "ore_slade_iron.png", "sulfur": "ore_stone_brimstone.png",
-           "uranium": "ore_stone_soul.png"}
+           "uranium": "ore_stone_soul.png", "diamond": "ore_slade_diamond.png",
+           "gold": "ore_slade_gold.png", "glowstone": "ore_slade_glowstone.png",
+           "quartz": "ore_stone_saltpeter.png"}
+
+# Ores the collection has no sprite for, turned from another: the source, the hue the ore takes
+# (0 to 1 round the colour wheel), the saturation it is given where it has none, and the brightness
+# range its pixels are mapped into. A pixel is ore by the same test as in ORE_PIXEL, on the source.
+RECOLOURED = {
+    "redstone": ("ore_slade_lapis.png", 0.0, 0.85, (0.0, 1.0)),
+    "netherite": ("ore_stone_anthracite.png", 0.06, 0.5, (0.3, 0.55)),
+}
 
 # The items wear his sprites too. The uranium ingot's is recoloured to the uranium ore's green.
 ITEM_ART = {"sulfur": "material_crystal_sulfur_fancy.png", "raw_uranium": "material_crystal_greenish.png",
@@ -96,7 +108,17 @@ ORE_PIXEL = {
     "iron": (0.25, 0.2),
     "sulfur": (0.025, 0.0),
     "uranium": (0.25, 0.3),
+    "diamond": (0.3, 0.0),
+    "gold": (0.4, 0.0),
+    "glowstone": (0.3, 0.0),
+    "redstone": (0.3, 0.0),
+    # Anthracite's ore is dark as coal's is; it is turned brown, and so tested on its brown.
+    "netherite": (0.25, 0.0),
+    # Saltpeter's ore is white, and its matrix grey: a pixel brighter than the third number is ore.
+    "quartz": (1.1, 0.0, 0.64),
 }
+
+ORE_SOURCE_TEST = {"netherite": (1.1, 0.2)}
 
 STONE = (122, 122, 122)
 
@@ -183,19 +205,41 @@ def to_hsv(pixel):
     return colorsys.rgb_to_hsv(*(v / 255 for v in pixel[:3]))
 
 
+def recoloured_art(resource):
+    """A borrowed ore sprite with its ore pixels turned to another colour, the stone left as it was."""
+    name, hue, saturation, (low, high) = RECOLOURED[resource]
+    source = art(name)
+    test_saturation, test_value = ORE_SOURCE_TEST.get(resource, ORE_PIXEL[resource][:2])
+    pixels = []
+    for row in source:
+        out = []
+        for p in row:
+            h, s, v = to_hsv(p)
+            if s > test_saturation or v < test_value:
+                r, g, b = colorsys.hsv_to_rgb(hue, max(s, saturation) if resource == "netherite" else s, low + (high - low) * v)
+                p = [round(r * 255), round(g * 255), round(b * 255), p[3]]
+            out.append(p)
+        pixels.append(out)
+    return pixels
+
+
+def source_art(resource):
+    return recoloured_art(resource) if resource in RECOLOURED else art(SOURCED[resource])
+
+
 def sourced_sprites(resource, ratios):
     """One sprite per stage from a borrowed full sprite: the ore shrinks toward its centre."""
-    source = art(SOURCED[resource])
-    saturation, value = ORE_PIXEL[resource]
+    source = source_art(resource)
+    saturation, value, *bright = ORE_PIXEL[resource]
     cells = [(x, y) for y in range(16) for x in range(16)]
     hsv = {c: to_hsv(source[c[1]][c[0]]) for c in cells}
-    ore = [c for c in cells if hsv[c][1] > saturation or hsv[c][2] < value]
+    ore = [c for c in cells if hsv[c][1] > saturation or hsv[c][2] < value or (bright and hsv[c][2] > bright[0])]
     stone = [c for c in cells if c not in ore]
     cx = sum(x for x, _ in ore) / len(ore)
     cy = sum(y for _, y in ore) / len(ore)
     # The most ore-like pixel near the centroid is the last to go, so the final stage still reads
     # as ore rather than as a shadow: the brightest coloured pixel, or for coal the darkest.
-    coloured = [c for c in ore if hsv[c][1] > saturation]
+    coloured = [c for c in ore if hsv[c][1] > saturation or (bright and hsv[c][2] > bright[0])]
     strength = (lambda c: hsv[c][2]) if coloured else (lambda c: 1 - hsv[c][2])
     centre = max(coloured or ore,
                  key=lambda c: (strength(c) - 0.1 * ((c[0] - cx) ** 2 + (c[1] - cy) ** 2) ** 0.5, -c[1], -c[0]))
@@ -418,7 +462,7 @@ def build():
         ratios = by_key[resource]["stage_ratios"]
         if len(ratios) < 2:
             sys.exit(f"{resource} carries {len(ratios)} stage ratios; there is nothing to render")
-        images = (sourced_sprites(resource, ratios) if resource in SOURCED
+        images = (sourced_sprites(resource, ratios) if resource in SOURCED or resource in RECOLOURED
                   else boulder_sprites(resource, ratios))
         for stage, image in enumerate(images):
             files[os.path.join(ORE_OUT, f"{resource}_stage{stage}.png")] = image
