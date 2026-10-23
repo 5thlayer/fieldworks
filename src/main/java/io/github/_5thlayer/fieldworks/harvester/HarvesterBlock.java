@@ -18,14 +18,18 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 
 /**
  * A Harvester's origin block: the footprint's block that holds the block entity and the facing, which
- * is the output face. Its other 26 positions are Groundworks' part blocks.
+ * is the output face, and, being the bottom centre, one of the nine bottom blocks that can draw a drill head. Its other 26 positions are Groundworks' part blocks.
  */
 public final class HarvesterBlock extends HorizontalDirectionalBlock implements EntityBlock {
+
+    /** Whether this bottom-layer block is its column's drill head, the source lying directly under the Harvester. */
+    public static final BooleanProperty DRILL = BooleanProperty.create("drill");
 
     private final TierBlock tier;
     private final MapCodec<HarvesterBlock> codec;
@@ -34,7 +38,7 @@ public final class HarvesterBlock extends HorizontalDirectionalBlock implements 
         super(properties);
         this.tier = tier;
         this.codec = simpleCodec(props -> new HarvesterBlock(props, tier));
-        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
+        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH).setValue(DRILL, false));
     }
 
     public TierBlock tier() {
@@ -48,7 +52,7 @@ public final class HarvesterBlock extends HorizontalDirectionalBlock implements 
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, DRILL);
     }
 
     @Override

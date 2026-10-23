@@ -30,6 +30,23 @@ class HarvesterTierTest {
         assertTrue(tier.power().fuel());
         assertEquals(0, tier.power().fePerTick());
         assertEquals(0, tier.feBuffer());
+        assertEquals(1, tier.reach());
+    }
+
+    @Test
+    void aTierThatNamesNoReachHasNone() {
+        HarvesterTier tier = parse(json("""
+                {"rank": 1, "speed": 1.0, "power": {"fuel": true}, "fe_buffer": 0}""")).getOrThrow();
+
+        assertEquals(0, tier.reach());
+    }
+
+    @Test
+    void aReachHasNoCapButCannotBeNegative() {
+        assertEquals(500, parse(json("""
+                {"rank": 1, "speed": 1.0, "power": {"fuel": true}, "reach": 500}""")).getOrThrow().reach());
+        assertRefused(parse(json("""
+                {"rank": 1, "speed": 1.0, "power": {"fuel": true}, "reach": -1}""")), "reach");
     }
 
     @Test
@@ -65,6 +82,7 @@ class HarvesterTierTest {
         assertFalse(tier.power().fuel());
         assertEquals(40, tier.power().fePerTick());
         assertEquals(50_000, tier.feBuffer());
+        assertEquals(2, tier.reach());
     }
 
     @Test

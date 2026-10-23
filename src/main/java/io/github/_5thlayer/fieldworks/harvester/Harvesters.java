@@ -10,7 +10,6 @@ import java.util.function.Supplier;
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.groundworks.Footprint;
 import io.github._5thlayer.groundworks.FootprintItem;
-import io.github._5thlayer.groundworks.FootprintPartBlock;
 import io.github._5thlayer.groundworks.FootprintShape;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -54,8 +53,8 @@ public final class Harvesters {
         for (TierBlock tier : TierBlock.values()) {
             DeferredBlock<HarvesterBlock> origin = BLOCKS.registerBlock(tier.blockName(),
                     properties -> new HarvesterBlock(machine(properties), tier));
-            DeferredBlock<FootprintPartBlock> part = BLOCKS.registerBlock(tier.partBlockName(),
-                    properties -> new FootprintPartBlock(machine(properties).noLootTable(), () -> footprint(tier)));
+            DeferredBlock<HarvesterPartBlock> part = BLOCKS.registerBlock(tier.partBlockName(),
+                    properties -> new HarvesterPartBlock(machine(properties).noLootTable(), () -> footprint(tier)));
             DeferredItem<FootprintItem> item = ITEMS.registerItem(tier.blockName(),
                     properties -> new FootprintItem(footprint(tier), properties.useBlockDescriptionPrefix()));
             BLOCK_BY_TIER.put(tier, origin);
@@ -63,6 +62,10 @@ public final class Harvesters {
             FOOTPRINTS.put(tier, Footprint.declare(SHAPE, origin, part, item));
         }
     }
+
+    /** A Harvester's drill head, placed and removed by the Harvester; it has no item (ADR 0008). */
+    public static final DeferredBlock<DrillHeadBlock> DRILL_HEAD = BLOCKS.registerBlock("drill_head",
+            properties -> new DrillHeadBlock(machine(properties).noCollision().noLootTable()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<HarvesterBlockEntity>> BLOCK_ENTITY =
             BLOCK_ENTITIES.register("harvester", () -> new BlockEntityType<>(HarvesterBlockEntity::new,

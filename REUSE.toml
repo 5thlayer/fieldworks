@@ -53,6 +53,8 @@ path = [
     "data/art/device_gearbox_ends.png",
     "data/art/device_smelter_front.png",
     "data/art/copper_coil_side.png",
+    "data/art/steel_block.png",
+    "data/art/metal_pipes_copper.png",
     "data/art/space-plating-*.png",
     "src/main/resources/assets/fieldworks/textures/block/harvester/*.png",
     "src/main/resources/assets/fieldworks/textures/block/ore/coal_stage*.png",

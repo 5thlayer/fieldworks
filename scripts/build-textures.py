@@ -45,6 +45,7 @@ ORE_OUT = os.path.join(BLOCK_OUT, "ore")
 ITEM_OUT = os.path.join(TEXTURES, "item")
 HARVESTER_OUT = os.path.join(BLOCK_OUT, "harvester")
 MODELS = os.path.join(ROOT, "src", "main", "resources", "assets", "fieldworks", "models", "block")
+BLOCKSTATES = os.path.join(ROOT, "src", "main", "resources", "assets", "fieldworks", "blockstates")
 HARVESTER_SPRITE = "fieldworks:block/harvester/"
 ART = os.path.join(ROOT, "data", "art")
 
@@ -77,6 +78,9 @@ HARVESTER_ART = {
     "band_1_vertical": "space-plating-stripe-light-gray-vertical-undamaged.png",
     "band_2": "space-plating-stripe-yellow-horizontal-undamaged.png",
     "band_2_vertical": "space-plating-stripe-yellow-vertical-undamaged.png",
+    # The drill heads' housing and the drill legs, drawn by the Harvester's renderer; the bit wears the gearbox.
+    "drill_body": "steel_block.png",
+    "drill_leg": "metal_pipes_copper.png",
 }
 # Each tier's default power, shown at eye height on its front: tier 1 burns fuel, tier 2 takes FE.
 # Its keys are the tiers a model is written for.
@@ -396,28 +400,46 @@ def shift(low, high):
     sys.exit(f"no translation brings {low}..{high} inside {LOW}..{HIGH}")
 
 
-def harvester_model(tier):
-    """A Harvester's 3x3x3 casing, facing north: one element per footprint block with only its
-    outward faces. The duct all round the lower two rows and underneath; the tier's band round the
+def casing_faces(x, y, z):
+    """The faces of the casing block at column x, z and row y (0 the bottom) of a Harvester facing north:
+    only its outward ones. The duct all round the lower two rows and underneath; the tier's band round the
     top row and down the roof's centre line, with braced corners, vents at its east and west edges and
-    the gearbox at its centre; on the front, the intake at the foot and the tier's power above it. The
-    top row is above the bounds, so the model is a NeoForge composite whose children are translated
-    by whole blocks when it bakes, before the blockstate turns it to each facing."""
+    the gearbox at its centre; on the front, the intake at the foot and the tier's power above it."""
+    faces = {}
+    if y == 0:
+        faces["down"] = face("#duct")
+    if y == 2:
+        faces["up"] = face("#gearbox" if (x, z) == (0, 0) else "#band_vertical" if x == 0
+                           else "#vent" if z == 0 else "#brace")
+    for outward, name in ((x == -1, "west"), (x == 1, "east"), (z == -1, "north"), (z == 1, "south")):
+        if outward:
+            faces[name] = face("#band" if y == 2 else "#duct")
+    if (x, z) == (0, -1) and y < 2:
+        faces["north"] = face("#intake" if y == 0 else "#power")
+    return faces
+
+
+def harvester_textures(tier):
+    textures = {name: HARVESTER_SPRITE + name for name in HARVESTER_ART
+                if not name.startswith(("band_", "drill_"))}
+    textures.update(band=HARVESTER_SPRITE + f"band_{tier}", band_vertical=HARVESTER_SPRITE + f"band_{tier}_vertical",
+                    power=HARVESTER_SPRITE + HARVESTER_POWER[tier])
+    return textures
+
+
+def harvester_model(tier, lowest):
+    """A Harvester's 3x3x3 casing, facing north, from row `lowest` up: one element per footprint block.
+    The top row is above the bounds, so the model is a NeoForge composite whose children are translated
+    by whole blocks when it bakes, before the blockstate turns it to each facing. The origin draws it
+    from row 1, its bottom row being nine blocks that each draw their own (see foot_model); the item
+    draws it whole from row 0."""
     children = {}
     for x in (-1, 0, 1):
         for y in (0, 1, 2):
+            if y < lowest:
+                continue
             for z in (-1, 0, 1):
-                faces = {}
-                if y == 0:
-                    faces["down"] = face("#duct")
-                if y == 2:
-                    faces["up"] = face("#gearbox" if (x, z) == (0, 0) else "#band_vertical" if x == 0
-                                       else "#vent" if z == 0 else "#brace")
-                for outward, name in ((x == -1, "west"), (x == 1, "east"), (z == -1, "north"), (z == 1, "south")):
-                    if outward:
-                        faces[name] = face("#band" if y == 2 else "#duct")
-                if (x, z) == (0, -1) and y < 2:
-                    faces["north"] = face("#intake" if y == 0 else "#power")
+                faces = casing_faces(x, y, z)
                 # The block at the footprint's heart shows nothing, and Minecraft refuses an element
                 # with no faces.
                 if not faces:
@@ -429,9 +451,7 @@ def harvester_model(tier):
                     "to": [high[axis] - 16 * moved[axis] for axis in range(3)],
                     "faces": faces,
                 })
-    textures = {name: HARVESTER_SPRITE + name for name in HARVESTER_ART if not name.startswith("band_")}
-    textures.update(band=HARVESTER_SPRITE + f"band_{tier}", band_vertical=HARVESTER_SPRITE + f"band_{tier}_vertical",
-                    power=HARVESTER_SPRITE + HARVESTER_POWER[tier])
+    textures = harvester_textures(tier)
     return {
         "ambientocclusion": False,
         "textures": dict(textures, particle=HARVESTER_SPRITE + "duct"),
@@ -444,14 +464,74 @@ def harvester_model(tier):
     }
 
 
+def column_of(x, z):
+    """The Harvester's column at offset x, z from its origin block, facing north, in the order its cursor
+    counts in (the Java side's DrillParts): dx then dz, from -1 to 1."""
+    return (x + 1) * 3 + (z + 1)
+
+
+def foot_model(tier, column):
+    """The bottom block of one column, drawn on its own: its casing, and nothing where a drill head stands
+    there instead (the blockstate leaves it out; the renderer draws the head)."""
+    x, z = column // 3 - 1, column % 3 - 1
+    textures = harvester_textures(tier)
+    return {
+        "ambientocclusion": False,
+        "textures": {"duct": textures["duct"], "intake": textures["intake"], "particle": HARVESTER_SPRITE + "duct"},
+        "elements": [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": casing_faces(x, 0, z)}],
+    }
+
+
 def harvester_models():
-    """Each Harvester model, by name: the casing on the origin, and a part block's, which draws nothing
+    """Each Harvester model, by name: the casing above the bottom row on the origin, the whole casing for
+    its item, a bottom block's casing for each of the nine columns, and a part block's, which draws nothing
     and lends its breaking particles the duct."""
     models = {}
     for tier in HARVESTER_POWER:
-        models[f"harvester_{tier}"] = harvester_model(tier)
+        models[f"harvester_{tier}"] = harvester_model(tier, 1)
+        models[f"harvester_{tier}_full"] = harvester_model(tier, 0)
         models[f"harvester_{tier}_part"] = {"textures": {"particle": HARVESTER_SPRITE + "duct"}}
+        for column in range(9):
+            models[f"harvester_{tier}_foot_{column}"] = foot_model(tier, column)
     return models
+
+
+# A blockstate turns a model to each facing the way the origin's is turned: north is the model as written.
+FACING_TURNS = {"north": 0, "east": 90, "south": 180, "west": 270}
+
+
+def turned(model, turn):
+    apply = {"model": "fieldworks:block/" + model}
+    if turn:
+        apply["y"] = turn
+    return apply
+
+
+def harvester_blockstates():
+    """Each Harvester block's blockstate, by name. The origin draws the casing above its bottom row, and
+    its own bottom block unless it is a drill head; a part draws its own bottom block, unless it is a
+    drill head, if it stands in the bottom row, and otherwise nothing (the origin's model has it)."""
+    states = {}
+    for tier in HARVESTER_POWER:
+        origin = []
+        part = [{"apply": {"model": f"fieldworks:block/harvester_{tier}_part"}}]
+        for facing, turn in FACING_TURNS.items():
+            origin.append({"when": {"facing": facing}, "apply": turned(f"harvester_{tier}", turn)})
+            origin.append({"when": {"facing": facing, "drill": "false"},
+                           "apply": turned(f"harvester_{tier}_foot_{column_of(0, 0)}", turn)})
+            number = 0
+            for lx in (-1, 0, 1):
+                for lz in (-1, 0, 1):
+                    if (lx, lz) == (0, 0):
+                        continue
+                    number += 1
+                    # A part's offset is in the origin's frame, x forward and z to the side; facing
+                    # north that is the world's dz = lx and dx = lz (Groundworks' FootprintShape).
+                    part.append({"when": {"facing": facing, "part": str(number), "drill": "false"},
+                                 "apply": turned(f"harvester_{tier}_foot_{column_of(lz, lx)}", turn)})
+        states[f"harvester_{tier}"] = {"multipart": origin}
+        states[f"harvester_{tier}_part"] = {"multipart": part}
+    return states
 
 
 def build():
@@ -474,6 +554,8 @@ def build():
         files[os.path.join(HARVESTER_OUT, f"{name}.png")] = png(pixels)
     for name, model in harvester_models().items():
         files[os.path.join(MODELS, f"{name}.json")] = (json.dumps(model, indent=2) + "\n").encode()
+    for name, state in harvester_blockstates().items():
+        files[os.path.join(BLOCKSTATES, f"{name}.json")] = (json.dumps(state, indent=2) + "\n").encode()
     return files
 
 

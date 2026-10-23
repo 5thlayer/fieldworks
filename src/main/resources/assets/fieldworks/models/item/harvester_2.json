@@ -1,5 +1,5 @@
 {
-  "parent": "fieldworks:block/harvester_2",
+  "parent": "fieldworks:block/harvester_2_full",
   "display": {
     "gui": {
       "rotation": [

@@ -1,19 +1,78 @@
 {
-  "variants": {
-    "facing=north": {
-      "model": "fieldworks:block/harvester_2"
+  "multipart": [
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2"
+      }
     },
-    "facing=east": {
-      "model": "fieldworks:block/harvester_2",
-      "y": 90
+    {
+      "when": {
+        "facing": "north",
+        "drill": "false"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_4"
+      }
     },
-    "facing=south": {
-      "model": "fieldworks:block/harvester_2",
-      "y": 180
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2",
+        "y": 90
+      }
     },
-    "facing=west": {
-      "model": "fieldworks:block/harvester_2",
-      "y": 270
+    {
+      "when": {
+        "facing": "east",
+        "drill": "false"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_4",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "drill": "false"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_4",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "drill": "false"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_4",
+        "y": 270
+      }
     }
-  }
+  ]
 }

@@ -5,5 +5,6 @@
     "fuel": true,
     "burn_per_operation": 200
   },
-  "fe_buffer": 0
+  "fe_buffer": 0,
+  "reach": 1
 }
