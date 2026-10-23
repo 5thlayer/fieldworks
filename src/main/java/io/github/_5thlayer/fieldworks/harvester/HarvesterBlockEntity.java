@@ -436,8 +436,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
 
     /**
      * The origin of the Harvester showing the placed drill head at {@code head}, or null for none: it stands above the
-     * head, in one of the nine columns over it, no further up than the longest reach loaded. Unloaded cells are skipped,
-     * so a lookup never loads a chunk.
+     * head, in one of the nine columns over it, no further up than the longest reach loaded. A footprint can straddle a
+     * chunk's edge, so a cell is read even where its chunk is not loaded: breaking a head always dismantles its Harvester.
      */
     static @Nullable BlockPos showing(Level level, BlockPos head) {
         int farthest = HarvesterTiers.snapshot().values().stream().mapToInt(HarvesterTier::reach).max().orElse(0);
@@ -445,7 +445,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             for (int dz = -1; dz <= 1; dz++) {
                 for (int up = 1; up <= farthest && head.getY() + up < level.getMaxY(); up++) {
                     BlockPos at = head.offset(dx, up, dz);
-                    if (level.isLoaded(at) && level.getBlockEntity(at) instanceof HarvesterBlockEntity harvester && harvester.shows(head)) {
+                    if (level.getBlockEntity(at) instanceof HarvesterBlockEntity harvester && harvester.shows(head)) {
                         return at;
                     }
                 }
@@ -567,9 +567,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         progress = input.getIntOr(PROGRESS_KEY, 0);
         cursor = input.getIntOr(CURSOR_KEY, 0);
         held = input.read(HELD_KEY, Identifier.CODEC).orElse(null);
-        // A save of the wrong shape, or with a negative depth, shows nothing: the next tick puts it right.
-        heads = input.read(HEADS_KEY, HEADS_CODEC)
-                .filter(saved -> saved.size() == DrillParts.COLUMNS && saved.stream().allMatch(depth -> depth >= Reach.NONE))
+        heads = input.read(HEADS_KEY, HEADS_CODEC).filter(saved -> saved.size() == DrillParts.COLUMNS)
                 .map(saved -> saved.stream().mapToInt(Integer::intValue).toArray()).orElseGet(() -> new int[DrillParts.COLUMNS]);
     }
 
