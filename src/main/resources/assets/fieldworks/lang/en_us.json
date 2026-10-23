@@ -103,5 +103,7 @@
   "fieldworks.gallery.nether": "Nether Patches",
   "fieldworks.gallery.nether.1": "quartz, glowstone",
   "fieldworks.gallery.nether.2": "and netherite on",
-  "fieldworks.gallery.nether.3": "the Nether floor"
+  "fieldworks.gallery.nether.3": "the Nether floor",
+  "config.jade.plugin_fieldworks.harvester": "Harvester",
+  "config.jade.plugin_fieldworks.ore_amount": "Ore amount"
 }
