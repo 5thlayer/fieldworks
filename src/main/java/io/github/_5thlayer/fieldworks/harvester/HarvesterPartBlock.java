@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
  */
 public final class HarvesterPartBlock extends FootprintPartBlock {
 
+    // Per instance, as the origin's is: each tier's part block names its own footprint.
     private final MapCodec<HarvesterPartBlock> codec;
 
     public HarvesterPartBlock(Properties properties, Supplier<Footprint> footprint) {

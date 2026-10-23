@@ -40,6 +40,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
@@ -406,16 +407,20 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
                     level.setBlock(cell, DrillHeadBlock.placedAt(level, cell), Block.UPDATE_ALL);
                 }
             }
-            BlockPos bottom = worldPosition.offset(DrillParts.dx(index), 0, DrillParts.dz(index));
-            BlockState state = level.getBlockState(bottom);
-            boolean underHead = shown == DrillParts.UNDER;
-            if (state.hasProperty(HarvesterBlock.DRILL_HEAD) && state.getValue(HarvesterBlock.DRILL_HEAD) != underHead) {
-                level.setBlock(bottom, state.setValue(HarvesterBlock.DRILL_HEAD, underHead), Block.UPDATE_CLIENTS);
-            }
+            showBottomHead(level, index, shown == DrillParts.UNDER);
         }
         if (changed) {
             setChanged();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /** Draws the bottom block of the column {@code index} as its drill head, or as casing. */
+    private void showBottomHead(ServerLevel level, int index, boolean head) {
+        BlockPos bottom = worldPosition.offset(DrillParts.dx(index), 0, DrillParts.dz(index));
+        BlockState state = level.getBlockState(bottom);
+        if (state.hasProperty(HarvesterBlock.DRILL_HEAD) && state.getValue(HarvesterBlock.DRILL_HEAD) != head) {
+            level.setBlock(bottom, state.setValue(HarvesterBlock.DRILL_HEAD, head), Block.UPDATE_CLIENTS);
         }
     }
 
@@ -427,6 +432,26 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     /** Whether this Harvester shows a placed drill head at {@code pos}. */
     boolean shows(BlockPos pos) {
         return placedHeads().contains(pos);
+    }
+
+    /**
+     * The origin of the Harvester showing the placed drill head at {@code head}, or null for none: it stands above the
+     * head, in one of the nine columns over it, no further up than the longest reach loaded. Unloaded cells are skipped,
+     * so a lookup never loads a chunk.
+     */
+    static @Nullable BlockPos showing(Level level, BlockPos head) {
+        int farthest = HarvesterTiers.snapshot().values().stream().mapToInt(HarvesterTier::reach).max().orElse(0);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int up = 1; up <= farthest && head.getY() + up < level.getMaxY(); up++) {
+                    BlockPos at = head.offset(dx, up, dz);
+                    if (level.isLoaded(at) && level.getBlockEntity(at) instanceof HarvesterBlockEntity harvester && harvester.shows(head)) {
+                        return at;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /** Where this Harvester's placed drill heads stand. */
@@ -542,7 +567,9 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         progress = input.getIntOr(PROGRESS_KEY, 0);
         cursor = input.getIntOr(CURSOR_KEY, 0);
         held = input.read(HELD_KEY, Identifier.CODEC).orElse(null);
-        heads = input.read(HEADS_KEY, HEADS_CODEC).filter(saved -> saved.size() == DrillParts.COLUMNS)
+        // A save of the wrong shape, or with a negative depth, shows nothing: the next tick puts it right.
+        heads = input.read(HEADS_KEY, HEADS_CODEC)
+                .filter(saved -> saved.size() == DrillParts.COLUMNS && saved.stream().allMatch(depth -> depth >= Reach.NONE))
                 .map(saved -> saved.stream().mapToInt(Integer::intValue).toArray()).orElseGet(() -> new int[DrillParts.COLUMNS]);
     }
 

@@ -26,7 +26,6 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A drill head a Harvester places in the cell above a source that lies below the block directly under it
@@ -81,23 +80,6 @@ public final class DrillHeadBlock extends Block implements SimpleWaterloggedBloc
         }
     }
 
-    /** The origin of the Harvester whose column the head at {@code head} stands in, or null where none reaches it. */
-    static @Nullable BlockPos ownerOf(Level level, BlockPos head) {
-        // No Harvester's column reaches further than the longest reach loaded.
-        int farthest = HarvesterTiers.snapshot().values().stream().mapToInt(HarvesterTier::reach).max().orElse(0);
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                for (int up = 1; up <= farthest && head.getY() + up < level.getMaxY(); up++) {
-                    BlockPos at = head.offset(dx, up, dz);
-                    if (level.getBlockEntity(at) instanceof HarvesterBlockEntity harvester && harvester.shows(head)) {
-                        return at;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     protected FluidState getFluidState(BlockState state) {
         return state.getValue(BlockStateProperties.WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
@@ -131,7 +113,7 @@ public final class DrillHeadBlock extends Block implements SimpleWaterloggedBloc
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide()) {
-            BlockPos owner = ownerOf(level, pos);
+            BlockPos owner = HarvesterBlockEntity.showing(level, pos);
             if (owner != null) {
                 level.destroyBlock(owner, !player.preventsBlockDrops(), player);
             }
@@ -144,7 +126,7 @@ public final class DrillHeadBlock extends Block implements SimpleWaterloggedBloc
     protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
         super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
         if (!REMOVING.get()) {
-            BlockPos owner = ownerOf(level, pos);
+            BlockPos owner = HarvesterBlockEntity.showing(level, pos);
             if (owner != null) {
                 level.destroyBlock(owner, true);
             }
