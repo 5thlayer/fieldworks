@@ -88,11 +88,23 @@ A block with no amount that the Harvester may break for its normal loot, leaving
 _Avoid_: minable, ore (alone)
 
 **Harvester**:
-The machine that works the layer under its footprint: it draws ore blocks, breaks harvestable blocks, or pumps oil wells.
+The machine that works the nine columns under its footprint, each down to its reach: it draws ore blocks, breaks harvestable blocks, or pumps oil wells.
 _Avoid_: drill, rig, miner, pumpjack
 
+**Reach**:
+How far down a Harvester's columns look past the block directly under it, a figure of its Harvester Tier. A column passes air, replaceable blocks and fluids, and its source is the first other block it meets within reach, or none. Reach is always counted from the Harvester, so a column opened by a broken harvestable block looks further down but never deeper than reach. It never widens the footprint.
+_Avoid_: depth, range, reach area
+
+**Drill head**:
+What shows a Harvester column at work, standing right over the column's source. Where the source lies directly under the Harvester, the Harvester's own bottom block in that column becomes the drill head; otherwise the Harvester places one in the cell above the source, for nothing, and removes it with itself, and drill legs join the two. A placed drill head takes a replaceable block's or a fluid's place, waterlogs in a water source and leaves the water when it goes, collides with nothing and holds its cell; breaking it dismantles the Harvester. It is never placed by hand.
+_Avoid_: reach block, bit, drill (alone: the Harvester's avoided name)
+
+**Drill legs**:
+The struts drawn from a Harvester's bottom block down to a placed drill head, part of the drill head's look and nothing in the world.
+_Avoid_: support (a Beltworks term), pillar, shaft
+
 **Harvester Tier**:
-One rung of Harvester, with its rank, its speed, and the power it accepts: burn time, FE, or both.
+One rung of Harvester, with its rank, its speed, its reach, and the power it accepts: burn time, FE, or both.
 _Avoid_: level, mark, burner/electric (as tier names)
 
 **Harvest Recipe**:
