@@ -45,14 +45,13 @@ public final class PatchShape {
             Land land) {
         double distance = law.distance(centreX, centreZ);
         double radius = law.radius(sizeFactor, distance);
-        if (!law.generatesAt(distance) || Math.round(radius) < 1) {
+        int reach = reachOf(law, sizeFactor, centreX, centreZ);
+        if (reach == 0) {
             return new PatchShape(centreX, centreZ, radius, 0, new BitSet());
         }
         double height = law.height(sizeFactor, distance);
         double amplitude = law.blobAmplitude(distance);
         OreCorpus.Edge edge = law.edge();
-        double weights = edge.octaves().stream().mapToDouble(OreCorpus.Octave::outputScale).sum();
-        int reach = (int) Math.ceil(radius * (1 + (weights * NOISE_BOUND - edge.offset()) * amplitude / height));
 
         int side = 2 * reach + 1;
         BitSet columns = new BitSet(side * side);
@@ -70,6 +69,24 @@ public final class PatchShape {
             }
         }
         return new PatchShape(centreX, centreZ, radius, reach, columns);
+    }
+
+    /**
+     * Half the side of the square every column of that disc lies in, from the law alone and no noise
+     * sample: the radius the edge's noise bound can push out to. Zero where the disc is empty (inside
+     * the minimum distance, or a radius that rounds below one block).
+     */
+    public static int reachOf(PatchLaw law, double sizeFactor, int centreX, int centreZ) {
+        double distance = law.distance(centreX, centreZ);
+        double radius = law.radius(sizeFactor, distance);
+        if (!law.generatesAt(distance) || Math.round(radius) < 1) {
+            return 0;
+        }
+        double height = law.height(sizeFactor, distance);
+        double amplitude = law.blobAmplitude(distance);
+        OreCorpus.Edge edge = law.edge();
+        double weights = edge.octaves().stream().mapToDouble(OreCorpus.Octave::outputScale).sum();
+        return (int) Math.ceil(radius * (1 + (weights * NOISE_BOUND - edge.offset()) * amplitude / height));
     }
 
     /** A shape read back from its piece's saved mask. */

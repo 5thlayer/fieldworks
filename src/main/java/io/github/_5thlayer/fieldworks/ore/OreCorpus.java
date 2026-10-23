@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,12 +33,15 @@ public final class OreCorpus {
     private final DistanceLaw law;
     private final DensityLaw density;
     private final Edge edge;
+    private final int clearance;
 
-    private OreCorpus(Map<String, Resource> resources, DistanceLaw law, DensityLaw density, Edge edge) {
+    private OreCorpus(Map<String, Resource> resources, DistanceLaw law, DensityLaw density, Edge edge,
+            int clearance) {
         this.resources = resources;
         this.law = law;
         this.density = density;
         this.edge = edge;
+        this.clearance = clearance;
     }
 
     public static OreCorpus get() {
@@ -69,14 +73,16 @@ public final class OreCorpus {
                     value.getAsJsonObject().get("input_scale").getAsDouble(),
                     value.getAsJsonObject().get("output_scale").getAsDouble())));
             return new OreCorpus(
-                    Map.copyOf(resources),
+                    // Not Map.copyOf: the listed order breaks a tie in rarity (ADR 0009).
+                    Collections.unmodifiableMap(resources),
                     new DistanceLaw(distance.get("offset").getAsInt(), distance.get("divisor").getAsInt()),
                     new DensityLaw(
                             density.get("starting_resource_placement_radius").getAsDouble(),
                             density.get("regular_patch_fade_in_distance").getAsDouble(),
                             density.get("double_density_distance").getAsDouble()),
                     new Edge(edge.get("radius_cap").getAsDouble(), List.copyOf(octaves),
-                            edge.get("offset").getAsDouble()));
+                            edge.get("offset").getAsDouble()),
+                    root.get("clearance").getAsInt());
         } catch (IOException broken) {
             throw new IllegalStateException("could not read " + path, broken);
         }
@@ -102,6 +108,7 @@ public final class OreCorpus {
         return found;
     }
 
+    /** In the order the Patch numbers list them, which breaks a tie in rarity (ADR 0009). */
     public Map<String, Resource> resources() {
         return resources;
     }
@@ -124,6 +131,11 @@ public final class OreCorpus {
 
     public Edge edge() {
         return edge;
+    }
+
+    /** The gap, in the dimension's own blocks, a patch or oil field keeps from the edge of another kind (ADR 0009). */
+    public int clearance() {
+        return clearance;
     }
 
     /**

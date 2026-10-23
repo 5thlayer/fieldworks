@@ -78,6 +78,10 @@ public final class PatchDiscStructure extends Structure {
             return Optional.empty();
         }
         double sizeFactor = law.sizeFactor(context.random().nextDouble());
+        // A rarer start of another kind within the clearance keeps its place, and this one generates nothing (ADR 0009).
+        if (!StartClearance.stays(context, resource.key(), x, z, PatchShape.reachOf(law, sizeFactor, x, z))) {
+            return Optional.empty();
+        }
         boolean nether = resource.dimension() == PatchDimension.NETHER;
         int y;
         if (nether) {

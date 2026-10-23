@@ -155,4 +155,21 @@ class PatchShapeTest {
         assertTrue(IRON.radius(1, 450) < IRON.radius(1, 1600));
         assertEquals(IRON.radius(1, 1600), IRON.radius(1, 5000), 1e-9);
     }
+
+    @Test
+    void noDiscReachesFartherThanTheBoundTheClearanceSearchesBy() {
+        java.util.List<PatchLaw> laws = new java.util.ArrayList<>();
+        for (OreResource resource : OreResource.values()) {
+            laws.add(PatchLaw.of(resource));
+        }
+        laws.add(io.github._5thlayer.fieldworks.oil.OilCorpus.get().law());
+        for (PatchLaw law : laws) {
+            for (double unit : new double[] {0, 0.5, 1}) {
+                for (int distance = 0; distance < 100_000; distance += 7) {
+                    int reach = PatchShape.reachOf(law, law.sizeFactor(unit), distance, 0);
+                    assertTrue(reach <= Clearance.MAX_REACH, "reach " + reach + " at " + distance);
+                }
+            }
+        }
+    }
 }

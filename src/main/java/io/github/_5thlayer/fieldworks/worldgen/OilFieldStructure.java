@@ -6,7 +6,9 @@ package io.github._5thlayer.fieldworks.worldgen;
 import com.mojang.serialization.MapCodec;
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.config.FieldworksConfig;
+import io.github._5thlayer.fieldworks.oil.OilCorpus;
 import io.github._5thlayer.fieldworks.oil.OilField;
+import io.github._5thlayer.fieldworks.ore.PatchShape;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -35,6 +37,11 @@ public final class OilFieldStructure extends Structure {
         ChunkPos chunk = context.chunkPos();
         int x = chunk.getMiddleBlockX();
         int z = chunk.getMiddleBlockZ();
+        // A rarer start of another kind within the clearance keeps its place, and this one generates nothing (ADR 0009).
+        if (!StartClearance.stays(context, StartClearance.OIL, x, z,
+                PatchShape.reachOf(OilCorpus.get().law(), OilField.SIZE_FACTOR, x, z))) {
+            return Optional.empty();
+        }
         int y = context.chunkGenerator().getFirstOccupiedHeight(
                 x, z, Heightmap.Types.WORLD_SURFACE_WG, context.heightAccessor(), context.randomState());
         ImprovedNoise noise = new ImprovedNoise(new XoroshiroRandomSource(context.seed()).forkPositional()

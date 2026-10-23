@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- **Breaking:** patches and oil fields keep a clearance from anything of another kind ([ADR 0009](docs/adr/0009-patches-keep-a-clearance-and-the-rarer-start-wins.md), [#41](https://github.com/5thlayer/fieldworks/issues/41)). A start generates nothing when a start of another kind (a patch of another resource, or an oil field against a patch) would leave less than `clearance` between the two discs' edges; the rarer one, the kind whose structure set has the larger spacing, keeps its place, with oil fields first and then the resources in the order of `amounts.json` between equals. `clearance` is a new figure in the Patch numbers, `fieldworks/ore/amounts.json`, 16 blocks in the dimension's own blocks. Chunks generated after updating are laid out differently, so a seed's patches and oil fields change; those already in a world stay.
+
 ## 0.3.2
 
 - A Harvester lights its power face, the Burner's firebox or the Electric's coil, and gives off light 13 while it works, and goes dark on any idle reason ([#42](https://github.com/5thlayer/fieldworks/issues/42)).

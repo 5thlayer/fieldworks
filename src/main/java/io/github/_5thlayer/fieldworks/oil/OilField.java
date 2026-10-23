@@ -25,7 +25,7 @@ public final class OilField {
     }
 
     /** Crude's spot size is one fixed factor, so no draw decides it. */
-    private static final double SIZE_FACTOR = 1.0;
+    public static final double SIZE_FACTOR = 1.0;
 
     private final int centreX;
     private final int centreZ;

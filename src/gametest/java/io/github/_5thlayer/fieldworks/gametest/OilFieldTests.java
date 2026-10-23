@@ -234,7 +234,7 @@ final class OilFieldTests {
         return placed;
     }
 
-    private static Holder<Structure> resolve(GameTestHelper helper) {
+    static Holder<Structure> resolve(GameTestHelper helper) {
         var set = helper.getLevel().registryAccess().lookupOrThrow(Registries.STRUCTURE_SET)
                 .get(ResourceKey.create(Registries.STRUCTURE_SET, SET));
         if (set.isEmpty()) {

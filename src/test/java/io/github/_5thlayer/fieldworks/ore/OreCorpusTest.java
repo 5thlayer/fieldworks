@@ -88,4 +88,11 @@ class OreCorpusTest {
     void thePlacementRadiusLeavesTheSpawnAreaBare() {
         assertEquals(150.0, OreCorpus.get().densityLaw().placementRadius(), 1e-9);
     }
+
+    @Test
+    void theClearanceIsSixteenBlocksAndTheResourcesKeepTheirListedOrder() {
+        assertEquals(16, OreCorpus.get().clearance());
+        assertEquals(java.util.List.of("iron", "copper", "coal", "stone", "sulfur", "uranium", "redstone", "gold",
+                "diamond", "quartz", "glowstone", "netherite"), java.util.List.copyOf(OreCorpus.get().resources().keySet()));
+    }
 }

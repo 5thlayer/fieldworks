@@ -77,7 +77,8 @@ final class PatchDiscTests {
         OreResource[] resources = OreResource.values();
         for (int i = 0; i < resources.length; i++) {
             OreResource resource = resources[i];
-            ChunkPos far = new ChunkPos(100 + 8 * i, 100);
+            // Coal's and diamond's first chunks lie within the clearance of another kind's start (ADR 0009), which would leave no disc.
+            ChunkPos far = new ChunkPos(100 + 8 * i, resource == OreResource.COAL || resource == OreResource.DIAMOND ? 112 : 100);
             if (nether(resource)) {
                 tests.test("patches_" + resource.key() + "_disc_lies_on_the_open_nether_floor", 40,
                         helper -> netherDiscPlaces(helper, resource, far));

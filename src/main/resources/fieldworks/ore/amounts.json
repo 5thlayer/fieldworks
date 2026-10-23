@@ -26,6 +26,7 @@
     ],
     "offset": 0.3333333333333333
   },
+  "clearance": 16,
   "resources": {
     "iron": {
       "default_amount": 6400,
