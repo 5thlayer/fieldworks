@@ -84,5 +84,7 @@
   "fieldworks.gallery.drilling_fluids": "Drilling Fluids",
   "fieldworks.gallery.drilling_fluids.1": "a held recipe",
   "fieldworks.gallery.drilling_fluids.2": "spends mud to",
-  "fieldworks.gallery.drilling_fluids.3": "beat a floor"
+  "fieldworks.gallery.drilling_fluids.3": "beat a floor",
+  "config.jade.plugin_fieldworks.harvester": "Harvester",
+  "config.jade.plugin_fieldworks.ore_amount": "Ore amount"
 }
