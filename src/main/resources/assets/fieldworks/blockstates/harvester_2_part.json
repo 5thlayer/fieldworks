@@ -18,11 +18,31 @@
     {
       "when": {
         "facing": "north",
+        "part": "1",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_0_head"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
         "part": "2",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_3"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "part": "2",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_3_head"
       }
     },
     {
@@ -38,11 +58,31 @@
     {
       "when": {
         "facing": "north",
+        "part": "3",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_6_head"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
         "part": "4",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_1"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "part": "4",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_1_head"
       }
     },
     {
@@ -58,11 +98,31 @@
     {
       "when": {
         "facing": "north",
+        "part": "5",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_7_head"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
         "part": "6",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_2"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "part": "6",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_2_head"
       }
     },
     {
@@ -78,6 +138,16 @@
     {
       "when": {
         "facing": "north",
+        "part": "7",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_5_head"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
         "part": "8",
         "drill_head": "false"
       },
@@ -87,12 +157,33 @@
     },
     {
       "when": {
+        "facing": "north",
+        "part": "8",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_8_head"
+      }
+    },
+    {
+      "when": {
         "facing": "east",
         "part": "1",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_0",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "part": "1",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_0_head",
         "y": 90
       }
     },
@@ -110,11 +201,33 @@
     {
       "when": {
         "facing": "east",
+        "part": "2",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_3_head",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
         "part": "3",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_6",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "part": "3",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_6_head",
         "y": 90
       }
     },
@@ -132,11 +245,33 @@
     {
       "when": {
         "facing": "east",
+        "part": "4",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_1_head",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
         "part": "5",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_7",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "part": "5",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_7_head",
         "y": 90
       }
     },
@@ -154,6 +289,17 @@
     {
       "when": {
         "facing": "east",
+        "part": "6",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_2_head",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
         "part": "7",
         "drill_head": "false"
       },
@@ -165,11 +311,33 @@
     {
       "when": {
         "facing": "east",
+        "part": "7",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_5_head",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
         "part": "8",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_8",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "part": "8",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_8_head",
         "y": 90
       }
     },
@@ -187,11 +355,33 @@
     {
       "when": {
         "facing": "south",
+        "part": "1",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_0_head",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
         "part": "2",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_3",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "part": "2",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_3_head",
         "y": 180
       }
     },
@@ -209,11 +399,33 @@
     {
       "when": {
         "facing": "south",
+        "part": "3",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_6_head",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
         "part": "4",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_1",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "part": "4",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_1_head",
         "y": 180
       }
     },
@@ -231,11 +443,33 @@
     {
       "when": {
         "facing": "south",
+        "part": "5",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_7_head",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
         "part": "6",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_2",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "part": "6",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_2_head",
         "y": 180
       }
     },
@@ -253,11 +487,33 @@
     {
       "when": {
         "facing": "south",
+        "part": "7",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_5_head",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
         "part": "8",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_8",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "part": "8",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_8_head",
         "y": 180
       }
     },
@@ -275,11 +531,33 @@
     {
       "when": {
         "facing": "west",
+        "part": "1",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_0_head",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
         "part": "2",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_3",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "part": "2",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_3_head",
         "y": 270
       }
     },
@@ -297,11 +575,33 @@
     {
       "when": {
         "facing": "west",
+        "part": "3",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_6_head",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
         "part": "4",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_1",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "part": "4",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_1_head",
         "y": 270
       }
     },
@@ -319,11 +619,33 @@
     {
       "when": {
         "facing": "west",
+        "part": "5",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_7_head",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
         "part": "6",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_2",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "part": "6",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_2_head",
         "y": 270
       }
     },
@@ -341,11 +663,33 @@
     {
       "when": {
         "facing": "west",
+        "part": "7",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_5_head",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
         "part": "8",
         "drill_head": "false"
       },
       "apply": {
         "model": "fieldworks:block/harvester_2_foot_8",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "part": "8",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_2_foot_8_head",
         "y": 270
       }
     }

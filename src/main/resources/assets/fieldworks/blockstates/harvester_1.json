@@ -19,6 +19,15 @@
     },
     {
       "when": {
+        "facing": "north",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_1_foot_4_head"
+      }
+    },
+    {
+      "when": {
         "facing": "east"
       },
       "apply": {
@@ -33,6 +42,16 @@
       },
       "apply": {
         "model": "fieldworks:block/harvester_1_foot_4",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_1_foot_4_head",
         "y": 90
       }
     },
@@ -57,6 +76,16 @@
     },
     {
       "when": {
+        "facing": "south",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_1_foot_4_head",
+        "y": 180
+      }
+    },
+    {
+      "when": {
         "facing": "west"
       },
       "apply": {
@@ -71,6 +100,16 @@
       },
       "apply": {
         "model": "fieldworks:block/harvester_1_foot_4",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "drill_head": "true"
+      },
+      "apply": {
+        "model": "fieldworks:block/harvester_1_foot_4_head",
         "y": 270
       }
     }

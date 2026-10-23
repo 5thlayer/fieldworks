@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 
 /**
  * A Harvester's part block. The nine blocks of its bottom layer draw themselves, as casing or, where their column's
- * source lies directly under the Harvester, as nothing, for the renderer to draw the drill head there; the upper layers
+ * source lies directly under the Harvester, as the walls round the drill head the renderer draws there; the upper layers
  * are drawn by the origin's model, so draw nothing, as every Groundworks part does.
  */
 public final class HarvesterPartBlock extends FootprintPartBlock {

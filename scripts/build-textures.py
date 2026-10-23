@@ -471,8 +471,7 @@ def column_of(x, z):
 
 
 def foot_model(tier, column):
-    """The bottom block of one column, drawn on its own: its casing, and nothing where a drill head stands
-    there instead (the blockstate leaves it out; the renderer draws the head)."""
+    """The bottom block of one column, drawn on its own: its casing, where it is no drill head."""
     x, z = column // 3 - 1, column % 3 - 1
     textures = harvester_textures(tier)
     return {
@@ -482,9 +481,32 @@ def foot_model(tier, column):
     }
 
 
+def head_cell_model(tier, column):
+    """The bottom block of one column where it is the drill head: its casing gone for the renderer to draw
+    the head, it draws the walls the hole would open into the machine, which has no faces inside, so
+    the casing reads as solid round it. Each wall is the face of the neighbour's cell, or of the block
+    above, turned into this one; the footprint's outer sides stay open, showing the head."""
+    x, z = column // 3 - 1, column % 3 - 1
+    textures = harvester_textures(tier)
+    walls = [((0, 16, 0), (16, 32, 16), "down")]
+    if x > -1:
+        walls.append(((-16, 0, 0), (0, 16, 16), "east"))
+    if x < 1:
+        walls.append(((16, 0, 0), (32, 16, 16), "west"))
+    if z > -1:
+        walls.append(((0, 0, -16), (16, 16, 0), "south"))
+    if z < 1:
+        walls.append(((0, 0, 16), (16, 16, 32), "north"))
+    return {
+        "ambientocclusion": False,
+        "textures": {"duct": textures["duct"], "particle": HARVESTER_SPRITE + "duct"},
+        "elements": [{"from": list(low), "to": list(high), "faces": {name: face("#duct")}} for low, high, name in walls],
+    }
+
+
 def harvester_models():
     """Each Harvester model, by name: the casing above the bottom row on the origin, the whole casing for
-    its item, a bottom block's casing for each of the nine columns, and a part block's, which draws nothing
+    its item, a bottom block's casing for each of the nine columns and the walls round it as a drill head, and a part block's, which draws nothing
     and lends its breaking particles the duct."""
     models = {}
     for tier in HARVESTER_POWER:
@@ -493,6 +515,7 @@ def harvester_models():
         models[f"harvester_{tier}_part"] = {"textures": {"particle": HARVESTER_SPRITE + "duct"}}
         for column in range(9):
             models[f"harvester_{tier}_foot_{column}"] = foot_model(tier, column)
+            models[f"harvester_{tier}_foot_{column}_head"] = head_cell_model(tier, column)
     return models
 
 
@@ -509,16 +532,18 @@ def turned(model, turn):
 
 def harvester_blockstates():
     """Each Harvester block's blockstate, by name. The origin draws the casing above its bottom row, and
-    its own bottom block unless it is a drill head; a part draws its own bottom block, unless it is a
-    drill head, if it stands in the bottom row, and otherwise nothing (the origin's model has it)."""
+    its own bottom block, as casing or, where it is a drill head, as the walls round the head; a part
+    draws its own bottom block the same way if it stands in the bottom row, and otherwise nothing (the
+    origin's model has it)."""
     states = {}
     for tier in HARVESTER_POWER:
         origin = []
         part = [{"apply": {"model": f"fieldworks:block/harvester_{tier}_part"}}]
         for facing, turn in FACING_TURNS.items():
             origin.append({"when": {"facing": facing}, "apply": turned(f"harvester_{tier}", turn)})
-            origin.append({"when": {"facing": facing, "drill_head": "false"},
-                           "apply": turned(f"harvester_{tier}_foot_{column_of(0, 0)}", turn)})
+            for head, suffix in (("false", ""), ("true", "_head")):
+                origin.append({"when": {"facing": facing, "drill_head": head},
+                               "apply": turned(f"harvester_{tier}_foot_{column_of(0, 0)}{suffix}", turn)})
             number = 0
             for lx in (-1, 0, 1):
                 for lz in (-1, 0, 1):
@@ -527,8 +552,9 @@ def harvester_blockstates():
                     number += 1
                     # A part's offset is in the origin's frame, x forward and z to the side; facing
                     # north that is the world's dz = lx and dx = lz (Groundworks' FootprintShape).
-                    part.append({"when": {"facing": facing, "part": str(number), "drill_head": "false"},
-                                 "apply": turned(f"harvester_{tier}_foot_{column_of(lz, lx)}", turn)})
+                    for head, suffix in (("false", ""), ("true", "_head")):
+                        part.append({"when": {"facing": facing, "part": str(number), "drill_head": head},
+                                     "apply": turned(f"harvester_{tier}_foot_{column_of(lz, lx)}{suffix}", turn)})
         states[f"harvester_{tier}"] = {"multipart": origin}
         states[f"harvester_{tier}_part"] = {"multipart": part}
     return states
