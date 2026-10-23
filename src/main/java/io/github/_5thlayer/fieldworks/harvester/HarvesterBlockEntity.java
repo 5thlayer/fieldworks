@@ -437,7 +437,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     /**
      * The origin of the Harvester showing the placed drill head at {@code head}, or null for none: it stands above the
      * head, in one of the nine columns over it, no further up than the longest reach loaded. A footprint can straddle a
-     * chunk's edge, so a cell is read even where its chunk is not loaded: breaking a head always dismantles its Harvester.
+     * chunk's edge, so the lookup loads any chunk it reads: breaking a head always dismantles its Harvester.
      */
     static @Nullable BlockPos showing(Level level, BlockPos head) {
         int farthest = HarvesterTiers.snapshot().values().stream().mapToInt(HarvesterTier::reach).max().orElse(0);
