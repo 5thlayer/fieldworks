@@ -43,6 +43,7 @@
   "fieldworks.harvesting.hold": "Hold this recipe",
   "fieldworks.harvester.working": "Working",
   "fieldworks.harvester.idle.nothing_to_work": "Nothing under it to work",
+  "fieldworks.harvester.idle.recipe_needed": "Hold a recipe to work what is under it",
   "fieldworks.harvester.idle.nothing_matching": "Nothing under it matches",
   "fieldworks.harvester.idle.tier_too_low": "Needs a better Harvester",
   "fieldworks.harvester.idle.no_fluid": "Not enough Drilling Fluid",
