@@ -5,8 +5,11 @@ package io.github._5thlayer.fieldworks.worldgen;
 
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.ore.OreResource;
+import io.github._5thlayer.fieldworks.ore.PatchDimension;
 import io.github._5thlayer.fieldworks.ore.PatchDisc;
 import io.github._5thlayer.fieldworks.ore.PatchShape;
+import java.util.OptionalInt;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
@@ -15,6 +18,7 @@ import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -24,19 +28,22 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSeriali
 /**
  * A disc as a structure piece: what {@code OreMining} reads a block's amount from. The box is the
  * world's full height, because each column lands wherever the ground is and {@code OreMining} finds
- * the disc by testing the box against the broken block.
+ * the disc by testing the box against the broken block. In the Nether each column lands on its open floor.
  */
 public final class PatchDiscPiece extends StructurePiece implements PatchDisc.Source {
 
     private final PatchDisc disc;
     private final PatchShape shape;
+    /** The height of the centre's floor, which a Nether patch's columns keep within reach of; unknown for a disc saved before. */
+    private final int centreY;
 
-    PatchDiscPiece(PatchDisc disc, PatchShape shape, LevelHeightAccessor height) {
+    PatchDiscPiece(PatchDisc disc, PatchShape shape, int centreY, LevelHeightAccessor height) {
         super(FieldworksWorldgen.PATCH_DISC_PIECE.get(), 0, new BoundingBox(
                 disc.centreX() - shape.reach(), height.getMinY(), disc.centreZ() - shape.reach(),
                 disc.centreX() + shape.reach(), height.getMaxY(), disc.centreZ() + shape.reach()));
         this.disc = disc;
         this.shape = shape;
+        this.centreY = centreY;
     }
 
     public PatchDiscPiece(CompoundTag tag) {
@@ -49,6 +56,7 @@ public final class PatchDiscPiece extends StructurePiece implements PatchDisc.So
                 tag.getIntOr("centre_z", 0));
         this.shape = PatchShape.of(disc.centreX(), disc.centreZ(), tag.getIntOr("reach", 0),
                 tag.getLongArray("columns").orElse(new long[0]));
+        this.centreY = tag.getIntOr("centre_y", Integer.MIN_VALUE);
     }
 
     @Override
@@ -70,6 +78,20 @@ public final class PatchDiscPiece extends StructurePiece implements PatchDisc.So
         tag.putInt("centre_z", disc.centreZ());
         tag.putInt("reach", shape.reach());
         tag.putLongArray("columns", shape.mask());
+        tag.putInt("centre_y", centreY);
+    }
+
+    /** A Nether column's ore, on its open floor: none on a lava sea or off the centre's reach, and the plants or fire standing there go. */
+    private void placeOnFloor(WorldGenLevel level, BlockPos.MutableBlockPos cursor, int x, int z, BlockState ore) {
+        OptionalInt floor = Ground.nether(level, x, z);
+        if (floor.isEmpty() || centreY != Integer.MIN_VALUE && Math.abs(floor.getAsInt() - centreY) > NetherFloor.MAX_STEP) {
+            return;
+        }
+        int y = floor.getAsInt();
+        if (!level.getBlockState(cursor.set(x, y + 1, z)).isAir()) {
+            level.setBlock(cursor, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+        }
+        level.setBlock(cursor.set(x, y, z), ore, Block.UPDATE_CLIENTS);
     }
 
     @Override
@@ -83,7 +105,12 @@ public final class PatchDiscPiece extends StructurePiece implements PatchDisc.So
         int maxZ = Math.min(boundingBox.maxZ(), chunkBB.maxZ());
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) {
-                if (shape.contains(x, z)) {
+                if (!shape.contains(x, z)) {
+                    continue;
+                }
+                if (disc.resource().dimension() == PatchDimension.NETHER) {
+                    placeOnFloor(level, cursor, x, z, ore);
+                } else {
                     level.setBlock(cursor.set(x, Ground.of(level, x, z), z), ore, Block.UPDATE_CLIENTS);
                 }
             }

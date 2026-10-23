@@ -49,14 +49,6 @@ class BonusCapTest {
     }
 
     @Test
-    void aWellRecipeRestoringMoreThanTheWellsStartingYieldIsReported() {
-        List<String> violations = BonusCap.violations(fixture("well_restores_above_whole"));
-
-        assertEquals(1, violations.size(), violations.toString());
-        assertTrue(violations.get(0).contains("crude_restored_and_a_half"), violations.get(0));
-    }
-
-    @Test
     void aSourceWhoseDefaultAnotherRecipeReplacesIsNotJudged() {
         assertEquals(List.of(), BonusCap.violations(fixture("default_replaced_elsewhere")));
     }
@@ -64,7 +56,7 @@ class BonusCapTest {
     @Test
     void recipesThatAreNotBonusesAreLeftAlone() {
         // Replaces the Default, yields another item, has a source with no known Default, yields one with no fluid,
-        // pumps crude in fixed mB, restores the whole of a well's starting yield, or is no Harvest Recipe at all.
+        // pumps crude in fixed mB or the well's own cycle, or is no Harvest Recipe at all.
         assertEquals(List.of(), BonusCap.violations(fixture("not_a_bonus")));
     }
 

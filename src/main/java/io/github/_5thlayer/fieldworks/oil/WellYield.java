@@ -36,16 +36,6 @@ public record WellYield(long normal, long minimum, long depletion, int amountPer
         return Math.max(minimum, initial * FLOOR_PERCENT_OF_INITIAL / 100);
     }
 
-    /**
-     * The crude of a cycle at {@code fraction} of the yield the well had at its starting amount, {@code initial}, in
-     * whole mB with the remainder dropped, never more than {@link #MAX_PER_CYCLE}.
-     */
-    public int restored(long initial, double fraction) {
-        // The epsilon keeps a product such as 0.7 x 10 from flooring to one under the whole it stands for.
-        long crude = (long) Math.floor(fraction * amountPerCycle * initial / normal + 1e-9);
-        return (int) Math.min(crude, MAX_PER_CYCLE);
-    }
-
     public Cycle cycle(long amount, long initial, long carry) {
         long owed = amountPerCycle * amount + carry;
         long crude = owed / normal;

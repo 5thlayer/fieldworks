@@ -28,16 +28,20 @@ public final class OreBlock extends Block {
     private final OreResource resource;
 
     public OreBlock(OreResource resource, BlockBehaviour.Properties props) {
-        super(props
-                .mapColor(MapColor.STONE)
-                .requiresCorrectToolForDrops()
+        super(properties(resource, props));
+        this.resource = resource;
+        registerDefaultState(stateDefinition.any().setValue(STAGE, 0));
+    }
+
+    private static BlockBehaviour.Properties properties(OreResource resource, BlockBehaviour.Properties props) {
+        props = props
+                .mapColor(resource.dimension() == PatchDimension.NETHER ? MapColor.NETHER : MapColor.STONE)
                 .noLootTable()
                 .strength(resource.hardness(), Math.max(resource.hardness(), 3.0f))
                 // A pushed block would arrive full, its delta retired behind it.
                 .pushReaction(PushReaction.BLOCK)
-                .sound(SoundType.STONE));
-        this.resource = resource;
-        registerDefaultState(stateDefinition.any().setValue(STAGE, 0));
+                .sound(SoundType.STONE);
+        return resource.needsTool() ? props.requiresCorrectToolForDrops() : props;
     }
 
     public OreResource resource() {

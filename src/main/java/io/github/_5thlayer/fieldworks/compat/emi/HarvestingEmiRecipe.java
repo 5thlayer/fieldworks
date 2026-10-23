@@ -51,6 +51,5 @@ final class HarvestingEmiRecipe extends BasicEmiRecipe {
         widgets.addText(HarvestRecipeLines.seconds(view), 0, 24, 0xFF808080, false);
         widgets.addText(HarvestRecipeLines.note(view), 0, 35, 0xFF808080, false);
         widgets.addText(HarvestRecipeLines.detail(view), 0, 46, 0xFF808080, false);
-        widgets.addText(HarvestRecipeLines.restores(view), 0, 57, 0xFF808080, false);
     }
 }

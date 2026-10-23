@@ -116,6 +116,38 @@ class PatchShapeTest {
     }
 
     @Test
+    void aNetherCentreCountsEightTimesItsDistanceSoTheSameLawsServeBothDimensions() {
+        PatchLaw quartz = PatchLaw.of(OreResource.QUARTZ);
+
+        assertEquals(PatchDimension.NETHER, quartz.dimension());
+        assertEquals(8 * 100.0, quartz.distance(100, 0), 1e-9);
+        assertEquals(8 * 50.0 * Math.sqrt(2), quartz.distance(50, 50), 1e-9);
+        // A Nether centre 100 blocks out is where an Overworld one 800 blocks out is: the same density and richness.
+        assertEquals(PatchLaw.of(OreResource.IRON).density(800), quartz.density(quartz.distance(100, 0)) * 8.0 / 6.0, 1e-9);
+        assertEquals(IRON.richness(800), quartz.richness(quartz.distance(100, 0)), 1e-9);
+    }
+
+    @Test
+    void nothingGeneratesBelowAResourcesMinimumDistance() {
+        PatchLaw diamond = PatchLaw.of(OreResource.DIAMOND);
+
+        assertTrue(PatchShape.of(diamond, 2, 1400, 0, FLAT, LAND).isEmpty());
+        assertFalse(PatchShape.of(diamond, 2, 1500, 0, FLAT, LAND).isEmpty());
+        assertFalse(PatchShape.of(IRON, 2, 400, 0, FLAT, LAND).isEmpty(), "the starting resources have no minimum");
+    }
+
+    @Test
+    void aNetherResourcesMinimumDistanceIsMeasuredInNetherBlocksTimesEight() {
+        PatchLaw netherite = PatchLaw.of(OreResource.NETHERITE);
+
+        // 2000 Overworld-equivalent blocks is 250 Nether blocks.
+        assertTrue(PatchShape.of(netherite, 2, 249, 0, FLAT, LAND).isEmpty());
+        assertFalse(PatchShape.of(netherite, 2, 250, 0, FLAT, LAND).isEmpty());
+        assertTrue(PatchShape.of(netherite, 2, 2000, 0, FLAT, LAND).isEmpty() == false,
+                "past the gate in the Nether the disc is placed as ever, there being no cap");
+    }
+
+    @Test
     void aDiscIsSmallUntil450() {
         assertTrue(PatchShape.of(IRON, 0.25, 150, 1, FLAT, LAND).isEmpty(),
                 "a radius that rounds below one block does not generate");

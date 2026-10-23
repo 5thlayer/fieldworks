@@ -1,0 +1,8 @@
+{
+  "type": "fieldworks:patch_disc",
+  "resource": "netherite",
+  "biomes": "#fieldworks:patch_nether",
+  "step": "top_layer_modification",
+  "spawn_overrides": {},
+  "terrain_adaptation": "none"
+}

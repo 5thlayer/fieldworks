@@ -1,0 +1,12 @@
+{
+  "type": "fieldworks:harvesting",
+  "source": "fieldworks:netherite_ore",
+  "drilling_fluid": {
+    "fluid": "#fieldworks:drilling_fluids/nether",
+    "amount": 25
+  },
+  "result": "minecraft:netherite_scrap",
+  "duration": 100,
+  "minimum_tier": "fieldworks:harvester_2",
+  "replaces_default": true
+}

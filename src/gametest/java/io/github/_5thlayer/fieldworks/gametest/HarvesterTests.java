@@ -163,6 +163,21 @@ final class HarvesterTests {
         helper.succeed();
     }
 
+    /**
+     * A game-test recipe pumping a well's own cycle in 20 ticks at any tier. The oil well's Default recipe is replaced by
+     * the shipped one, which needs the Electric Harvester (ADR 0007), so a test of the tanks or the cycle over a well on a
+     * Burner Harvester holds this one, which a pack's datapack could write just as well.
+     */
+    static final net.minecraft.resources.Identifier CYCLE_CRUDE =
+            net.minecraft.resources.Identifier.fromNamespaceAndPath("fieldworks", "gametest/crude_cycle");
+
+    /** Sets the Harvester at {@link #ORIGIN} to hold {@link #CYCLE_CRUDE}. */
+    static HarvesterBlockEntity holdingTheWellsCycle(GameTestHelper helper) {
+        HarvesterBlockEntity machine = helper.getBlockEntity(ORIGIN, HarvesterBlockEntity.class);
+        machine.setHeldRecipe(CYCLE_CRUDE);
+        return machine;
+    }
+
     static void tick(GameTestHelper helper, HarvesterBlockEntity machine, int ticks) {
         for (int i = 0; i < ticks; i++) {
             machine.serverTick(helper.getLevel());

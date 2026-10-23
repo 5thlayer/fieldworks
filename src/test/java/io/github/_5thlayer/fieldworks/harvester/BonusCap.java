@@ -33,9 +33,8 @@ import io.github._5thlayer.fieldworks.ore.OreResource;
  * root replaces is not judged, and neither is a harvestable block, whose Default is its loot, which only a loot table
  * evaluated in game could tell. Block tags are read from the root's own tag files.
  *
- * <p>A well recipe is crude's floor role, not a bonus: a crude result that restores a share of the well's starting
- * yield may restore at most the whole of it, and one in fixed mB is not judged, a well's Default yield depending on
- * the well.
+ * <p>A well recipe is not a bonus: a crude result, in fixed mB or the well's own cycle, is not judged, a well's
+ * Default yield depending on the well and its floor being final (ADR 0081).
  */
 final class BonusCap {
 
@@ -75,10 +74,6 @@ final class BonusCap {
                 JsonObject recipe = entry.getValue();
                 JsonElement crude = recipe.get("result").isJsonObject() ? recipe.get("result").getAsJsonObject().get("crude_oil") : null;
                 if (crude != null) {
-                    if (crude.isJsonObject() && crude.getAsJsonObject().get("restores").getAsDouble() > 1) {
-                        violations.add(file + " restores " + crude.getAsJsonObject().get("restores").getAsDouble()
-                                + " of its well's starting yield, over the whole of it");
-                    }
                     continue;
                 }
                 String item = itemOf(recipe.get("result"));

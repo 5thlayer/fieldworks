@@ -6,6 +6,9 @@
     "fieldworks:patch_stone",
     "fieldworks:patch_sulfur",
     "fieldworks:patch_uranium",
+    "fieldworks:patch_redstone",
+    "fieldworks:patch_gold",
+    "fieldworks:patch_diamond",
     "fieldworks:oil_field"
   ]
 }

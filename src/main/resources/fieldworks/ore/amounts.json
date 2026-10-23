@@ -28,7 +28,9 @@
   },
   "resources": {
     "iron": {
-      "default_amount": 8000,
+      "default_amount": 6400,
+      "dimension": "overworld",
+      "min_distance": 0,
       "stage_ratios": [
         1.0,
         0.6333333333333333,
@@ -40,17 +42,19 @@
         0.005333333333333333
       ],
       "patch": {
-        "base_density": 10.0,
+        "base_density": 8.0,
         "base_spots_per_km2": 2.5,
         "random_spot_size_minimum": 0.25,
         "random_spot_size_maximum": 2.0,
-        "regular_rq_factor": 0.11,
+        "regular_rq_factor": 0.1,
         "regular_blob_amplitude_multiplier": 0.125,
         "regular_blob_amplitude_maximum_distance": 1600.0
       }
     },
     "copper": {
       "default_amount": 6400,
+      "dimension": "overworld",
+      "min_distance": 0,
       "stage_ratios": [
         1.0,
         0.6333333333333333,
@@ -72,7 +76,9 @@
       }
     },
     "coal": {
-      "default_amount": 6400,
+      "default_amount": 8000,
+      "dimension": "overworld",
+      "min_distance": 0,
       "stage_ratios": [
         1.0,
         0.6333333333333333,
@@ -84,17 +90,19 @@
         0.005333333333333333
       ],
       "patch": {
-        "base_density": 8.0,
+        "base_density": 10.0,
         "base_spots_per_km2": 2.5,
         "random_spot_size_minimum": 0.25,
         "random_spot_size_maximum": 2.0,
-        "regular_rq_factor": 0.1,
+        "regular_rq_factor": 0.11,
         "regular_blob_amplitude_multiplier": 0.125,
         "regular_blob_amplitude_maximum_distance": 1600.0
       }
     },
     "stone": {
       "default_amount": 3200,
+      "dimension": "overworld",
+      "min_distance": 0,
       "stage_ratios": [
         1.0,
         0.6333333333333333,
@@ -115,8 +123,34 @@
         "regular_blob_amplitude_maximum_distance": 1600.0
       }
     },
+    "sulfur": {
+      "default_amount": 2400,
+      "dimension": "overworld",
+      "min_distance": 300,
+      "stage_ratios": [
+        1.0,
+        0.633,
+        0.367,
+        0.193,
+        0.087,
+        0.027,
+        0.01,
+        0.005
+      ],
+      "patch": {
+        "base_density": 1.5,
+        "base_spots_per_km2": 1.25,
+        "random_spot_size_minimum": 1.0,
+        "random_spot_size_maximum": 3.0,
+        "regular_rq_factor": 0.1,
+        "regular_blob_amplitude_multiplier": 0.125,
+        "regular_blob_amplitude_maximum_distance": 1600.0
+      }
+    },
     "uranium": {
       "default_amount": 1440,
+      "dimension": "overworld",
+      "min_distance": 600,
       "stage_ratios": [
         1.0,
         0.633,
@@ -137,8 +171,10 @@
         "regular_blob_amplitude_maximum_distance": 1600.0
       }
     },
-    "sulfur": {
-      "default_amount": 2400,
+    "redstone": {
+      "default_amount": 4800,
+      "dimension": "overworld",
+      "min_distance": 300,
       "stage_ratios": [
         1.0,
         0.633,
@@ -150,10 +186,130 @@
         0.005
       ],
       "patch": {
-        "base_density": 1.5,
-        "base_spots_per_km2": 1.25,
+        "base_density": 6.0,
+        "base_spots_per_km2": 2.0,
+        "random_spot_size_minimum": 0.25,
+        "random_spot_size_maximum": 2.0,
+        "regular_rq_factor": 0.1,
+        "regular_blob_amplitude_multiplier": 0.125,
+        "regular_blob_amplitude_maximum_distance": 1600.0
+      }
+    },
+    "gold": {
+      "default_amount": 3200,
+      "dimension": "overworld",
+      "min_distance": 500,
+      "stage_ratios": [
+        1.0,
+        0.633,
+        0.367,
+        0.193,
+        0.087,
+        0.027,
+        0.01,
+        0.005
+      ],
+      "patch": {
+        "base_density": 4.0,
+        "base_spots_per_km2": 1.5,
+        "random_spot_size_minimum": 0.5,
+        "random_spot_size_maximum": 2.0,
+        "regular_rq_factor": 0.1,
+        "regular_blob_amplitude_multiplier": 0.125,
+        "regular_blob_amplitude_maximum_distance": 1600.0
+      }
+    },
+    "diamond": {
+      "default_amount": 480,
+      "dimension": "overworld",
+      "min_distance": 1500,
+      "stage_ratios": [
+        1.0,
+        0.633,
+        0.367,
+        0.193,
+        0.087,
+        0.027,
+        0.01,
+        0.005
+      ],
+      "patch": {
+        "base_density": 0.3,
+        "base_spots_per_km2": 0.5,
         "random_spot_size_minimum": 1.0,
-        "random_spot_size_maximum": 3.0,
+        "random_spot_size_maximum": 2.0,
+        "regular_rq_factor": 0.1,
+        "regular_blob_amplitude_multiplier": 0.125,
+        "regular_blob_amplitude_maximum_distance": 1600.0
+      }
+    },
+    "quartz": {
+      "default_amount": 4800,
+      "dimension": "nether",
+      "min_distance": 0,
+      "stage_ratios": [
+        1.0,
+        0.633,
+        0.367,
+        0.193,
+        0.087,
+        0.027,
+        0.01,
+        0.005
+      ],
+      "patch": {
+        "base_density": 6.0,
+        "base_spots_per_km2": 2.0,
+        "random_spot_size_minimum": 0.25,
+        "random_spot_size_maximum": 2.0,
+        "regular_rq_factor": 0.1,
+        "regular_blob_amplitude_multiplier": 0.125,
+        "regular_blob_amplitude_maximum_distance": 1600.0
+      }
+    },
+    "glowstone": {
+      "default_amount": 2400,
+      "dimension": "nether",
+      "min_distance": 0,
+      "stage_ratios": [
+        1.0,
+        0.633,
+        0.367,
+        0.193,
+        0.087,
+        0.027,
+        0.01,
+        0.005
+      ],
+      "patch": {
+        "base_density": 2.0,
+        "base_spots_per_km2": 1.5,
+        "random_spot_size_minimum": 0.5,
+        "random_spot_size_maximum": 2.0,
+        "regular_rq_factor": 0.1,
+        "regular_blob_amplitude_multiplier": 0.125,
+        "regular_blob_amplitude_maximum_distance": 1600.0
+      }
+    },
+    "netherite": {
+      "default_amount": 160,
+      "dimension": "nether",
+      "min_distance": 2000,
+      "stage_ratios": [
+        1.0,
+        0.633,
+        0.367,
+        0.193,
+        0.087,
+        0.027,
+        0.01,
+        0.005
+      ],
+      "patch": {
+        "base_density": 0.1,
+        "base_spots_per_km2": 0.4,
+        "random_spot_size_minimum": 1.0,
+        "random_spot_size_maximum": 2.0,
         "regular_rq_factor": 0.1,
         "regular_blob_amplitude_multiplier": 0.125,
         "regular_blob_amplitude_maximum_distance": 1600.0

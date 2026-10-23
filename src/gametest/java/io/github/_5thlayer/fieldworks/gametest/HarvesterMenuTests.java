@@ -147,6 +147,7 @@ final class HarvesterMenuTests {
     private static void bothTanks(GameTestHelper helper) {
         OilWellBlockEntity well = well(helper, 60_000_000);
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
+        HarvesterTests.holdingTheWellsCycle(helper);
         insertItem(helper, Items.COAL, 4);
         HarvesterMenu menu = menu(helper);
         helper.assertTrue(menu.drillingFluid().isEmpty() && menu.product().isEmpty(), "a new Harvester's menu shows a tank holding something");
@@ -330,6 +331,7 @@ final class HarvesterMenuTests {
     private static void productTankFull(GameTestHelper helper) {
         well(helper, 60_000_000);
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
+        HarvesterTests.holdingTheWellsCycle(helper);
         insertItem(helper, Items.COAL, 4);
         HarvesterBlockEntity machine = machine(helper);
 

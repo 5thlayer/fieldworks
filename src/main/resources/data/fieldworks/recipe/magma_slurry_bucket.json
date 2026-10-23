@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:lava_bucket",
+    "minecraft:soul_soil"
+  ],
+  "result": {
+    "id": "fieldworks:magma_slurry_bucket"
+  }
+}

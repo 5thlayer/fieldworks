@@ -5,6 +5,7 @@ package io.github._5thlayer.fieldworks;
 
 import io.github._5thlayer.fieldworks.fluid.CrudeOil;
 import io.github._5thlayer.fieldworks.fluid.DrillingMud;
+import io.github._5thlayer.fieldworks.fluid.MagmaSlurry;
 import io.github._5thlayer.fieldworks.harvester.Harvesters;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
 import io.github._5thlayer.fieldworks.oil.Tar;
@@ -38,5 +39,6 @@ final class WorksTabContents {
         event.accept(CrudeOil.BUCKET.get());
         event.accept(DrillingMud.BOTTLE.get());
         event.accept(DrillingMud.BUCKET.get());
+        event.accept(MagmaSlurry.BUCKET.get());
     }
 }

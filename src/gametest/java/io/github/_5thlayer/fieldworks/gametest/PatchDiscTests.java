@@ -21,6 +21,7 @@ import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreDelta;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.ore.OreResource;
+import io.github._5thlayer.fieldworks.ore.PatchDimension;
 import io.github._5thlayer.fieldworks.ore.PatchDisc;
 import io.github._5thlayer.fieldworks.ore.PatchLaw;
 import io.github._5thlayer.fieldworks.worldgen.PatchDiscStructure;
@@ -34,7 +35,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
@@ -61,6 +64,10 @@ final class PatchDiscTests {
     static final TagKey<Biome> LAND = TagKey.create(Registries.BIOME,
             Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_land"));
 
+    /** The Nether biomes a Nether patch may lie in (ADR 0007). */
+    static final TagKey<Biome> NETHER_LAND = TagKey.create(Registries.BIOME,
+            Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_nether"));
+
     private static final int HOLE = 150;
 
     private PatchDiscTests() {
@@ -71,14 +78,23 @@ final class PatchDiscTests {
         for (int i = 0; i < resources.length; i++) {
             OreResource resource = resources[i];
             ChunkPos far = new ChunkPos(100 + 8 * i, 100);
-            tests.test("patch_" + resource.key() + "_disc_places", 20, helper -> discPlaces(helper, resource, far));
-            tests.test("patch_" + resource.key() + "_nothing_in_the_hole", 20,
-                    helper -> nothingInTheHole(helper, resource));
-            tests.test("patch_" + resource.key() + "_nothing_off_the_land", 20,
+            if (nether(resource)) {
+                tests.test("patches_" + resource.key() + "_disc_lies_on_the_open_nether_floor", 40,
+                        helper -> netherDiscPlaces(helper, resource, far));
+            } else {
+                tests.test("patch_" + resource.key() + "_disc_places", 20, helper -> discPlaces(helper, resource, far));
+            }
+            tests.test("patches_" + resource.key() + "_nothing_inside_its_minimum_distance", 40,
+                    helper -> nothingInsideTheMinimumDistance(helper, resource));
+            tests.test("patch_" + resource.key() + "_nothing_off_the_land", 40,
                     helper -> nothingOffTheLand(helper, resource, far));
-            tests.test("patch_" + resource.key() + "_switched_off_generates_nothing", 20,
+            tests.test("patch_" + resource.key() + "_switched_off_generates_nothing", 40,
                     helper -> switchedOff(helper, resource, far));
+            tests.test("patches_" + resource.key() + "_generates_only_in_its_own_dimension", 40,
+                    helper -> onlyInItsOwnDimension(helper, resource, far));
         }
+        tests.test("patches_a_nether_ore_block_exhausted_becomes_netherrack_and_an_overworld_one_stone", 1000,
+                PatchDiscTests::exhaustedBlocks);
         tests.test("patch_marker_is_found_once_and_removed_when_the_last_block_goes", 20,
                 helper -> markerFollowsThePatch(helper, OreResource.IRON, new ChunkPos(100, 140)));
     }
@@ -265,21 +281,265 @@ final class PatchDiscTests {
         helper.succeed();
     }
 
-    private static void nothingInTheHole(GameTestHelper helper, OreResource resource) {
+    /**
+     * Nothing generates in the starting area, nor inside the resource's own minimum distance, all in
+     * Overworld-equivalent blocks: a Nether chunk counts for eight times its distance from origin, so
+     * the gate is crossed at an eighth of the blocks. A ring of chunks just inside the gate holds
+     * nothing, and a ring just beyond it holds a patch.
+     */
+    private static void nothingInsideTheMinimumDistance(GameTestHelper helper, OreResource resource) {
         Holder<Structure> structure = resolve(helper, resource);
         if (structure == null) {
             return;
         }
-        int reach = SectionPos.blockToSectionCoord(HOLE) + 1;
+        ServerLevel level = levelOf(helper, resource);
+        int scale = resource.dimension().distanceScale();
+        int minimum = resource.corpus().minDistance();
+        // The starting area first: every chunk within the placement radius, which for a Nether resource is an eighth of it.
+        int hole = (int) Math.ceil((double) HOLE / scale);
+        int reach = SectionPos.blockToSectionCoord(hole) + 1;
         for (int x = -reach; x <= reach; x++) {
             for (int z = -reach; z <= reach; z++) {
                 ChunkPos chunk = new ChunkPos(x, z);
-                if (distance(chunk) <= HOLE && generate(helper.getLevel(), structure, chunk).isValid()) {
-                    helper.fail(resource.key() + " generated at " + chunk + ", " + distance(chunk) + " from origin");
+                if (distance(chunk) * scale <= HOLE && generate(level, structure, chunk).isValid()) {
+                    helper.fail(resource.key() + " generated at " + chunk + ", " + distance(chunk) * scale + " from origin");
                     return;
                 }
             }
         }
+        if (minimum > 0) {
+            for (int angle = 0; angle < 16; angle++) {
+                double theta = Math.PI / 8 * angle;
+                for (double inside : new double[] {minimum - 100, minimum - 40}) {
+                    ChunkPos chunk = chunkAt(inside / scale, theta);
+                    if (distance(chunk) * scale < minimum && generate(level, structure, chunk).isValid()) {
+                        helper.fail(resource.key() + " generated at " + chunk + ", " + distance(chunk) * scale
+                                + " from origin, inside its minimum distance " + minimum);
+                        return;
+                    }
+                }
+            }
+        }
+        // And beyond the gate it does generate, somewhere on a ring a little past it.
+        double beyond = Math.max(minimum + 300, 600);
+        int generated = 0;
+        for (int angle = 0; angle < 32; angle++) {
+            for (double extra : new double[] {0, 64, 128}) {
+                ChunkPos chunk = chunkAt((beyond + extra) / scale, Math.PI / 16 * angle);
+                if (generate(level, structure, chunk).isValid()) {
+                    generated++;
+                }
+            }
+        }
+        if (generated == 0) {
+            helper.fail(resource.key() + " generated nowhere on a ring " + beyond + " from origin, past its gate of " + minimum);
+            return;
+        }
+        helper.succeed();
+    }
+
+    private static ChunkPos chunkAt(double blocks, double theta) {
+        return new ChunkPos(SectionPos.blockToSectionCoord((int) Math.round(blocks * Math.cos(theta))),
+                SectionPos.blockToSectionCoord((int) Math.round(blocks * Math.sin(theta))));
+    }
+
+    /**
+     * A resource generates only in the dimension its Patch numbers name: its structure's biomes hold that
+     * dimension's biomes and nothing of the other's, and a start there is refused by the other dimension's
+     * real biomes, with the structure's own biome set as the test.
+     */
+    private static void onlyInItsOwnDimension(GameTestHelper helper, OreResource resource, ChunkPos chunk) {
+        Holder<Structure> structure = resolve(helper, resource);
+        if (structure == null) {
+            return;
+        }
+        var biomes = helper.getLevel().registryAccess().lookupOrThrow(Registries.BIOME);
+        List<ResourceKey<Biome>> theirs = nether(resource)
+                ? List.of(Biomes.PLAINS, Biomes.DESERT, Biomes.FOREST, Biomes.OCEAN, Biomes.THE_END)
+                : List.of(Biomes.NETHER_WASTES, Biomes.SOUL_SAND_VALLEY, Biomes.CRIMSON_FOREST, Biomes.WARPED_FOREST,
+                        Biomes.BASALT_DELTAS, Biomes.THE_END);
+        for (ResourceKey<Biome> key : theirs) {
+            if (structure.value().biomes().contains(biomes.getOrThrow(key))) {
+                helper.fail(resource.key() + " may generate in " + key.identifier());
+                return;
+            }
+        }
+        if (nether(resource)) {
+            for (ResourceKey<Biome> key : List.of(Biomes.NETHER_WASTES, Biomes.SOUL_SAND_VALLEY, Biomes.CRIMSON_FOREST,
+                    Biomes.WARPED_FOREST, Biomes.BASALT_DELTAS)) {
+                if (!structure.value().biomes().contains(biomes.getOrThrow(key))) {
+                    helper.fail(resource.key() + " may not generate in the Nether biome " + key.identifier());
+                    return;
+                }
+            }
+        }
+        // Each other dimension's real biome source, with only the structure's own biomes valid.
+        for (ServerLevel level : List.of(helper.getLevel(), helper.getLevel().getServer().getLevel(Level.NETHER),
+                helper.getLevel().getServer().getLevel(Level.END))) {
+            if (level == null || level == levelOf(helper, resource)) {
+                continue;
+            }
+            for (int i = 0; i < 4; i++) {
+                ChunkPos at = new ChunkPos(chunk.x() + 3 * i, chunk.z());
+                if (generate(level, structure, at, structure.value().biomes()::contains).isValid()) {
+                    helper.fail(resource.key() + " generated in " + level.dimension().identifier() + " at " + at);
+                    return;
+                }
+            }
+        }
+        helper.succeed();
+    }
+
+    /**
+     * An ore block whose last unit is drawn becomes stone, or netherrack for a Nether resource, so a
+     * patch lies flush with the ground it was dealt on (ADR 0007).
+     */
+    private static void exhaustedBlocks(GameTestHelper helper) {
+        for (OreResource resource : List.of(OreResource.IRON, OreResource.QUARTZ, OreResource.NETHERITE, OreResource.DIAMOND)) {
+            BlockPos rel = new BlockPos(2, 1, 2);
+            OreBlock ore = FieldworksRegistries.ore(resource).get();
+            helper.setBlock(rel, ore);
+            BlockPos pos = helper.absolutePos(rel);
+            int units = OreMining.initialAmount(helper.getLevel(), ore, pos);
+            for (int unit = 0; unit < units; unit++) {
+                helper.assertTrue(helper.getLevel().getBlockState(pos).is(ore), resource.key() + " ran out after " + unit + " of " + units);
+                OreMining.draw(helper.getLevel(), ore, pos);
+            }
+            var spent = nether(resource) ? Blocks.NETHERRACK : Blocks.STONE;
+            helper.assertTrue(helper.getLevel().getBlockState(pos).is(spent),
+                    resource.key() + " exhausted became " + helper.getLevel().getBlockState(pos) + ", not " + spent);
+        }
+        helper.succeed();
+    }
+
+    static boolean nether(OreResource resource) {
+        return resource.dimension() == PatchDimension.NETHER;
+    }
+
+    /** The level a resource's patches lie in: the Overworld the test stands in, or the server's real Nether. */
+    static ServerLevel levelOf(GameTestHelper helper, OreResource resource) {
+        if (!nether(resource)) {
+            return helper.getLevel();
+        }
+        ServerLevel level = helper.getLevel().getServer().getLevel(Level.NETHER);
+        if (level == null) {
+            throw helper.assertionException("the game-test server has no Nether");
+        }
+        return level;
+    }
+
+    /**
+     * A Nether patch in the server's real Nether, generated and placed through the structure's own biome
+     * test, from the first chunk at or after {@code from} where one is found. Each ore block is the floor
+     * itself, a solid block with air above it, under the bedrock roof and clear of lava, and the disc follows
+     * the uneven floor column by column within eight blocks of the centre's, and the few columns it left
+     * bare are ones the lava took or the floor put out of reach.
+     */
+    private static void netherDiscPlaces(GameTestHelper helper, OreResource resource, ChunkPos from) {
+        Holder<Structure> structure = resolve(helper, resource);
+        if (structure == null) {
+            return;
+        }
+        ServerLevel level = levelOf(helper, resource);
+        StructureStart start = null;
+        ChunkPos chunk = from;
+        for (int i = 0; i < 80 && start == null; i++) {
+            chunk = new ChunkPos(from.x() + i, from.z());
+            StructureStart found = generate(level, structure, chunk, structure.value().biomes()::contains);
+            if (found.isValid()) {
+                start = found;
+            }
+        }
+        if (start == null || !(start.getPieces().getFirst() instanceof PatchDisc.Source source)) {
+            helper.fail(resource.key() + " generated no disc in the Nether in 80 chunks from " + from);
+            return;
+        }
+        PatchDisc disc = source.disc();
+        BoundingBox box = start.getBoundingBox();
+        loadChunks(level, box);
+        place(level, structure.value(), start, chunk, box);
+
+        BlockState ore = FieldworksRegistries.ore(resource).get().defaultBlockState();
+        int placed = 0;
+        int missed = 0;
+        int lowest = Integer.MAX_VALUE;
+        int highest = Integer.MIN_VALUE;
+        BlockPos any = null;
+        for (int x = box.minX(); x <= box.maxX(); x++) {
+            for (int z = box.minZ(); z <= box.maxZ(); z++) {
+                List<BlockPos> ores = new ArrayList<>();
+                for (int y = level.getMinY(); y <= level.getMaxY(); y++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    BlockState state = level.getBlockState(pos);
+                    if (state.getBlock() instanceof OreBlock) {
+                        ores.add(pos);
+                    }
+                }
+                if (ores.size() > 1) {
+                    helper.fail(resource.key() + "'s disc is " + ores.size() + " deep at " + x + ", " + z);
+                    return;
+                }
+                if (ores.isEmpty()) {
+                    // A column the disc covers and left bare is one whose floor lay under lava or out of the centre's reach.
+                    if (source.covers(x, z)) {
+                        missed++;
+                    }
+                    continue;
+                }
+                BlockPos pos = ores.getFirst();
+                if (!source.covers(x, z)) {
+                    helper.fail(resource.key() + "'s disc placed ore at " + pos + ", outside its columns");
+                    return;
+                }
+                if (level.getBlockState(pos) != ore) {
+                    helper.fail(resource.key() + "'s disc placed " + level.getBlockState(pos) + " at " + pos);
+                    return;
+                }
+                if (pos.getY() >= level.getMinY() + level.dimensionType().logicalHeight() - 6) {
+                    helper.fail(resource.key() + "'s disc placed ore at " + pos + ", in or on the bedrock roof");
+                    return;
+                }
+                if (!level.getBlockState(pos.above()).isAir()) {
+                    helper.fail(resource.key() + "'s ore at " + pos + " has " + level.getBlockState(pos.above()) + " above it, not air");
+                    return;
+                }
+                if (level.getFluidState(pos.above()).is(FluidTags.LAVA) || level.getFluidState(pos).is(FluidTags.LAVA)) {
+                    helper.fail(resource.key() + "'s ore at " + pos + " is in lava");
+                    return;
+                }
+                lowest = Math.min(lowest, pos.getY());
+                highest = Math.max(highest, pos.getY());
+                any = pos;
+                placed++;
+            }
+        }
+        if (placed == 0) {
+            helper.fail(resource.key() + "'s disc at " + chunk + " placed no ore");
+            return;
+        }
+        if (missed > disc.blockCount() / 4) {
+            helper.fail(resource.key() + "'s disc left " + missed + " of its " + disc.blockCount() + " columns bare");
+            return;
+        }
+        // Each column within eight blocks of the centre's floor, so the disc is one place and not every cave level.
+        if (highest - lowest > 16) {
+            helper.fail(resource.key() + "'s disc spans floors from " + lowest + " to " + highest + ", more than 16 apart");
+            return;
+        }
+        if (placed + missed != disc.blockCount()) {
+            helper.fail(resource.key() + "'s piece stored " + disc.blockCount() + " blocks and " + placed + " were placed, with "
+                    + missed + " left to the lava");
+            return;
+        }
+        OreBlock block = (OreBlock) ore.getBlock();
+        int amount = disc.amountPerBlock();
+        OreDelta.Draw draw = OreMining.draw(level, block, any);
+        if (amount <= 0 || draw.paid() != 1 || draw.remaining() != amount - 1) {
+            helper.fail(resource.key() + " at " + any + " drew " + draw + " from a disc holding " + amount + " a block");
+            return;
+        }
+        LOGGER.info("PATCH {} nether disc at {}, {}: {} blocks on a floor from {} to {}, {} left to the lava",
+                resource.key(), disc.centreX(), disc.centreZ(), placed, lowest, highest, missed);
         helper.succeed();
     }
 
@@ -289,12 +549,12 @@ final class PatchDiscTests {
         if (structure == null) {
             return;
         }
-        String wet = wetBiomeInLand(helper.getLevel(), structure.value());
+        String wet = nether(resource) ? null : wetBiomeInLand(helper.getLevel(), structure.value());
         if (wet != null) {
             helper.fail(resource.key() + " may generate in " + wet);
             return;
         }
-        if (generate(helper.getLevel(), structure, chunk, biome -> biome.is(Biomes.OCEAN)).isValid()) {
+        if (generate(levelOf(helper, resource), structure, chunk, biome -> biome.is(Biomes.OCEAN)).isValid()) {
             helper.fail(resource.key() + " generated where its biome was not valid");
             return;
         }
@@ -318,17 +578,27 @@ final class PatchDiscTests {
         if (structure == null) {
             return;
         }
+        ServerLevel level = levelOf(helper, resource);
+        // A Nether resource may find no floor at one chunk, so the first chunk it generates at is the one switched.
+        ChunkPos at = chunk;
+        for (int i = 0; i < 80 && !generate(level, structure, at).isValid(); i++) {
+            at = new ChunkPos(chunk.x() + i + 1, chunk.z());
+        }
+        if (!generate(level, structure, at).isValid()) {
+            helper.fail(resource.key() + " generated nowhere near " + chunk + " with its switch on");
+            return;
+        }
         var generate = FieldworksConfig.generateSwitch(resource);
         generate.set(false);
         try {
-            if (generate(helper.getLevel(), structure, chunk).isValid()) {
+            if (generate(level, structure, at).isValid()) {
                 helper.fail(resource.key() + " generated with its switch off");
                 return;
             }
         } finally {
             generate.set(true);
         }
-        if (!generate(helper.getLevel(), structure, chunk).isValid()) {
+        if (!generate(level, structure, at).isValid()) {
             helper.fail(resource.key() + " did not generate with its switch back on");
             return;
         }
@@ -367,8 +637,9 @@ final class PatchDiscTests {
             helper.fail(id + " holds " + structure.value() + ", not " + resource.key() + "'s disc");
             return null;
         }
-        if (!structure.value().biomes().unwrapKey().map(LAND::equals).orElse(false)) {
-            helper.fail(id + " is confined to " + structure.value().biomes() + ", not " + LAND.location());
+        TagKey<Biome> land = nether(resource) ? NETHER_LAND : LAND;
+        if (!structure.value().biomes().unwrapKey().map(land::equals).orElse(false)) {
+            helper.fail(id + " is confined to " + structure.value().biomes() + ", not " + land.location());
             return null;
         }
         return structure;

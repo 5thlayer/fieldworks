@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import io.github._5thlayer.fieldworks.ore.OreCorpus;
+import io.github._5thlayer.fieldworks.ore.PatchDimension;
 import io.github._5thlayer.fieldworks.ore.PatchLaw;
 
 /** Crude oil's frozen numbers from {@code fieldworks/oil/crude.json}, beside the law it shares with the ores. */
@@ -56,7 +57,7 @@ public final class OilCorpus {
                     new InputStreamReader(stream, StandardCharsets.UTF_8), JsonObject.class);
             OreCorpus ores = OreCorpus.get();
             PatchLaw law = new PatchLaw(OreCorpus.patch(crude.getAsJsonObject("patch")),
-                    ores.densityLaw(), ores.distanceLaw(), ores.edge());
+                    ores.densityLaw(), ores.distanceLaw(), ores.edge(), PatchDimension.OVERWORLD, 0);
             return new OilCorpus(crude, law);
         } catch (IOException broken) {
             throw new IllegalStateException("could not read " + path, broken);

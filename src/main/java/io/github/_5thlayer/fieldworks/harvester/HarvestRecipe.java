@@ -19,7 +19,6 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github._5thlayer.fieldworks.FieldworksTags;
-import io.github._5thlayer.fieldworks.harvester.OperationChoice.YieldCondition;
 import io.github._5thlayer.fieldworks.oil.OilWellBlock;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
@@ -50,12 +49,10 @@ import net.minecraft.world.level.material.Fluid;
  * <p>{@code drilling_fluid}, optional, is a fluid, fluid tag or list of fluids and the mB an operation takes of it
  * from the Harvester's Drilling Fluid tank; only a Held recipe takes it (#11).
  *
- * <p>{@code result} is an item stack, or for an oil well {@code {"crude_oil": <mB>}} or
- * {@code {"crude_oil": {"restores": <fraction>}}}, the crude one operation pumps in place of the well's own cycle's
- * yield: so many mB, or that fraction of the yield the well had at its starting amount (the cycle still takes its
- * step off the well, ADR 0002).
- * {@code yield_condition}, optional and for a well, is {@code above_floor} or {@code at_floor}: the recipe works
- * a well only in that state, and with none it works a well either way (#12).
+ * <p>{@code result} is an item stack, or for an oil well {@code {"crude_oil": <mB>}}, the crude one operation pumps
+ * in place of the well's own cycle's yield, or {@code {"crude_oil": "cycle"}}, the well's own cycle's yield (the cycle
+ * takes its step off the well either way, ADR 0002). A well's floor is final: no recipe lifts a well above it
+ * (ADR 0081).
  *
  * <p>{@code minimum_tier} names a Harvester block, compared by the tier's rank (ADR 0005), and
  * {@code replaces_default}, false when omitted, removes its sources' Default recipes (a fluid-only resource).
@@ -66,26 +63,26 @@ import net.minecraft.world.level.material.Fluid;
  * <p>{@link #matches} is false: nothing looks one up by its inputs. A Harvester reads them by id.
  */
 public record HarvestRecipe(HolderSet<Block> source, Result result, int duration,
-        Optional<Identifier> minimumTier, boolean replacesDefault, Optional<FluidInput> drillingFluid,
-        Optional<YieldCondition> yieldCondition) implements Recipe<RecipeInput> {
+        Optional<Identifier> minimumTier, boolean replacesDefault, Optional<FluidInput> drillingFluid)
+        implements Recipe<RecipeInput> {
 
-    /** What one operation yields: an item stack, or crude oil for a well, fixed or restored. */
+    /** What one operation yields: an item stack, or crude oil for a well, fixed or the well's own cycle's. */
     public sealed interface Result {
 
-        /** Crude is an object, {@code {"crude_oil": 10}} or {@code {"crude_oil": {"restores": 1.0}}}; anything else is read as an item stack. */
-        Codec<Result> CODEC = Codec.either(Codec.either(Crude.CODEC, Restored.CODEC), ItemStackTemplate.CODEC).xmap(
-                either -> either.map(crude -> crude.map(fixed -> fixed, restored -> restored), Item::new),
+        /** Crude is an object, {@code {"crude_oil": 10}} or {@code {"crude_oil": "cycle"}}; anything else is read as an item stack. */
+        Codec<Result> CODEC = Codec.either(Codec.either(Crude.CODEC, Cycle.CODEC), ItemStackTemplate.CODEC).xmap(
+                either -> either.map(crude -> crude.map(fixed -> fixed, cycle -> cycle), Item::new),
                 Result::toEither);
 
         StreamCodec<RegistryFriendlyByteBuf, Result> STREAM_CODEC = ByteBufCodecs.either(
-                ByteBufCodecs.either(Crude.STREAM_CODEC, Restored.STREAM_CODEC), ItemStackTemplate.STREAM_CODEC).map(
-                either -> either.map(crude -> crude.map(fixed -> fixed, restored -> restored), Item::new),
+                ByteBufCodecs.either(Crude.STREAM_CODEC, Cycle.STREAM_CODEC), ItemStackTemplate.STREAM_CODEC).map(
+                either -> either.map(crude -> crude.map(fixed -> fixed, cycle -> cycle), Item::new),
                 Result::toEither);
 
-        private static Either<Either<Crude, Restored>, ItemStackTemplate> toEither(Result result) {
+        private static Either<Either<Crude, Cycle>, ItemStackTemplate> toEither(Result result) {
             return switch (result) {
                 case Crude crude -> Either.left(Either.left(crude));
-                case Restored restored -> Either.left(Either.right(restored));
+                case Cycle cycle -> Either.left(Either.right(cycle));
                 case Item item -> Either.right(item.template());
             };
         }
@@ -106,16 +103,17 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
             private static final StreamCodec<ByteBuf, Crude> STREAM_CODEC = ByteBufCodecs.VAR_INT.map(Crude::new, Crude::millibuckets);
         }
 
-        /**
-         * The crude one operation pumps as {@code fraction} of the yield the well had at its starting amount, so a well
-         * that started rich is restored to more than one that started poor (ADR 0002).
-         */
-        record Restored(double fraction) implements Result {
+        /** The crude of the well's own cycle, which decays to its floor and no further (ADR 0081). */
+        record Cycle() implements Result {
 
-            private static final Codec<Restored> CODEC = Codec.DOUBLE.fieldOf("restores").codec().fieldOf("crude_oil").codec()
-                    .xmap(Restored::new, Restored::fraction);
+            private static final String NAME = "cycle";
 
-            private static final StreamCodec<ByteBuf, Restored> STREAM_CODEC = ByteBufCodecs.DOUBLE.map(Restored::new, Restored::fraction);
+            private static final Codec<Cycle> CODEC = Codec.STRING.fieldOf("crude_oil").codec().comapFlatMap(
+                    name -> NAME.equals(name) ? DataResult.success(new Cycle())
+                            : DataResult.error(() -> "a Harvest Recipe's crude_oil must be a number of mB or \"cycle\", not " + name),
+                    cycle -> NAME);
+
+            private static final StreamCodec<ByteBuf, Cycle> STREAM_CODEC = StreamCodec.unit(new Cycle());
         }
     }
 
@@ -212,7 +210,7 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
         Optional<OperationChoice.DrillingFluid> fluid = drillingFluid.map(input -> new OperationChoice.DrillingFluid(
                 input.serving().stream().flatMap(holder -> holder.unwrapKey().stream()).map(key -> key.identifier().toString())
                         .collect(Collectors.toUnmodifiableSet()), input.amount()));
-        return new OperationChoice.Recipe<>(id.toString(), blocks, tags, duration, minimum, replacesDefault, fluid, yieldCondition, result);
+        return new OperationChoice.Recipe<>(id.toString(), blocks, tags, duration, minimum, replacesDefault, fluid, result);
     }
 
     private static DataResult<HarvestRecipe> check(HarvestRecipe recipe) {
@@ -229,9 +227,6 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
         if (recipe.result instanceof Result.Crude crude && crude.millibuckets() < 1) {
             return DataResult.error(() -> "a Harvest Recipe's crude_oil result must be at least 1 mB, not " + crude.millibuckets());
         }
-        if (recipe.result instanceof Result.Restored restored && !(restored.fraction() > 0 && restored.fraction() <= 1)) {
-            return DataResult.error(() -> "a Harvest Recipe's crude_oil restores must be above 0 and at most 1.0, not " + restored.fraction());
-        }
         // A block tag is read after the load, so only a source named block by block can be checked here (#12).
         List<Holder<Block>> named = recipe.source.unwrap().right().orElse(List.of());
         boolean wells = named.stream().anyMatch(block -> block.value() instanceof OilWellBlock);
@@ -242,19 +237,8 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
         if (recipe.result instanceof Result.Item && wells) {
             return DataResult.error(() -> "a Harvest Recipe's source names an oil well, which yields crude_oil, not an item");
         }
-        if (recipe.yieldCondition.isPresent() && others) {
-            return DataResult.error(() -> "a Harvest Recipe's yield_condition is for an oil well, and its source names another block");
-        }
         return DataResult.success(recipe);
     }
-
-    private static final Codec<YieldCondition> YIELD_CODEC = Codec.STRING.comapFlatMap(
-            name -> YieldCondition.byId(name).map(DataResult::success).orElseGet(() -> DataResult.error(
-                    () -> "a Harvest Recipe's yield_condition must be above_floor or at_floor, not " + name)),
-            YieldCondition::id);
-
-    private static final StreamCodec<ByteBuf, YieldCondition> YIELD_STREAM_CODEC =
-            ByteBufCodecs.STRING_UTF8.map(name -> YieldCondition.byId(name).orElseThrow(), YieldCondition::id);
 
     static final MapCodec<HarvestRecipe> CODEC = RecordCodecBuilder.<HarvestRecipe>mapCodec(instance -> instance.group(
             RegistryCodecs.homogeneousList(Registries.BLOCK).fieldOf("source").forGetter(HarvestRecipe::source),
@@ -262,8 +246,7 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
             Codec.INT.fieldOf("duration").forGetter(HarvestRecipe::duration),
             Identifier.CODEC.optionalFieldOf("minimum_tier").forGetter(HarvestRecipe::minimumTier),
             Codec.BOOL.optionalFieldOf("replaces_default", false).forGetter(HarvestRecipe::replacesDefault),
-            FluidInput.CODEC.optionalFieldOf("drilling_fluid").forGetter(HarvestRecipe::drillingFluid),
-            YIELD_CODEC.optionalFieldOf("yield_condition").forGetter(HarvestRecipe::yieldCondition)
+            FluidInput.CODEC.optionalFieldOf("drilling_fluid").forGetter(HarvestRecipe::drillingFluid)
     ).apply(instance, HarvestRecipe::new)).flatXmap(HarvestRecipe::check, HarvestRecipe::check);
 
     static final StreamCodec<RegistryFriendlyByteBuf, HarvestRecipe> STREAM_CODEC = StreamCodec.composite(
@@ -273,7 +256,6 @@ public record HarvestRecipe(HolderSet<Block> source, Result result, int duration
             ByteBufCodecs.optional(Identifier.STREAM_CODEC), HarvestRecipe::minimumTier,
             ByteBufCodecs.BOOL, HarvestRecipe::replacesDefault,
             ByteBufCodecs.optional(FluidInput.STREAM_CODEC), HarvestRecipe::drillingFluid,
-            ByteBufCodecs.optional(YIELD_STREAM_CODEC), HarvestRecipe::yieldCondition,
             HarvestRecipe::new);
 
     static RecipeSerializer<HarvestRecipe> serializer() {

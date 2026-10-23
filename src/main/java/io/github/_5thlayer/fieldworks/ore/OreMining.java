@@ -25,14 +25,14 @@ import org.slf4j.Logger;
 /**
  * The draw: one break takes one unit and the block stands until the count reaches zero (ADR-0002).
  * A hand break is cancelled rather than allowed to destroy a block holding hundreds of units, and
- * a machine takes from the same number through {@link #draw}. A depleted block becomes stone, so
- * a patch lies flush with the ground it was dealt on.
+ * a machine takes from the same number through {@link #draw}. A depleted block becomes stone, or
+ * netherrack in the Nether, so a patch lies flush with the ground it was dealt on.
  */
 public final class OreMining {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** The block {@link #draw} is replacing with stone, whose removal is not a loss of its units. */
+    /** The block {@link #draw} is replacing with stone or netherrack, whose removal is not a loss of its units. */
     private static @Nullable BlockPos depleting;
 
     private OreMining() {
@@ -85,7 +85,7 @@ public final class OreMining {
         if (draw.exhausted()) {
             depleting = pos;
             try {
-                level.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
+                level.setBlockAndUpdate(pos, spent(ore.resource()));
             } finally {
                 depleting = null;
             }
@@ -96,6 +96,11 @@ public final class OreMining {
             level.setBlockAndUpdate(pos, ore.stateFor(draw.remaining(), initial));
         }
         return draw;
+    }
+
+    /** What an exhausted block becomes: the stone a Nether resource lies on there is netherrack. */
+    private static BlockState spent(OreResource resource) {
+        return (resource.dimension() == PatchDimension.NETHER ? Blocks.NETHERRACK : Blocks.STONE).defaultBlockState();
     }
 
     /** What is left in the block at {@code pos}, for a HUD. */

@@ -175,7 +175,7 @@ final class HarvesterWellTests {
         return well;
     }
 
-    /** A Burner Harvester facing north over the layer, fed a stack of coal through its item capability. */
+    /** A Burner Harvester facing north over the layer, fed a stack of coal through its item capability, holding the cycle recipe. */
     private static HarvesterBlockEntity harvester(GameTestHelper helper) {
         if (helper.getBlockState(CENTRE).isAir()) {
             helper.setBlock(CENTRE, Blocks.STONE);
@@ -188,7 +188,7 @@ final class HarvesterWellTests {
             helper.assertValueEqual(items.insert(ItemResource.of(Items.COAL), 64, feeding), 64, "coal the Harvester took");
             feeding.commit();
         }
-        return helper.getBlockEntity(ORIGIN, HarvesterBlockEntity.class);
+        return HarvesterTests.holdingTheWellsCycle(helper);
     }
 
     /** The fluid capability on a side of the footprint, where a pipe would meet it. */

@@ -3,6 +3,8 @@
 
 package io.github._5thlayer.fieldworks.worldgen;
 
+import java.util.OptionalInt;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.LevelReader;
@@ -27,6 +29,17 @@ final class Ground {
             y--;
         }
         return y;
+    }
+
+    /**
+     * The y of the open floor in a Nether column, or empty where it lies under lava (ADR 0007). Plants and
+     * fire standing on it do not make it less open.
+     */
+    static OptionalInt nether(LevelReader level, int x, int z) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos(x, 0, z);
+        // The Nether's blocks stop at its logical height, 128; the 256 the dimension spans are empty air over the roof.
+        int top = Math.min(level.getMaxY(), level.getMinY() + level.dimensionType().logicalHeight() - 1);
+        return NetherFloor.of(y -> level.getBlockState(cursor.setY(y)), level.getMinY(), top);
     }
 
     /** Water is not terrain either, so a patch that clips a pond lies on its floor rather than floating. */

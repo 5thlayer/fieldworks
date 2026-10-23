@@ -33,6 +33,12 @@ class OreResourceTest {
         assertEquals("minecraft:cobblestone", OreResource.STONE.drop());
         assertEquals("fieldworks:raw_uranium", OreResource.URANIUM.drop());
         assertEquals("fieldworks:sulfur", OreResource.SULFUR.drop());
+        assertEquals("minecraft:redstone", OreResource.REDSTONE.drop());
+        assertEquals("minecraft:raw_gold", OreResource.GOLD.drop());
+        assertEquals("minecraft:diamond", OreResource.DIAMOND.drop());
+        assertEquals("minecraft:quartz", OreResource.QUARTZ.drop());
+        assertEquals("minecraft:glowstone_dust", OreResource.GLOWSTONE.drop());
+        assertEquals("minecraft:netherite_scrap", OreResource.NETHERITE.drop());
     }
 
     @Test
