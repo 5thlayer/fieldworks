@@ -15,7 +15,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 - **Breaking:** uranium ore and oil wells need the Electric Harvester, and diamond and netherite ore too. Uranium and diamond also need drilling mud (10 mB a draw) and netherite magma slurry (25 mB), as written Harvest Recipes that replace the default, `fieldworks:uranium_from_ore`, `diamond_from_ore`, `netherite_scrap_from_ore` and `crude_from_oil_well`; a Burner Harvester can no longer work them, and an Electric Harvester works none until the recipe is held.
 - **Breaking:** an oil well decayed to its floor pumps at the floor for good: nothing raises it. The drilling mud Harvest Recipe `fieldworks:crude_from_drilling_mud` is gone, and the Harvest Recipe codec no longer accepts `yield_condition` (ignored) or a crude result that `restores` (refused). A well's result can instead be `{"crude_oil": "cycle"}`, the well's own yield.
 - **Breaking:** the new resources, and the minimum distances, apply only to chunks generated after updating: patches are structures, so an existing world keeps the land it has.
-- A Harvester whose only sources need a written recipe held, as netherite, uranium, diamond and oil wells do, says so ("Hold a recipe to work what is under it", `IdleReason.RECIPE_NEEDED`) in place of "Nothing under it to work".
+- A Harvester whose only sources need a written recipe held, as netherite, uranium, diamond and oil wells do, says so ("Needs its recipe held: pick it in EMI or JEI", `IdleReason.RECIPE_NEEDED`) in place of "Nothing under it to work".
 - The Jade config entries for the Harvester and ore amount providers have names in lang, so a dev client with assertions on no longer crashes on the title screen with "Missing config translation".
 
 ## 0.2.9
