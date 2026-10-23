@@ -20,17 +20,17 @@ import net.minecraft.world.level.block.state.StateDefinition;
  */
 public final class HarvesterPartBlock extends FootprintPartBlock {
 
-    private final Supplier<Footprint> footprint;
+    private final MapCodec<HarvesterPartBlock> codec;
 
     public HarvesterPartBlock(Properties properties, Supplier<Footprint> footprint) {
         super(properties, footprint);
-        this.footprint = footprint;
+        this.codec = simpleCodec(props -> new HarvesterPartBlock(props, footprint));
         registerDefaultState(defaultBlockState().setValue(HarvesterBlock.DRILL_HEAD, false));
     }
 
     @Override
     protected MapCodec<? extends Block> codec() {
-        return simpleCodec(properties -> new HarvesterPartBlock(properties, footprint));
+        return codec;
     }
 
     @Override

@@ -82,10 +82,12 @@ final class HarvesterReachTests {
     private static void bottomBlockIsTheHead(GameTestHelper helper) {
         HarvesterTests.ore(helper, COLUMN, 0);
         HarvesterTests.ore(helper, ORIGIN.below(), 0);
-        standing(helper);
+        HarvesterBlockEntity machine = standing(helper);
 
         helper.assertTrue(drill(helper, FOOT), "the part over an ore block directly under is no drill head");
         helper.assertTrue(drill(helper, ORIGIN), "the origin over an ore block directly under is no drill head");
+        helper.assertTrue(helper.getBlockEntity(ORIGIN, HarvesterBlockEntity.class) == machine,
+                "the origin turned drill head lost its block entity");
         helper.assertFalse(drill(helper, ORIGIN.east()), "a part over nothing is a drill head");
         helper.assertFalse(isHead(helper, COLUMN), "a drill head block stands where the bottom block is the head");
         helper.succeed();

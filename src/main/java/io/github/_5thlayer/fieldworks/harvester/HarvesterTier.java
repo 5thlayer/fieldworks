@@ -15,11 +15,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  */
 public record HarvesterTier(int rank, double speed, Power power, int feBuffer, int reach) {
 
-    /** A tier with no reach: its columns work only the block directly under it. */
-    public HarvesterTier(int rank, double speed, Power power, int feBuffer) {
-        this(rank, speed, power, feBuffer, 0);
-    }
-
     /**
      * The power a tier takes: burn time from fuel, FE at a cost per tick of work, or both. A fuel's burn time is spent
      * {@code burnPerOperation} to an operation however long it runs, as a furnace spends 200 on a smelt, so a coal

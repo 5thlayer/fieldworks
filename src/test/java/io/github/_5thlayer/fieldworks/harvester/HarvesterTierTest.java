@@ -111,8 +111,8 @@ class HarvesterTierTest {
 
     @Test
     void anOperationTakesItsDurationOverTheSpeedAndNeverLessThanATick() {
-        HarvesterTier doubled = new HarvesterTier(2, 2.0, new HarvesterTier.Power(false, 40, 1), 4000);
-        HarvesterTier fast = new HarvesterTier(3, 100.0, new HarvesterTier.Power(true, 0, 1), 0);
+        HarvesterTier doubled = new HarvesterTier(2, 2.0, new HarvesterTier.Power(false, 40, 1), 4000, 0);
+        HarvesterTier fast = new HarvesterTier(3, 100.0, new HarvesterTier.Power(true, 0, 1), 0, 0);
 
         assertEquals(10, doubled.ticks(20));
         assertEquals(1, fast.ticks(20));

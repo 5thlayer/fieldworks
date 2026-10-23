@@ -18,7 +18,10 @@ import java.util.List;
 public final class DrillParts {
 
     private static final double PX = 1 / 16d;
-    /** Columns under the footprint: {@code dx} then {@code dz} from -1 to 1, the order the Harvester's cursor counts in. */
+    /**
+     * Columns under the footprint: {@code dx} then {@code dz} from -1 to 1, the order the Harvester's cursor counts in,
+     * and the order {@code column_of} in {@code scripts/build-textures.py} numbers the bottom blocks' models in.
+     */
     public static final int COLUMNS = 9;
     /** The depth of a source directly under the Harvester, whose column's bottom block is its drill head. */
     public static final int UNDER = 1;

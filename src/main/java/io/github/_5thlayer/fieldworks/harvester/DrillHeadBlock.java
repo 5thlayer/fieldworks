@@ -60,7 +60,8 @@ public final class DrillHeadBlock extends Block implements SimpleWaterloggedBloc
 
     /** The head laid in the cell at {@code pos}: waterlogged over a water source, whatever else was there lost. */
     static BlockState placedAt(BlockGetter level, BlockPos pos) {
-        boolean water = level.getFluidState(pos).is(Fluids.WATER) && level.getFluidState(pos).isSource();
+        FluidState fluid = level.getFluidState(pos);
+        boolean water = fluid.is(Fluids.WATER) && fluid.isSource();
         return Harvesters.DRILL_HEAD.get().defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, water);
     }
 
@@ -82,17 +83,14 @@ public final class DrillHeadBlock extends Block implements SimpleWaterloggedBloc
 
     /** The origin of the Harvester whose column the head at {@code head} stands in, or null where none reaches it. */
     static @Nullable BlockPos ownerOf(Level level, BlockPos head) {
+        // No Harvester's column reaches further than the longest reach loaded.
         int farthest = HarvesterTiers.snapshot().values().stream().mapToInt(HarvesterTier::reach).max().orElse(0);
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 for (int up = 1; up <= farthest && head.getY() + up < level.getMaxY(); up++) {
                     BlockPos at = head.offset(dx, up, dz);
-                    if (level.getBlockState(at).getBlock() instanceof HarvesterBlock harvester) {
-                        HarvesterTier tier = HarvesterTiers.get(harvester.tier());
-                        if (tier != null && tier.reach() >= up && level.getBlockEntity(at) instanceof HarvesterBlockEntity entity
-                                && entity.shows(head)) {
-                            return at;
-                        }
+                    if (level.getBlockEntity(at) instanceof HarvesterBlockEntity harvester && harvester.shows(head)) {
+                        return at;
                     }
                 }
             }

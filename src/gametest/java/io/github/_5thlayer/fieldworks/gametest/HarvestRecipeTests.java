@@ -158,7 +158,7 @@ final class HarvestRecipeTests {
         machine.setHeldRecipe(recipe("iron_nuggets"));
 
         try (var fast = HarvesterTiers.swapped(TierBlock.HARVESTER_1,
-                new HarvesterTier(1, 4.0, new HarvesterTier.Power(true, 0, 1), 0))) {
+                new HarvesterTier(1, 4.0, new HarvesterTier.Power(true, 0, 1), 0, 0))) {
             HarvesterTests.tick(helper, machine, 9);
             helper.assertValueEqual(HarvesterTests.remaining(helper, ore), initial, "the ore block's amount after 9 ticks");
             HarvesterTests.tick(helper, machine, 1);

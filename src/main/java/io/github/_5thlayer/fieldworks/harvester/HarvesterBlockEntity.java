@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import com.mojang.serialization.Codec;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipe.Result;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Choice;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Idle;
@@ -19,7 +20,6 @@ import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreMining;
-import com.mojang.serialization.Codec;
 import io.github._5thlayer.libworks.transfer.GuardedResourceHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -393,25 +393,24 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         boolean changed = false;
         for (int index = 0; index < DrillParts.COLUMNS; index++) {
             int shown = columns.get(index).shown();
-            int dx = DrillParts.dx(index);
-            int dz = DrillParts.dz(index);
             if (heads[index] != shown) {
                 if (DrillParts.placesHead(heads[index])) {
-                    DrillHeadBlock.removeAll(level, List.of(headCell(dx, dz, heads[index])));
+                    DrillHeadBlock.removeAll(level, List.of(headCell(index, heads[index])));
                 }
                 heads[index] = shown;
                 changed = true;
             }
             if (DrillParts.placesHead(shown)) {
-                BlockPos cell = headCell(dx, dz, shown);
+                BlockPos cell = headCell(index, shown);
                 if (!(level.getBlockState(cell).getBlock() instanceof DrillHeadBlock)) {
                     level.setBlock(cell, DrillHeadBlock.placedAt(level, cell), Block.UPDATE_ALL);
                 }
             }
-            BlockPos bottom = worldPosition.offset(dx, 0, dz);
+            BlockPos bottom = worldPosition.offset(DrillParts.dx(index), 0, DrillParts.dz(index));
             BlockState state = level.getBlockState(bottom);
-            if (state.hasProperty(HarvesterBlock.DRILL_HEAD) && state.getValue(HarvesterBlock.DRILL_HEAD) != (shown == DrillParts.UNDER)) {
-                level.setBlock(bottom, state.setValue(HarvesterBlock.DRILL_HEAD, shown == DrillParts.UNDER), Block.UPDATE_CLIENTS);
+            boolean underHead = shown == DrillParts.UNDER;
+            if (state.hasProperty(HarvesterBlock.DRILL_HEAD) && state.getValue(HarvesterBlock.DRILL_HEAD) != underHead) {
+                level.setBlock(bottom, state.setValue(HarvesterBlock.DRILL_HEAD, underHead), Block.UPDATE_CLIENTS);
             }
         }
         if (changed) {
@@ -420,9 +419,9 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         }
     }
 
-    /** Where the drill head of the column at {@code dx}, {@code dz} showing {@code depth} stands: over its source. */
-    private BlockPos headCell(int dx, int dz, int depth) {
-        return worldPosition.offset(dx, -DrillParts.headBelow(depth), dz);
+    /** Where the drill head of the column {@code index} showing {@code depth} stands: over its source. */
+    private BlockPos headCell(int index, int depth) {
+        return worldPosition.offset(DrillParts.dx(index), -DrillParts.headBelow(depth), DrillParts.dz(index));
     }
 
     /** Whether this Harvester shows a placed drill head at {@code pos}. */
@@ -435,7 +434,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         List<BlockPos> placed = new ArrayList<>();
         for (int index = 0; index < DrillParts.COLUMNS; index++) {
             if (DrillParts.placesHead(heads[index])) {
-                placed.add(headCell(DrillParts.dx(index), DrillParts.dz(index), heads[index]));
+                placed.add(headCell(index, heads[index]));
             }
         }
         return placed;
