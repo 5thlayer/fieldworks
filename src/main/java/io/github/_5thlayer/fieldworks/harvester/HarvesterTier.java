@@ -9,10 +9,11 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 /**
  * A Harvester Tier's figures, read from its file, {@code data/<ns>/harvester_tier/<block>.json}
- * (ADR 0005): its rank, the speed its operations run at, the power it takes, and its FE buffer.
- * A file the codec refuses says why, and its Harvester stays idle.
+ * (ADR 0005): its rank, the speed its operations run at, the power it takes, its FE buffer, and its reach,
+ * how far down its columns look past the block under it (ADR 0008). A file the codec refuses says why, and its
+ * Harvester stays idle.
  */
-public record HarvesterTier(int rank, double speed, Power power, int feBuffer) {
+public record HarvesterTier(int rank, double speed, Power power, int feBuffer, int reach) {
 
     /**
      * The power a tier takes: burn time from fuel, FE at a cost per tick of work, or both. A fuel's burn time is spent
@@ -71,12 +72,16 @@ public record HarvesterTier(int rank, double speed, Power power, int feBuffer) {
             Codec.INT.fieldOf("rank").forGetter(HarvesterTier::rank),
             Codec.DOUBLE.fieldOf("speed").forGetter(HarvesterTier::speed),
             Power.CODEC.fieldOf("power").forGetter(HarvesterTier::power),
-            Codec.INT.optionalFieldOf("fe_buffer", 0).forGetter(HarvesterTier::feBuffer)
+            Codec.INT.optionalFieldOf("fe_buffer", 0).forGetter(HarvesterTier::feBuffer),
+            Codec.INT.optionalFieldOf("reach", 0).forGetter(HarvesterTier::reach)
     ).apply(instance, HarvesterTier::new)).validate(HarvesterTier::check);
 
     private static DataResult<HarvesterTier> check(HarvesterTier tier) {
         if (!(tier.speed > 0)) {
             return DataResult.error(() -> "a tier's speed must be above 0, not " + tier.speed);
+        }
+        if (tier.reach < 0) {
+            return DataResult.error(() -> "a tier's reach cannot be negative, not " + tier.reach);
         }
         if (tier.power.fePerTick < 0 || tier.feBuffer < 0) {
             return DataResult.error(() -> "a tier's FE figures cannot be negative");

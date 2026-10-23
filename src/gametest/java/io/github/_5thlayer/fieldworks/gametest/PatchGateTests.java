@@ -136,7 +136,7 @@ final class PatchGateTests {
         helper.assertValueEqual(amountOf(helper, FluidResource.of(CrudeOil.SOURCE.get())), 0, "crude pumped");
         machine.setHeldRecipe(null);
         HarvesterTests.tick(helper, machine, 200);
-        helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.NOTHING_TO_WORK), "the idle reason with nothing held");
+        helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.RECIPE_NEEDED), "the idle reason with nothing held");
         helper.assertValueEqual(amountOf(helper, FluidResource.of(CrudeOil.SOURCE.get())), 0, "crude pumped with nothing held");
         if (!well) {
             helper.assertValueEqual(HarvesterTests.remaining(helper, CENTRE), initial, gate.name() + " ore left after the Burner");

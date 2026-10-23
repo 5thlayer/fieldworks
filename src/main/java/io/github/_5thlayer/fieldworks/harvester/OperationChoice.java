@@ -48,6 +48,7 @@ public final class OperationChoice {
         }
         // Any well under the footprint excludes every block source (#1).
         boolean wells = layer.stream().anyMatch(source -> source.kind() == Kind.WELL);
+        boolean replaced = false;
         int size = layer.size();
         for (int step = 0; step < size; step++) {
             int position = Math.floorMod(cursor + step, size);
@@ -65,9 +66,11 @@ public final class OperationChoice {
                 }
             } else if (recipes.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
                 return machine.run(new Operation<>(position, defaultTicks(source.kind()), next, Optional.empty()));
+            } else {
+                replaced = true;
             }
         }
-        return new Idle<>(held.isPresent() ? IdleReason.NOTHING_MATCHING : IdleReason.NOTHING_TO_WORK);
+        return new Idle<>(held.isPresent() ? IdleReason.NOTHING_MATCHING : replaced ? IdleReason.RECIPE_NEEDED : IdleReason.NOTHING_TO_WORK);
     }
 
     /**
@@ -185,8 +188,13 @@ public final class OperationChoice {
 
     /** Why the Harvester has no operation to run. */
     public enum IdleReason {
-        /** With no Held recipe, no source in the layer has a Default recipe to run. */
+        /** With no Held recipe, no source in the layer has a Default recipe to run, nor one a written recipe replaces. */
         NOTHING_TO_WORK,
+        /**
+         * With no Held recipe, the layer's only sources are ones whose Default recipe a written recipe replaces, so
+         * that recipe must be held to work them, as netherite's must.
+         */
+        RECIPE_NEEDED,
         /** The Held recipe matches no source in the layer (#10); it never falls back to the Default recipes. */
         NOTHING_MATCHING,
         /** The Held recipe names a minimum tier above the Harvester's rank. */

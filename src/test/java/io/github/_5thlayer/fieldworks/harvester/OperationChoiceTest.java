@@ -227,7 +227,7 @@ class OperationChoiceTest {
         Recipe<String> muddyDiamond = recipe("test:muddy_diamond", Set.of("minecraft:diamond_ore"), Set.of(), 60, OptionalInt.empty(), false,
                 Optional.of(new DrillingFluid(Set.of("fieldworks:drilling_mud"), 250)));
 
-        assertEquals(new OperationChoice.Idle<>(IdleReason.NOTHING_TO_WORK),
+        assertEquals(new OperationChoice.Idle<>(IdleReason.RECIPE_NEEDED),
                 OperationChoice.choose(layer, 0, List.of(replacesDiamond), Optional.empty(), ready(1)));
         assertEquals(new OperationChoice.Idle<>(IdleReason.OUTPUT_FULL),
                 OperationChoice.choose(layer, 0, List.of(), Optional.empty(), new Machine<String>(1, Tank.EMPTY, any -> false, true)));
@@ -412,11 +412,11 @@ class OperationChoiceTest {
     }
 
     @Test
-    void aWrittenRecipeThatReplacesTheDefaultLeavesAWellWithNothingToWorkUntilItIsHeld() {
+    void aWrittenRecipeThatReplacesTheDefaultLeavesAWellNeedingItHeld() {
         List<Source> layer = List.of(WELL, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE);
         Recipe<String> crude = shipped("crude_from_oil_well");
 
-        assertEquals(new OperationChoice.Idle<>(IdleReason.NOTHING_TO_WORK),
+        assertEquals(new OperationChoice.Idle<>(IdleReason.RECIPE_NEEDED),
                 OperationChoice.choose(layer, 0, List.of(crude), Optional.empty(), ready(2)));
         assertEquals(crude, ((Operation<String>) OperationChoice.choose(layer, 0, List.of(crude), Optional.of(crude), ready(2))).recipe().orElseThrow());
     }
@@ -448,8 +448,8 @@ class OperationChoiceTest {
                     OperationChoice.choose(layer, 0, List.of(gated), Optional.of(gated), ready(1)), gated.id());
             assertEquals(new OperationChoice.Idle<>(IdleReason.NO_FLUID),
                     OperationChoice.choose(layer, 0, List.of(gated), Optional.of(gated), ready(2)), gated.id());
-            // Without the recipe held, the Default recipe it replaces is not there to run.
-            assertEquals(new OperationChoice.Idle<>(IdleReason.NOTHING_TO_WORK),
+            // Without the recipe held, the Default recipe it replaces is not there to run, so the recipe must be held.
+            assertEquals(new OperationChoice.Idle<>(IdleReason.RECIPE_NEEDED),
                     OperationChoice.choose(layer, 0, List.of(gated), Optional.empty(), electricWithMud), gated.id());
         }
         assertEquals(10, shipped("uranium_from_ore").drillingFluid().orElseThrow().amount());

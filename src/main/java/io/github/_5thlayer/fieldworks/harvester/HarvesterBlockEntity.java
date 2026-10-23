@@ -4,10 +4,12 @@
 package io.github._5thlayer.fieldworks.harvester;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import com.mojang.serialization.Codec;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipe.Result;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Choice;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Idle;
@@ -21,10 +23,16 @@ import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.libworks.transfer.GuardedResourceHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -32,11 +40,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -67,6 +78,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     private static final String PROGRESS_KEY = "progress";
     private static final String CURSOR_KEY = "cursor";
     private static final String HELD_KEY = "held_recipe";
+    private static final String HEADS_KEY = "drill_heads";
+    private static final Codec<List<Integer>> HEADS_CODEC = Codec.INT.listOf();
 
     private final ItemStacksResourceHandler buffer = new HarvesterSlots(BUFFER_SLOTS, this::setChanged);
     private final HarvesterPower power = new HarvesterPower(buffer, this::setChanged);
@@ -81,6 +94,13 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     /** Ticks the operation under way takes on this tier, for the menu's progress bar; not saved, set as it works (#13). */
     private int operationTicks;
     private int cursor;
+    /**
+     * What each of the nine columns shows (ADR 0008), in the cursor's order: 0 for no source, 1 for a source directly
+     * under the Harvester, whose bottom block is the drill head, and more for a source that deep, whose drill head
+     * stands in the cell above it. Saved, so a head placed before a reload is taken away when its source changes, and
+     * sent to watchers, who draw it.
+     */
+    private int[] heads = new int[DrillParts.COLUMNS];
 
     /** The Held recipe's id, resolved on each tick: a block entity loads before the recipes do. */
     private @Nullable Identifier held;
@@ -121,6 +141,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     }
 
     public void serverTick(ServerLevel level) {
+        List<Column> columns = columns(level);
+        followWorld(level, columns);
         fluids.exchangeContainers();
         pushOutput(level);
         HarvesterTier tier = tier();
@@ -139,7 +161,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             }
             heldChoice = Optional.of(recipe);
         }
-        List<BlockPos> layer = layer();
+        List<BlockPos> layer = columns.stream().map(Column::pos).toList();
         Machine<Result> machine = new Machine<>(tier.rank(), fluids.choiceTank(), operation -> work(level, layer, operation) != null,
                 power.canPay(level, tier));
         Choice<Result> choice = OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, machine);
@@ -327,16 +349,125 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         return new HarvesterMenu(containerId, inventory, this);
     }
 
-    /** The layer under the footprint, in the fixed order the cursor counts in, whatever way the Harvester faces. */
-    private List<BlockPos> layer() {
-        List<BlockPos> layer = new ArrayList<>(9);
-        BlockPos centre = worldPosition.below();
+    /**
+     * What one of the nine columns under the footprint looks down to: the first block it does not pass at {@code
+     * pos}, {@code depth} blocks under the origin, or with no such block within reach the block directly under, with
+     * depth {@link Reach#NONE}. {@code source} is whether that block is one a Harvester works.
+     */
+    record Column(BlockPos pos, int depth, boolean source) {
+
+        /** What the column shows (see {@code heads}). */
+        int shown() {
+            return source ? depth : Reach.NONE;
+        }
+    }
+
+    /**
+     * The nine columns, in the fixed order the cursor counts in, whatever way the Harvester faces. Each looks down from
+     * the block directly under the Harvester through air, replaceable blocks, fluids and drill heads, up to the tier's
+     * reach past that block (ADR 0008); a Harvester whose tier is missing has none.
+     */
+    private List<Column> columns(ServerLevel level) {
+        HarvesterTier tier = tier();
+        int reach = tier == null ? 0 : tier.reach();
+        List<Column> columns = new ArrayList<>(DrillParts.COLUMNS);
+        for (int index = 0; index < DrillParts.COLUMNS; index++) {
+            BlockPos top = worldPosition.offset(DrillParts.dx(index), 0, DrillParts.dz(index));
+            int depth = Reach.firstBlock(reach, d -> passes(level.getBlockState(top.below(d))));
+            BlockPos at = top.below(Math.max(depth, 1));
+            columns.add(new Column(at, depth, depth != Reach.NONE && HarvestSources.kindOf(level.getBlockState(at)) != OperationChoice.Kind.NONE));
+        }
+        return columns;
+    }
+
+    /** Whether a column looks through this block: air, a replaceable block, a fluid or a drill head. */
+    private static boolean passes(BlockState state) {
+        return state.isAir() || state.canBeReplaced() || state.getBlock() instanceof LiquidBlock || state.getBlock() instanceof DrillHeadBlock;
+    }
+
+    /**
+     * Brings the bottom blocks and the placed drill heads to what the columns show, whether or not the Harvester is
+     * working (ADR 0008): a head is placed in the cell above a source lower than the block directly under the Harvester
+     * and taken away when its source changes, and a bottom block is the drill head where its source lies directly under.
+     */
+    private void followWorld(ServerLevel level, List<Column> columns) {
+        boolean changed = false;
+        for (int index = 0; index < DrillParts.COLUMNS; index++) {
+            int shown = columns.get(index).shown();
+            if (heads[index] != shown) {
+                if (DrillParts.placesHead(heads[index])) {
+                    DrillHeadBlock.removeAll(level, List.of(headCell(index, heads[index])));
+                }
+                heads[index] = shown;
+                changed = true;
+            }
+            if (DrillParts.placesHead(shown)) {
+                BlockPos cell = headCell(index, shown);
+                if (!(level.getBlockState(cell).getBlock() instanceof DrillHeadBlock)) {
+                    level.setBlock(cell, DrillHeadBlock.placedAt(level, cell), Block.UPDATE_ALL);
+                }
+            }
+            showBottomHead(level, index, shown == DrillParts.UNDER);
+        }
+        if (changed) {
+            setChanged();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /** Draws the bottom block of the column {@code index} as its drill head, or as casing. */
+    private void showBottomHead(ServerLevel level, int index, boolean head) {
+        BlockPos bottom = worldPosition.offset(DrillParts.dx(index), 0, DrillParts.dz(index));
+        BlockState state = level.getBlockState(bottom);
+        if (state.hasProperty(HarvesterBlock.DRILL_HEAD) && state.getValue(HarvesterBlock.DRILL_HEAD) != head) {
+            level.setBlock(bottom, state.setValue(HarvesterBlock.DRILL_HEAD, head), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /** Where the drill head of the column {@code index} showing {@code depth} stands: over its source. */
+    private BlockPos headCell(int index, int depth) {
+        return worldPosition.offset(DrillParts.dx(index), -DrillParts.headBelow(depth), DrillParts.dz(index));
+    }
+
+    /** Whether this Harvester shows a placed drill head at {@code pos}. */
+    boolean shows(BlockPos pos) {
+        return placedHeads().contains(pos);
+    }
+
+    /**
+     * The origin of the Harvester showing the placed drill head at {@code head}, or null for none: it stands above the
+     * head, in one of the nine columns over it, no further up than the longest reach loaded. A footprint can straddle a
+     * chunk's edge, so the lookup loads any chunk it reads: breaking a head always dismantles its Harvester.
+     */
+    static @Nullable BlockPos showing(Level level, BlockPos head) {
+        int farthest = HarvesterTiers.snapshot().values().stream().mapToInt(HarvesterTier::reach).max().orElse(0);
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                layer.add(centre.offset(dx, 0, dz));
+                for (int up = 1; up <= farthest && head.getY() + up < level.getMaxY(); up++) {
+                    BlockPos at = head.offset(dx, up, dz);
+                    if (level.getBlockEntity(at) instanceof HarvesterBlockEntity harvester && harvester.shows(head)) {
+                        return at;
+                    }
+                }
             }
         }
-        return layer;
+        return null;
+    }
+
+    /** Where this Harvester's placed drill heads stand. */
+    private List<BlockPos> placedHeads() {
+        List<BlockPos> placed = new ArrayList<>();
+        for (int index = 0; index < DrillParts.COLUMNS; index++) {
+            if (DrillParts.placesHead(heads[index])) {
+                placed.add(headCell(index, heads[index]));
+            }
+        }
+        return placed;
+    }
+
+    /** What each column shows, for the renderer; see {@link DrillParts}. */
+    public int[] drillHeads() {
+        return heads.clone();
     }
 
     private static List<Source> sources(ServerLevel level, List<BlockPos> layer) {
@@ -411,6 +542,20 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         if (held != null) {
             output.store(HELD_KEY, Identifier.CODEC, held);
         }
+        output.store(HEADS_KEY, HEADS_CODEC, Arrays.stream(heads).boxed().toList());
+    }
+
+    /** Only what its watchers draw: the drill heads. */
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registries);
+        output.store(HEADS_KEY, HEADS_CODEC, Arrays.stream(heads).boxed().toList());
+        return output.buildResult();
+    }
+
+    @Override
+    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
@@ -422,6 +567,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         progress = input.getIntOr(PROGRESS_KEY, 0);
         cursor = input.getIntOr(CURSOR_KEY, 0);
         held = input.read(HELD_KEY, Identifier.CODEC).orElse(null);
+        heads = input.read(HEADS_KEY, HEADS_CODEC).filter(saved -> saved.size() == DrillParts.COLUMNS)
+                .map(saved -> saved.stream().mapToInt(Integer::intValue).toArray()).orElseGet(() -> new int[DrillParts.COLUMNS]);
     }
 
     /** A broken Harvester drops what it holds, as a furnace does. */
@@ -429,6 +576,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);
         if (level != null) {
+            DrillHeadBlock.removeAll(level, placedHeads());
             for (ItemStacksResourceHandler slots : List.of(power.fuel(), fluids.fill(), fluids.drain(), buffer)) {
                 for (ItemStack stack : slots.copyToList()) {
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);

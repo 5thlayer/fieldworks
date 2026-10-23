@@ -30,6 +30,23 @@ class HarvesterTierTest {
         assertTrue(tier.power().fuel());
         assertEquals(0, tier.power().fePerTick());
         assertEquals(0, tier.feBuffer());
+        assertEquals(1, tier.reach());
+    }
+
+    @Test
+    void aTierThatNamesNoReachHasNone() {
+        HarvesterTier tier = parse(json("""
+                {"rank": 1, "speed": 1.0, "power": {"fuel": true}, "fe_buffer": 0}""")).getOrThrow();
+
+        assertEquals(0, tier.reach());
+    }
+
+    @Test
+    void aReachHasNoCapButCannotBeNegative() {
+        assertEquals(500, parse(json("""
+                {"rank": 1, "speed": 1.0, "power": {"fuel": true}, "reach": 500}""")).getOrThrow().reach());
+        assertRefused(parse(json("""
+                {"rank": 1, "speed": 1.0, "power": {"fuel": true}, "reach": -1}""")), "reach");
     }
 
     @Test
@@ -65,6 +82,7 @@ class HarvesterTierTest {
         assertFalse(tier.power().fuel());
         assertEquals(40, tier.power().fePerTick());
         assertEquals(50_000, tier.feBuffer());
+        assertEquals(2, tier.reach());
     }
 
     @Test
@@ -93,8 +111,8 @@ class HarvesterTierTest {
 
     @Test
     void anOperationTakesItsDurationOverTheSpeedAndNeverLessThanATick() {
-        HarvesterTier doubled = new HarvesterTier(2, 2.0, new HarvesterTier.Power(false, 40, 1), 4000);
-        HarvesterTier fast = new HarvesterTier(3, 100.0, new HarvesterTier.Power(true, 0, 1), 0);
+        HarvesterTier doubled = new HarvesterTier(2, 2.0, new HarvesterTier.Power(false, 40, 1), 4000, 0);
+        HarvesterTier fast = new HarvesterTier(3, 100.0, new HarvesterTier.Power(true, 0, 1), 0, 0);
 
         assertEquals(10, doubled.ticks(20));
         assertEquals(1, fast.ticks(20));

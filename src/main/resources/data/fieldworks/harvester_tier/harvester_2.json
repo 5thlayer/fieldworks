@@ -4,5 +4,6 @@
   "power": {
     "fe_per_tick": 40
   },
-  "fe_buffer": 50000
+  "fe_buffer": 50000,
+  "reach": 2
 }
