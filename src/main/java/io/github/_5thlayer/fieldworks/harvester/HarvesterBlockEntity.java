@@ -147,9 +147,11 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         pushOutput(level);
         HarvesterTier tier = tier();
         exposeEnergy(level, tier != null && tier.power().fe());
-        if (tier == null) {
-            return;
-        }
+        setLit(tier != null && operate(level, tier, columns));
+    }
+
+    /** One tick of choosing and advancing an operation; whether it was paid for and progressed. */
+    private boolean operate(ServerLevel level, HarvesterTier tier, List<Column> columns) {
         HarvestRecipes.Loaded recipes = HarvestRecipes.loaded(level);
         Optional<OperationChoice.Recipe<Result>> heldChoice = Optional.empty();
         if (held != null) {
@@ -157,7 +159,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             if (recipe == null) {
                 // A Held recipe a reload removed matches nothing; it never falls back to the Default recipes (#10).
                 idle = IdleReason.NOTHING_MATCHING;
-                return;
+                return false;
             }
             heldChoice = Optional.of(recipe);
         }
@@ -167,21 +169,21 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         Choice<Result> choice = OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, machine);
         if (!(choice instanceof Operation<Result> operation)) {
             idle = ((Idle<Result>) choice).reason();
-            return;
+            return false;
         }
         Runnable work = work(level, layer, operation);
         if (work == null) {
-            return;
+            return false;
         }
         int ticks = tier.ticks(operation.ticks());
         boolean completes = progress + 1 >= ticks;
         // The fluid is taken on completion, so it is checked before that tick is paid for: one short keeps its place (#11).
         if (completes && !fluids.takeDrillingFluid(operation.drillingFluid(), false)) {
             idle = IdleReason.NO_FLUID;
-            return;
+            return false;
         }
         if (!power.pay(level, tier, progress, ticks)) {
-            return;
+            return false;
         }
         idle = null;
         progress++;
@@ -193,6 +195,15 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
             cursor = operation.nextCursor();
         }
         setChanged();
+        return true;
+    }
+
+    /** Sets the origin's LIT only when it changes, so a Harvester at work does not update its state every tick. */
+    private void setLit(boolean lit) {
+        BlockState state = getBlockState();
+        if (level != null && state.getValue(HarvesterBlock.LIT) != lit) {
+            level.setBlock(worldPosition, state.setValue(HarvesterBlock.LIT, lit), Block.UPDATE_ALL);
+        }
     }
 
     /** The operation's work, or null while there is no room for what it yields. */

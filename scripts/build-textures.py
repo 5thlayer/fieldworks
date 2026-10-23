@@ -22,7 +22,8 @@ tier 1, yellow for 2, the Assemblers' colours by rank), and a gearbox at the roo
 front, the output face, has the duct intake at its foot and the tier's default power at eye height
 (ADR 0005): the smelter's front let into the duct for tier 1, as Craftworks' Refiner front is let
 into its plating, and the copper coil for tier 2, made symmetric as Wireworks' Steam Turbine wears
-it. The Harvesters' block models are written here as well, so --check also catches a hand edit to
+it. Each has a lit twin, the firebox ablaze and the coil glowing hot, which the origin draws at full
+brightness while the Harvester works. The Harvesters' block models are written here as well, so --check also catches a hand edit to
 one.
 
     scripts/build-textures.py
@@ -85,6 +86,8 @@ HARVESTER_ART = {
 # Each tier's default power, shown at eye height on its front: tier 1 burns fuel, tier 2 takes FE.
 # Its keys are the tiers a model is written for.
 HARVESTER_POWER = {1: "firebox", 2: "coil"}
+# The block light the lit power face is drawn with: full brightness.
+LIT_FACE_LIGHT = 15
 
 # The smelter's rim, where its brick shows: rows down to RIM_TOP, and the outer RIM_SIDE columns on each
 # side down to RIM_UPPER, the bottom of the firebox; below it the grate's iron reaches the edge.
@@ -93,6 +96,14 @@ RIM_SIDE = 2
 RIM_UPPER = 7
 # How much redder than blue a pixel is to be the smelter's brick, against the grey of its cold iron.
 BRICK_RED = 18
+# A lit firebox: the grate's gaps are the dark brown pixels (red over blue by this much), drawn in two
+# alternating flame colours; the rest of the dark inside blends toward ember.
+FIRE_GAP = 8
+FIRE_BLAZE = [(255, 176, 46, 255), (255, 138, 26, 255)]
+EMBER = (122, 46, 12, 255)
+# A copper pixel of the coil is one whose red leads its blue by more than this.
+COPPER_REDNESS = 40
+
 # Half the width of the dark band down the copper coil side's left edge.
 COIL_BAND_HALF = 2
 
@@ -380,11 +391,41 @@ def coil():
     return [row[:8] + row[7::-1] for row in turned]
 
 
+def firebox_lit():
+    """The firebox with its fire lit: the grate's dark gaps blaze orange, and the dark inside the firebox
+    round them is warmed toward ember."""
+    pixels = firebox()
+    for y in range(2, 16):
+        for x in range(2, 14):
+            r, g, b, a = pixels[y][x]
+            if r < 0x40 and g < 0x40 and b < 0x40:
+                gap = r - b >= FIRE_GAP
+                pixels[y][x] = FIRE_BLAZE[(x + y) % 2] if gap else blend(pixels[y][x], EMBER, 0.45)
+    return pixels
+
+
+def coil_lit():
+    """The coil with its copper glowing hot: each copper pixel brighter and pushed toward orange; the dark
+    edge bands, which are not copper, stay as they are."""
+    pixels = coil()
+    for row in pixels:
+        for x, (r, g, b, a) in enumerate(row):
+            if r > b + COPPER_REDNESS:
+                row[x] = (min(255, int(r * 1.1) + 35), min(255, int(g * 1.05) + 15), int(b * 0.7), a)
+    return pixels
+
+
+def blend(pixel, towards, amount):
+    return tuple(round(c + (t - c) * amount) for c, t in zip(pixel, towards))
+
+
 def harvester_sprites():
     """Each Harvester sprite, by name."""
     sprites = {name: art(source) for name, source in HARVESTER_ART.items()}
     sprites["firebox"] = firebox()
     sprites["coil"] = coil()
+    sprites["firebox_lit"] = firebox_lit()
+    sprites["coil_lit"] = coil_lit()
     return sprites
 
 
@@ -400,7 +441,7 @@ def shift(low, high):
     sys.exit(f"no translation brings {low}..{high} inside {LOW}..{HIGH}")
 
 
-def casing_faces(x, y, z):
+def casing_faces(x, y, z, lit=False):
     """The faces of the casing block at column x, z and row y (0 the bottom) of a Harvester facing north:
     only its outward ones. The duct all round the lower two rows and underneath; the tier's band round the
     top row and down the roof's centre line, with braced corners, vents at its east and west edges and
@@ -415,31 +456,34 @@ def casing_faces(x, y, z):
         if outward:
             faces[name] = face("#band" if y == 2 else "#duct")
     if (x, z) == (0, -1) and y < 2:
-        faces["north"] = face("#intake" if y == 0 else "#power")
+        faces["north"] = face("#intake") if y == 0 else face("#power")
+        if lit and y == 1:
+            # The power face at full brightness, whatever the light it stands in (NeoForge's face data).
+            faces["north"]["neoforge_data"] = {"light_emission": LIT_FACE_LIGHT}
     return faces
 
 
-def harvester_textures(tier):
+def harvester_textures(tier, lit=False):
     textures = {name: HARVESTER_SPRITE + name for name in HARVESTER_ART
                 if not name.startswith(("band_", "drill_"))}
     textures.update(band=HARVESTER_SPRITE + f"band_{tier}", band_vertical=HARVESTER_SPRITE + f"band_{tier}_vertical",
-                    power=HARVESTER_SPRITE + HARVESTER_POWER[tier])
+                    power=HARVESTER_SPRITE + HARVESTER_POWER[tier] + ("_lit" if lit else ""))
     return textures
 
 
-def harvester_model(tier, lowest):
+def harvester_model(tier, lowest, lit=False):
     """A Harvester's 3x3x3 casing, facing north, from row `lowest` up: one element per footprint block.
     The top row is above the bounds, so the model is a NeoForge composite whose children are translated
     by whole blocks when it bakes, before the blockstate turns it to each facing. The origin draws it
     from row 1, its bottom row being nine blocks that each draw their own (see foot_model); the item
-    draws it whole from row 0."""
+    draws it whole from row 0. Lit, its power face is the tier's lit sprite, drawn at full brightness."""
     children = {}
     for x in (-1, 0, 1):
         for y in (0, 1, 2):
             if y < lowest:
                 continue
             for z in (-1, 0, 1):
-                faces = casing_faces(x, y, z)
+                faces = casing_faces(x, y, z, lit)
                 # The block at the footprint's heart shows nothing, and Minecraft refuses an element
                 # with no faces.
                 if not faces:
@@ -451,7 +495,7 @@ def harvester_model(tier, lowest):
                     "to": [high[axis] - 16 * moved[axis] for axis in range(3)],
                     "faces": faces,
                 })
-    textures = harvester_textures(tier)
+    textures = harvester_textures(tier, lit)
     return {
         "ambientocclusion": False,
         "textures": dict(textures, particle=HARVESTER_SPRITE + "duct"),
@@ -508,6 +552,7 @@ def harvester_models():
     models = {}
     for tier in HARVESTER_POWER:
         models[f"harvester_{tier}"] = harvester_model(tier, 1)
+        models[f"harvester_{tier}_lit"] = harvester_model(tier, 1, lit=True)
         models[f"harvester_{tier}_full"] = harvester_model(tier, 0)
         models[f"harvester_{tier}_part"] = {"textures": {"particle": HARVESTER_SPRITE + "duct"}}
         for column in range(9):
@@ -537,7 +582,8 @@ def harvester_blockstates():
         origin = []
         part = [{"apply": {"model": f"fieldworks:block/harvester_{tier}_part"}}]
         for facing, turn in FACING_TURNS.items():
-            origin.append({"when": {"facing": facing}, "apply": turned(f"harvester_{tier}", turn)})
+            for lit, suffix in (("false", ""), ("true", "_lit")):
+                origin.append({"when": {"facing": facing, "lit": lit}, "apply": turned(f"harvester_{tier}{suffix}", turn)})
             for head, suffix in (("false", ""), ("true", "_head")):
                 origin.append({"when": {"facing": facing, "drill_head": head},
                                "apply": turned(f"harvester_{tier}_foot_{column_of(0, 0)}{suffix}", turn)})

@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
@@ -32,14 +33,20 @@ public final class HarvesterBlock extends HorizontalDirectionalBlock implements 
     /** Whether this bottom-layer block is its column's drill head, its source lying directly under the Harvester. */
     public static final BooleanProperty DRILL_HEAD = BooleanProperty.create("drill_head");
 
+    /** The block light a lit Harvester gives off, as a lit furnace does. */
+    public static final int LIT_LIGHT = 13;
+
+    /** Whether the Harvester is working: an operation progressed on its last tick. */
+    public static final BooleanProperty LIT = BlockStateProperties.LIT;
+
     private final TierBlock tier;
     private final MapCodec<HarvesterBlock> codec;
 
     public HarvesterBlock(Properties properties, TierBlock tier) {
-        super(properties);
+        super(properties.lightLevel(state -> state.getValue(LIT) ? LIT_LIGHT : 0));
         this.tier = tier;
         this.codec = simpleCodec(props -> new HarvesterBlock(props, tier));
-        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH).setValue(DRILL_HEAD, false));
+        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH).setValue(DRILL_HEAD, false).setValue(LIT, false));
     }
 
     public TierBlock tier() {
@@ -53,7 +60,7 @@ public final class HarvesterBlock extends HorizontalDirectionalBlock implements 
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, DRILL_HEAD);
+        builder.add(FACING, DRILL_HEAD, LIT);
     }
 
     @Override

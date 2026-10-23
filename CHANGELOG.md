@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- A Harvester lights its power face, the Burner's firebox or the Electric's coil, and gives off light 13 while it works, and goes dark on any idle reason ([#42](https://github.com/5thlayer/fieldworks/issues/42)).
+
 ## 0.3.1
 
 - Two adjacent drill heads no longer draw a wall between them. A casing block at a Harvester's bottom layer draws its own inner faces, which show only toward a drill head, and a drill head draws only the underside of the block above ([#39](https://github.com/5thlayer/fieldworks/issues/39)).
