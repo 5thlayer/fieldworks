@@ -57,7 +57,7 @@ public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> so
         for (OreResource resource : OreResource.values()) {
             OreBlock ore = FieldworksRegistries.ore(resource).get();
             Source source = HarvestSources.of(ore.defaultBlockState());
-            if (choices.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
+            if (OperationChoice.replacingDefaultOf(choices, source).isEmpty()) {
                 views.add(new HarvestRecipeView(defaultId(ore), true, List.of(ore), HarvesterBlockEntity.drop(ore),
                         OperationChoice.ORE_DRAW_TICKS, Optional.empty(), List.of(), 0, 0, 0));
             }
@@ -65,7 +65,7 @@ public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> so
         OilWellBlock well = FieldworksRegistries.OIL_WELL.get();
         Source wellSource = HarvestSources.of(well.defaultBlockState());
         WellYield yield = WellYield.fromCorpus();
-        if (choices.stream().noneMatch(recipe -> recipe.replacesDefaultOf(wellSource))) {
+        if (OperationChoice.replacingDefaultOf(choices, wellSource).isEmpty()) {
             views.add(new HarvestRecipeView(defaultId(well), true, List.of(well), ItemStack.EMPTY, OperationChoice.WELL_PUMP_TICKS,
                     Optional.empty(), List.of(), 0,
                     yield.cycle(yield.normal(), yield.normal(), 0).crude(), yield.cycle(yield.minimum(), yield.minimum(), 0).crude()));
@@ -77,7 +77,7 @@ public record HarvestRecipeView(Identifier id, boolean isDefault, List<Block> so
             if (source.kind() != Kind.HARVESTABLE || block.asItem() == Items.AIR) {
                 continue;
             }
-            if (choices.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
+            if (OperationChoice.replacingDefaultOf(choices, source).isEmpty()) {
                 views.add(new HarvestRecipeView(defaultId(block), true, List.of(block), ItemStack.EMPTY, OperationChoice.BREAK_TICKS,
                         Optional.empty(), List.of(), 0, 0, 0));
             }

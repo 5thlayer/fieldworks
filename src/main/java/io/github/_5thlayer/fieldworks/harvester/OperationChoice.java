@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.fieldworks.harvester;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -64,13 +65,22 @@ public final class OperationChoice {
                     }
                     return machine.run(new Operation<>(position, held.get().duration(), next, held));
                 }
-            } else if (recipes.stream().noneMatch(recipe -> recipe.replacesDefaultOf(source))) {
+            } else if (replacingDefaultOf(recipes, source).isEmpty()) {
                 return machine.run(new Operation<>(position, defaultTicks(source.kind()), next, Optional.empty()));
             } else {
                 replaced = true;
             }
         }
         return new Idle<>(held.isPresent() ? IdleReason.NOTHING_MATCHING : replaced ? IdleReason.RECIPE_NEEDED : IdleReason.NOTHING_TO_WORK);
+    }
+
+    /**
+     * The recipe that takes away {@code source}'s Default recipe, or empty when its Default recipe stands. The hand
+     * draw reads this too (ADR 0010), so the hand and the Harvester can never disagree. Where several replace it, the
+     * lowest id answers, so the answer doesn't depend on the order the recipes were loaded in.
+     */
+    public static <R> Optional<Recipe<R>> replacingDefaultOf(List<Recipe<R>> recipes, Source source) {
+        return recipes.stream().filter(recipe -> recipe.replacesDefaultOf(source)).min(Comparator.comparing(Recipe::id));
     }
 
     /**

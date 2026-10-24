@@ -87,7 +87,8 @@ _Avoid_: charted, discovered
 ### Harvesting
 
 **Draw**:
-Taking one unit from an ore block: a break by hand, or one Harvester operation.
+Taking one unit from an ore block: a break by hand, while the block's Default recipe stands, or one Harvester operation.
+A break by another mod's machine counts as one by hand.
 _Avoid_: mine, deplete (for a single draw)
 
 **Harvestable block**:
@@ -119,7 +120,7 @@ What one Harvester operation takes and yields: a source, an optional Drilling Fl
 _Avoid_: mining recipe, drill recipe
 
 **Default recipe**:
-The fluid-free Harvest Recipe every source has without one being written: a draw of an ore block, the loot of a harvestable block, crude from an oil well. A written recipe with `replaces_default` takes it away: uranium, diamond, netherite and the oil well have one, which needs the Electric Harvester.
+The fluid-free Harvest Recipe every source has without one being written: a draw of an ore block, the loot of a harvestable block, crude from an oil well. A written recipe with `replaces_default` takes it away, from the hand as from the Harvester: uranium, diamond, netherite and the oil well have one, which needs the Electric Harvester.
 _Avoid_: base recipe, fallback
 
 **Held recipe**:

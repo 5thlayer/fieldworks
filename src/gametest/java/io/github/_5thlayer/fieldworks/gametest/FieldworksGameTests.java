@@ -72,6 +72,7 @@ public final class FieldworksGameTests {
         OilFieldTests.register(tests);
         ClearanceTests.register(tests);
         HandMiningTests.register(tests);
+        HandGateTests.register(tests);
         HarvesterTests.register(tests);
         HarvesterReachTests.register(tests);
         HarvesterFaceTests.register(tests);

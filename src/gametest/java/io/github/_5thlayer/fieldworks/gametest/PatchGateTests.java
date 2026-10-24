@@ -248,15 +248,16 @@ final class PatchGateTests {
         helper.succeed();
     }
 
-    /** Vanilla's tiers: iron for redstone, gold and diamond, a diamond pickaxe for netherite, any pickaxe for quartz, nothing for glowstone. */
+    /**
+     * Vanilla's tiers where a hand draw exists: iron for redstone and gold, any pickaxe for quartz, nothing for glowstone.
+     * Diamond and netherite are Harvester-only, so no pickaxe tier applies ({@link HandGateTests}).
+     */
     private static void pickaxeTiers(GameTestHelper helper) {
         int slot = 0;
-        for (OreResource resource : List.of(OreResource.REDSTONE, OreResource.GOLD, OreResource.DIAMOND)) {
+        for (OreResource resource : List.of(OreResource.REDSTONE, OreResource.GOLD)) {
             helper.assertValueEqual(breakOnce(helper, resource, Items.STONE_PICKAXE, slot++), 0, "a stone pickaxe on " + resource.key());
             helper.assertValueEqual(breakOnce(helper, resource, Items.IRON_PICKAXE, slot++), 1, "an iron pickaxe on " + resource.key());
         }
-        helper.assertValueEqual(breakOnce(helper, OreResource.NETHERITE, Items.IRON_PICKAXE, slot++), 0, "an iron pickaxe on netherite");
-        helper.assertValueEqual(breakOnce(helper, OreResource.NETHERITE, Items.DIAMOND_PICKAXE, slot++), 1, "a diamond pickaxe on netherite");
         helper.assertValueEqual(breakOnce(helper, OreResource.QUARTZ, Items.WOODEN_PICKAXE, slot++), 1, "a wooden pickaxe on quartz");
         helper.assertValueEqual(breakOnce(helper, OreResource.QUARTZ, Items.AIR, slot++), 0, "a bare hand on quartz");
         helper.assertValueEqual(breakOnce(helper, OreResource.GLOWSTONE, Items.AIR, slot++), 1, "a bare hand on glowstone");
