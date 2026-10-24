@@ -9,7 +9,8 @@ wells and crude oil work, ported from FactoryWorks Core at commit `fb05f50`.
 
 ADR 0007 supersedes its resource list (twelve resources, each with a dimension and a minimum
 distance in place of the one 150-block hole) and the drilling mud bonus on wells: a well's floor is
-final.
+final. ADR 0010 supersedes its hand mining for a resource whose Default recipe is replaced: such ore
+is drawn by a Harvester only.
 
 **Decision.**
 
