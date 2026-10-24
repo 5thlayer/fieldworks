@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "Fieldworks game test: a pack that drops the diamond recipe",
+    "min_format": [101, 1],
+    "max_format": [101, 1]
+  }
+}

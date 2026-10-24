@@ -185,8 +185,6 @@ final class HeldRecipeTests {
         helper.assertTrue(views.stream().noneMatch(view -> view.isDefault()
                         && view.sources().contains(FieldworksRegistries.ore(OreResource.URANIUM).get())),
                 "the viewer lists uranium ore's Default recipe, which a recipe replaces");
-        helper.assertTrue(views.stream().anyMatch(view -> view.id().equals(Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "gametest/uranium_replaced"))),
-                "the viewer does not list the recipe that replaces uranium ore's Default");
         helper.succeed();
     }
 

@@ -29,7 +29,10 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 
-/** Hand mining: a vanilla pickaxe at its vanilla tier takes one unit per break, and a weaker tool takes none. */
+/**
+ * Hand mining: a vanilla pickaxe at its vanilla tier takes one unit per break, and a weaker tool takes none. A resource
+ * whose Default recipe is replaced is drawn by no hand ({@link HandGateTests}).
+ */
 final class HandMiningTests {
 
     private HandMiningTests() {
@@ -44,8 +47,8 @@ final class HandMiningTests {
                 helper -> mine(helper, OreResource.COAL, new ChunkPos(116, 180), Items.AIR, 0));
         tests.test("a_stone_pickaxe_takes_nothing_from_uranium", 20,
                 helper -> mine(helper, OreResource.URANIUM, new ChunkPos(124, 180), Items.STONE_PICKAXE, 0));
-        tests.test("an_iron_pickaxe_takes_one_unit_of_uranium_per_break", 20,
-                helper -> mine(helper, OreResource.URANIUM, new ChunkPos(132, 180), Items.IRON_PICKAXE, 1));
+        tests.test("hand_gate_an_iron_pickaxe_takes_nothing_from_uranium", 20,
+                helper -> mine(helper, OreResource.URANIUM, new ChunkPos(132, 180), Items.IRON_PICKAXE, 0));
         tests.test("an_ore_block_outside_a_patch_yields_its_default_amount", 20,
                 helper -> mineUnpatched(helper, OreResource.IRON));
     }
@@ -83,7 +86,7 @@ final class HandMiningTests {
     }
 
     /** Breaks the patch's first block once with {@code tool} and expects {@code units} drawn and paid. */
-    private static void mine(GameTestHelper helper, OreResource resource, ChunkPos chunk, Item tool, int units) {
+    static void mine(GameTestHelper helper, OreResource resource, ChunkPos chunk, Item tool, int units) {
         ServerLevel level = helper.getLevel();
         Holder<Structure> structure = PatchDiscTests.resolve(helper, resource);
         if (structure == null) {

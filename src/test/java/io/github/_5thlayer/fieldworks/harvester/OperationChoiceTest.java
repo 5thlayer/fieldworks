@@ -123,6 +123,26 @@ class OperationChoiceTest {
     }
 
     @Test
+    void theReplacingRecipeOfASourceIsTheOneThatReplacesItsDefault() {
+        Recipe<String> keepsIron = recipe("test:iron_keeps", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), false);
+        Recipe<String> replacesIron = recipe("test:iron", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), true);
+        Recipe<String> replacesCopper = recipe("test:copper", Set.of("fieldworks:copper_ore"), Set.of(), 40, OptionalInt.empty(), true);
+
+        assertEquals(Optional.of(replacesIron), OperationChoice.replacingDefaultOf(List.of(keepsIron, replacesCopper, replacesIron), IRON));
+        assertEquals(Optional.empty(), OperationChoice.replacingDefaultOf(List.of(keepsIron, replacesCopper), IRON));
+        assertEquals(Optional.empty(), OperationChoice.replacingDefaultOf(List.of(), IRON));
+        assertEquals(Optional.empty(), OperationChoice.replacingDefaultOf(List.of(replacesIron), NONE));
+    }
+
+    @Test
+    void whereSeveralRecipesReplaceADefaultTheLowestIdIsTheReplacingRecipe() {
+        Recipe<String> b = recipe("test:b", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), true);
+        Recipe<String> a = recipe("test:a", Set.of("fieldworks:iron_ore"), Set.of(), 40, OptionalInt.empty(), true);
+
+        assertEquals(Optional.of(a), OperationChoice.replacingDefaultOf(List.of(b, a), IRON));
+    }
+
+    @Test
     void aTagSourceReplacesTheDefaultOfEveryBlockInTheTag() {
         Source taggedIron = Source.oreBlock("fieldworks:iron_ore", Set.of("c:ores/iron"));
         List<Source> layer = List.of(taggedIron, COPPER, NONE, NONE, NONE, NONE, NONE, NONE, NONE);

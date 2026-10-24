@@ -3,13 +3,18 @@
 
 package io.github._5thlayer.fieldworks.ore;
 
+import java.util.Optional;
+
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
+import io.github._5thlayer.fieldworks.harvester.Requirement;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -40,7 +45,8 @@ public final class OreMining {
 
     /**
      * A player breaking an ore block. A creative break is let through: it is a build gesture, and
-     * cancelling it would leave a creative player unable to remove ore at all. A break with too weak
+     * cancelling it would leave a creative player unable to remove ore at all. A break of a block whose
+     * Default recipe a Harvest Recipe replaces draws nothing and tells the player what the block needs. A break with too weak
      * a tool draws nothing; the block survives with its amount intact.
      */
     public static void onBreak(BreakBlockEvent event) {
@@ -56,6 +62,14 @@ public final class OreMining {
             return;
         }
         event.setCanceled(true);
+        // A written recipe that replaces the Default recipe takes the hand draw away with it (ADR 0010); a fake player counts as hand.
+        Optional<Component> requirement = Requirement.of(level, state);
+        if (requirement.isPresent()) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.sendSystemMessage(requirement.get(), true);
+            }
+            return;
+        }
         if (player != null && !player.hasCorrectToolForDrops(state)) {
             return;
         }
