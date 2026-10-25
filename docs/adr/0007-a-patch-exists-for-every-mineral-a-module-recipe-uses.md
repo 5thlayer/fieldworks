@@ -31,7 +31,8 @@ resource, so the Electric Harvester gated nothing (#35).
 - **Nether Patches lie on the open Nether floor**, found by scanning down from under the bedrock
   roof, never on the roof or a lava sea, and follow the floor column by column, a column further
   than 8 blocks above or below the centre's floor being left out, so a Patch is one place to build
-  beside and not a scatter over every cave level.
+  beside and not a scatter over every cave level. ADR 0011 replaces the 8 with a span every patch
+  keeps in both dimensions.
 - **Rare resources sit behind a tech step.** The Burner Harvester works every common resource.
   Uranium and diamond need the Electric Harvester and an Overworld Drilling Fluid (10 mB a draw);
   netherite needs the Electric Harvester and a Nether Drilling Fluid (25 mB); Oil wells need the
