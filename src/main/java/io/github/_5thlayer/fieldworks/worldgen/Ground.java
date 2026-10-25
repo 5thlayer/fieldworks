@@ -26,7 +26,7 @@ final class Ground {
      * How a patch sets its blocks: with no shape updates to their neighbours, which worldgen never runs, so a
      * patch placed by {@code /place} into a live level leaves the same blocks that worldgen would.
      */
-    static final int PLACE = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
+    private static final int PLACE = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
     private Ground() {
     }
@@ -52,20 +52,26 @@ final class Ground {
         return NetherFloor.of(y -> level.getBlockState(cursor.setY(y)), level.getMinY(), top);
     }
 
+    /** Sets a patch's ore block at {@code y} and clears what grows over it. */
+    static void place(WorldGenLevel level, BlockPos.MutableBlockPos cursor, int x, int y, int z, BlockState ore) {
+        level.setBlock(cursor.set(x, y, z), ore, PLACE);
+        clearAbove(level, cursor, x, y, z);
+    }
+
     /**
      * Clears what grows over a patch's block at {@code y}, up the column to the first terrain block, a cave's
      * roof or an overhang, or to the column's top: a tree's trunk and the canopy over it, a bamboo stalk, the
      * grass, and the snow that lay on any of it. Water stays: a waterlogged plant or seagrass leaves its water,
      * so a patch under a pond keeps it, and snow lying on the ore itself stays.
      */
-    static void clearAbove(WorldGenLevel level, BlockPos.MutableBlockPos cursor, int x, int y, int z) {
+    private static void clearAbove(WorldGenLevel level, BlockPos.MutableBlockPos cursor, int x, int y, int z) {
         int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
         for (int above = y + 1; above < top; above++) {
             BlockState state = level.getBlockState(cursor.set(x, above, z));
             if (isTerrain(state)) {
                 return;
             }
-            if (state.is(FieldworksTags.PATCH_CLEARS) || above > y + 1 && state.is(Blocks.SNOW)) {
+            if (state.is(FieldworksTags.PATCH_CLEARS) || (above > y + 1 && state.is(Blocks.SNOW))) {
                 BlockState left = state.getFluidState().createLegacyBlock();
                 if (left != state) {
                     level.setBlock(cursor, left, PLACE);

@@ -85,9 +85,7 @@ public final class PatchDiscPiece extends StructurePiece implements PatchDisc.So
         if (floor.isEmpty() || centreY != Integer.MIN_VALUE && Math.abs(floor.getAsInt() - centreY) > NetherFloor.MAX_STEP) {
             return;
         }
-        int y = floor.getAsInt();
-        level.setBlock(cursor.set(x, y, z), ore, Ground.PLACE);
-        Ground.clearAbove(level, cursor, x, y, z);
+        Ground.place(level, cursor, x, floor.getAsInt(), z, ore);
     }
 
     @Override
@@ -107,9 +105,7 @@ public final class PatchDiscPiece extends StructurePiece implements PatchDisc.So
                 if (disc.resource().dimension() == PatchDimension.NETHER) {
                     placeOnFloor(level, cursor, x, z, ore);
                 } else {
-                    int y = Ground.of(level, x, z);
-                    level.setBlock(cursor.set(x, y, z), ore, Ground.PLACE);
-                    Ground.clearAbove(level, cursor, x, y, z);
+                    Ground.place(level, cursor, x, Ground.of(level, x, z), z, ore);
                 }
             }
         }
