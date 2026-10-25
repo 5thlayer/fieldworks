@@ -4,7 +4,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
-- A patch lies on the ground under what grows there rather than on top of it: bamboo, cactus, huge mushrooms, pumpkins, melons, mangrove roots and bee nests, as well as trees, and in the Nether huge fungi, whose caps a Nether patch used to land on. The new block tag `#fieldworks:patch_lies_under` holds these, so a pack can add its own plants. Chunks generated after updating are laid out this way; patches already in a world stay as they are.
+- A patch lies on the ground under what grows there, never on top of it, and clears it away: trees and the canopy over the patch, bamboo, cactus, huge mushrooms, pumpkins, melons, mangrove roots, bee nests, grass, flowers and vines, and in the Nether huge fungi, whose caps a Nether patch used to land on, and fire. Bamboo and cactus used to be left on the ore, where they broke and dropped at the first block update. Water stays: a waterlogged plant or seagrass leaves its water. The new block tag `#fieldworks:patch_clears` holds what a patch clears, so a pack can add its own plants. Chunks generated after updating are laid out this way; patches already in a world stay as they are.
 
 ## 0.5.0
 

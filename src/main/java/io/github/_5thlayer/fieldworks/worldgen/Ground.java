@@ -8,16 +8,25 @@ import java.util.OptionalInt;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * Where a patch lies in a column. Vanilla's heightmaps stop at whatever grows on the ground, so a patch
  * crossing a wood would land on the canopy; this walks the column down through everything that grew
- * there, the blocks of {@link FieldworksTags#PATCH_LIES_UNDER}, to the first terrain block, so the patch
- * lies under what grows on it.
+ * there, the blocks of {@link FieldworksTags#PATCH_CLEARS}, to the first terrain block, so the patch
+ * lies under what grows on it, and then clears it away.
  */
 final class Ground {
+
+    /**
+     * How a patch sets its blocks: with no shape updates to their neighbours, which worldgen never runs, so a
+     * patch placed by {@code /place} into a live level leaves the same blocks that worldgen would.
+     */
+    static final int PLACE = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
     private Ground() {
     }
@@ -44,10 +53,32 @@ final class Ground {
     }
 
     /**
+     * Clears what grows over a patch's block at {@code y}, up the column to the first terrain block, a cave's
+     * roof or an overhang, or to the column's top: a tree's trunk and the canopy over it, a bamboo stalk, the
+     * grass, and the snow that lay on any of it. Water stays: a waterlogged plant or seagrass leaves its water,
+     * so a patch under a pond keeps it, and snow lying on the ore itself stays.
+     */
+    static void clearAbove(WorldGenLevel level, BlockPos.MutableBlockPos cursor, int x, int y, int z) {
+        int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+        for (int above = y + 1; above < top; above++) {
+            BlockState state = level.getBlockState(cursor.set(x, above, z));
+            if (isTerrain(state)) {
+                return;
+            }
+            if (state.is(FieldworksTags.PATCH_CLEARS) || above > y + 1 && state.is(Blocks.SNOW)) {
+                BlockState left = state.getFluidState().createLegacyBlock();
+                if (left != state) {
+                    level.setBlock(cursor, left, PLACE);
+                }
+            }
+        }
+    }
+
+    /**
      * A solid block that did not grow there. Water is not terrain either, so a patch that clips a pond lies
      * on its floor rather than floating.
      */
     static boolean isTerrain(BlockState state) {
-        return state.blocksMotion() && !state.is(FieldworksTags.PATCH_LIES_UNDER);
+        return state.blocksMotion() && !state.is(FieldworksTags.PATCH_CLEARS);
     }
 }
