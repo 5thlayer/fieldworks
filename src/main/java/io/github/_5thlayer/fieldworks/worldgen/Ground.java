@@ -3,19 +3,19 @@
 
 package io.github._5thlayer.fieldworks.worldgen;
 
+import io.github._5thlayer.fieldworks.FieldworksTags;
 import java.util.OptionalInt;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Where a patch lies in a column. Vanilla's heightmaps stop at leaves and logs, bamboo, cactus and huge
- * mushrooms, so a patch crossing a wood would land on the canopy; this walks the column down through
- * everything that grew there to the first terrain block, so the patch lies under the plants.
+ * Where a patch lies in a column. Vanilla's heightmaps stop at whatever grows on the ground, so a patch
+ * crossing a wood would land on the canopy; this walks the column down through everything that grew
+ * there, the blocks of {@link FieldworksTags#PATCH_LIES_UNDER}, to the first terrain block, so the patch
+ * lies under the trees.
  */
 final class Ground {
 
@@ -34,7 +34,7 @@ final class Ground {
 
     /**
      * The y of the open floor in a Nether column, or empty where it lies under lava (ADR 0007). Plants and
-     * fire standing on it do not make it less open.
+     * fire standing on it, and huge fungi grown on it, do not make it less open.
      */
     static OptionalInt nether(LevelReader level, int x, int z) {
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos(x, 0, z);
@@ -43,15 +43,11 @@ final class Ground {
         return NetherFloor.of(y -> level.getBlockState(cursor.setY(y)), level.getMinY(), top);
     }
 
-    /** Water is not terrain either, so a patch that clips a pond lies on its floor rather than floating. */
-    private static boolean isTerrain(BlockState state) {
-        return state.blocksMotion()
-                && !state.is(BlockTags.LOGS)
-                && !state.is(BlockTags.LEAVES)
-                && !state.is(Blocks.BAMBOO)
-                && !state.is(Blocks.CACTUS)
-                && !state.is(Blocks.MUSHROOM_STEM)
-                && !state.is(Blocks.RED_MUSHROOM_BLOCK)
-                && !state.is(Blocks.BROWN_MUSHROOM_BLOCK);
+    /**
+     * A solid block that did not grow there. Water is not terrain either, so a patch that clips a pond lies
+     * on its floor rather than floating.
+     */
+    static boolean isTerrain(BlockState state) {
+        return state.blocksMotion() && !state.is(FieldworksTags.PATCH_LIES_UNDER);
     }
 }

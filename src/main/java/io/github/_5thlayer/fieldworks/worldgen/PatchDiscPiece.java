@@ -4,6 +4,7 @@
 package io.github._5thlayer.fieldworks.worldgen;
 
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
+import io.github._5thlayer.fieldworks.FieldworksTags;
 import io.github._5thlayer.fieldworks.ore.OreResource;
 import io.github._5thlayer.fieldworks.ore.PatchDimension;
 import io.github._5thlayer.fieldworks.ore.PatchDisc;
@@ -81,14 +82,18 @@ public final class PatchDiscPiece extends StructurePiece implements PatchDisc.So
         tag.putInt("centre_y", centreY);
     }
 
-    /** A Nether column's ore, on its open floor: none on a lava sea or off the centre's reach, and the plants or fire standing there go. */
+    /**
+     * A Nether column's ore, on its open floor: none on a lava sea or off the centre's reach, and the plants or
+     * fire standing there go, while a huge fungus's stem stays standing on the ore as a trunk does.
+     */
     private void placeOnFloor(WorldGenLevel level, BlockPos.MutableBlockPos cursor, int x, int z, BlockState ore) {
         OptionalInt floor = Ground.nether(level, x, z);
         if (floor.isEmpty() || centreY != Integer.MIN_VALUE && Math.abs(floor.getAsInt() - centreY) > NetherFloor.MAX_STEP) {
             return;
         }
         int y = floor.getAsInt();
-        if (!level.getBlockState(cursor.set(x, y + 1, z)).isAir()) {
+        BlockState above = level.getBlockState(cursor.set(x, y + 1, z));
+        if (!above.isAir() && !above.is(FieldworksTags.PATCH_LIES_UNDER)) {
             level.setBlock(cursor, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
         }
         level.setBlock(cursor.set(x, y, z), ore, Block.UPDATE_CLIENTS);

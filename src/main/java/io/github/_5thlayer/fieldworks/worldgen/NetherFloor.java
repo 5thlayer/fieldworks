@@ -10,7 +10,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Where a Nether patch lies in a column: the open floor, found by scanning down from under the bedrock
- * roof to the first solid block with nothing solid above it. The heightmaps are no use there, since the
+ * roof to the first terrain block with no terrain above it, so a huge fungus's cap and stem are passed
+ * through as {@link Ground} passes through a tree. The heightmaps are no use there, since the
  * topmost solid block of a Nether column is the roof. A floor under lava is no floor: the column is
  * rejected, so a patch never lies on a lava sea (ADR 0007).
  */
@@ -39,11 +40,11 @@ final class NetherFloor {
     static OptionalInt of(Column column, int minY, int maxY) {
         for (int y = maxY - ROOF_CLEARANCE; y > minY; y--) {
             BlockState below = column.at(y);
-            if (!below.blocksMotion()) {
+            if (!Ground.isTerrain(below)) {
                 continue;
             }
             BlockState above = column.at(y + 1);
-            if (above.blocksMotion()) {
+            if (Ground.isTerrain(above)) {
                 continue;
             }
             return above.getFluidState().is(FluidTags.LAVA) ? OptionalInt.empty() : OptionalInt.of(y);

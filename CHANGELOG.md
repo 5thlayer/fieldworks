@@ -4,7 +4,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
-- A patch crossing bamboo, cactus or a huge mushroom lies on the ground under it, as it does under trees, rather than on its top.
+- A patch lies on the ground under what grows there rather than on top of it: bamboo, cactus, huge mushrooms, pumpkins, melons, mangrove roots and bee nests, as well as trees, and in the Nether huge fungi, whose caps a Nether patch used to land on. The new block tag `#fieldworks:patch_lies_under` holds these, so a pack can add its own plants. Chunks generated after updating are laid out this way; patches already in a world stay as they are.
 
 ## 0.5.0
 
