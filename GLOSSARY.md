@@ -134,6 +134,11 @@ the tag its recipes name: `#fieldworks:drilling_fluids/overworld` (drilling mud)
 `#fieldworks:drilling_fluids/nether` (magma slurry). The Harvester checks no dimension.
 _Avoid_: lubricant, mud (for the general case)
 
+**Drilling mud**:
+The Overworld's Drilling Fluid, crafted from a water bucket and a clay ball, as magma slurry is from a lava
+bucket and soul soil. It comes in a bucket only, never brewed or bottled.
+_Avoid_: mud bottle, brewed mud
+
 **Magma slurry**:
 The Nether's Drilling Fluid, crafted from a lava bucket and soul soil. It flows at lava's pace but is not
 lava: it is not in `#minecraft:lava`, burns nothing, fuels no furnace and sets no crude into tar.
