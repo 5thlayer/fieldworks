@@ -4,6 +4,7 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- **Breaking:** drilling mud is crafted, not brewed ([ADR 0012](docs/adr/0012-a-drilling-fluid-is-crafted-by-the-bucket.md), [#52](https://github.com/5thlayer/fieldworks/issues/52)). A water bucket and a clay ball craft a drilling mud bucket, `fieldworks:drilling_mud_bucket`, of the type `fieldworks:crafting_shapeless_no_remainder`, so the water bucket becomes the mud bucket and no empty bucket is left in the grid, as with magma slurry. A brewing stand no longer brews drilling mud from a clay ball or a clay block, and EMI no longer shows that brewing. The item `fieldworks:drilling_mud_bottle` is gone: drilling mud comes in a bucket only, and mud bottles in a world disappear when it updates.
 - Crafting magma slurry no longer leaves an empty bucket in the grid ([#47](https://github.com/5thlayer/fieldworks/issues/47)): the lava bucket becomes the magma slurry bucket, where it used to give back its empty bucket too, a bucket for free. The craft, `fieldworks:magma_slurry_bucket`, is of a new type, `fieldworks:crafting_shapeless_no_remainder`, written like `minecraft:crafting_shapeless` and leaving nothing in the grid. A Craftworks Assembler still gives the empty bucket back, since it asks each ingredient for its remainder ([#51](https://github.com/5thlayer/fieldworks/issues/51)).
 
 ## 0.6.0

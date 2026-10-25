@@ -241,7 +241,7 @@ final class HarvesterMenuTests {
 
     /**
      * The fuel slot takes fuel on a burning tier and nothing on an electric one; the fill slot an empty bucket, the drain
-     * slot a mud bottle; the buffer slots take nothing from a player but show what the Harvester drew, and a shift-click
+     * slot a mud bucket; the buffer slots take nothing from a player but show what the Harvester drew, and a shift-click
      * of coal goes to the fuel slot.
      */
     private static void slots(GameTestHelper helper) {
@@ -259,7 +259,7 @@ final class HarvesterMenuTests {
         helper.assertFalse(fuel.mayPlace(new ItemStack(Items.COBBLESTONE)), "the fuel slot took cobblestone");
         helper.assertTrue(fill.mayPlace(new ItemStack(Items.BUCKET)), "the fill slot refused an empty bucket");
         helper.assertFalse(fill.mayPlace(new ItemStack(Items.COAL)), "the fill slot took coal");
-        helper.assertTrue(drain.mayPlace(new ItemStack(DrillingMud.BOTTLE.get())), "the drain slot refused a mud bottle");
+        helper.assertTrue(drain.mayPlace(new ItemStack(DrillingMud.BUCKET.get())), "the drain slot refused a mud bucket");
         helper.assertFalse(drain.mayPlace(new ItemStack(Items.BUCKET)), "the drain slot took an empty bucket");
         helper.assertFalse(buffer.mayPlace(new ItemStack(Items.COAL)), "an output buffer slot took coal");
 

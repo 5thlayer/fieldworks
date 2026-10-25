@@ -73,7 +73,7 @@ final class FlooredWellTests {
         tests.test("patches_a_decayed_rich_oil_well_pumps_its_own_higher_floor_rate_for_good", 400,
                 helper -> floorIsFinal(helper, RICH_START, 10));
         tests.test("a_held_crude_recipe_pumps_its_own_amount_and_the_well_still_decays", 20, FlooredWellTests::flatRecipeStillDecays);
-        tests.test("one_hopper_of_mud_bottles_and_empty_buckets_keeps_both_slots_fed_with_glass_bottles_and_crude_buckets_in_the_chest", 300,
+        tests.test("one_hopper_of_mud_buckets_and_an_empty_bucket_keeps_both_slots_fed_with_emptied_and_crude_buckets_in_the_chest", 300,
                 FlooredWellTests::mixedHopper);
         tests.test("patches_the_shipped_oil_well_recipe_loads_and_a_restoring_crude_result_is_refused", 1, FlooredWellTests::loadsAndRefuses);
         tests.test("patches_the_viewer_lists_the_oil_wells_recipe_in_place_of_its_default_with_the_crude_oil_bucket_as_its_icon", 1,
@@ -119,9 +119,10 @@ final class FlooredWellTests {
     }
 
     /**
-     * One hopper holds a mud bottle, an empty bucket and another mud bottle (ADR 0004). The machine has pumped a
+     * One hopper holds a mud bucket, an empty bucket and another mud bucket (ADR 0004). The machine has pumped a
      * bucketful of crude first, so the fill slot has something to fill and the drain slot something to drain:
-     * both are fed from the one hopper, and the chest at the output face gets a crude bucket and two glass bottles.
+     * both are fed from the one hopper, and the chest at the output face gets a crude bucket and the two emptied
+     * mud buckets.
      */
     private static void mixedHopper(GameTestHelper helper) {
         flooredWell(helper, NORMAL_START);
@@ -135,17 +136,16 @@ final class FlooredWellTests {
 
         helper.setBlock(HOPPER, Blocks.HOPPER.defaultBlockState().setValue(HopperBlock.FACING, Direction.EAST));
         HopperBlockEntity feed = helper.getBlockEntity(HOPPER, HopperBlockEntity.class);
-        feed.setItem(0, new ItemStack(DrillingMud.BOTTLE.get()));
+        feed.setItem(0, new ItemStack(DrillingMud.BUCKET.get()));
         feed.setItem(1, new ItemStack(Items.BUCKET));
-        feed.setItem(2, new ItemStack(DrillingMud.BOTTLE.get()));
+        feed.setItem(2, new ItemStack(DrillingMud.BUCKET.get()));
 
         helper.succeedWhen(() -> {
             helper.assertTrue(feed.isEmpty(), "the hopper still holds items");
             helper.assertValueEqual(HarvesterTests.count(helper, CHEST, CrudeOil.BUCKET.get()), 1, "crude buckets in the chest");
-            helper.assertValueEqual(HarvesterTests.count(helper, CHEST, Items.GLASS_BOTTLE), 2, "glass bottles in the chest");
-            helper.assertValueEqual(HarvesterTests.count(helper, CHEST, Items.BUCKET), 0, "empty buckets in the chest");
-            helper.assertValueEqual(HarvesterTests.count(helper, CHEST, DrillingMud.BOTTLE.get()), 0, "mud bottles in the chest");
-            helper.assertItemEntityNotPresent(Items.GLASS_BOTTLE);
+            helper.assertValueEqual(HarvesterTests.count(helper, CHEST, Items.BUCKET), 2, "empty buckets in the chest");
+            helper.assertValueEqual(HarvesterTests.count(helper, CHEST, DrillingMud.BUCKET.get()), 0, "mud buckets in the chest");
+            helper.assertItemEntityNotPresent(Items.BUCKET);
             helper.assertItemEntityNotPresent(CrudeOil.BUCKET.get());
         });
     }

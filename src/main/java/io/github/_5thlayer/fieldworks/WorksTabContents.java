@@ -37,7 +37,6 @@ final class WorksTabContents {
         event.accept(FieldworksRegistries.URANIUM_INGOT.get());
         event.accept(Tar.ITEM.get());
         event.accept(CrudeOil.BUCKET.get());
-        event.accept(DrillingMud.BOTTLE.get());
         event.accept(DrillingMud.BUCKET.get());
         event.accept(MagmaSlurry.BUCKET.get());
     }

@@ -43,7 +43,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * A Harvester's Drilling Fluid (#11): mud in bottles or buckets by hopper, or by pipe, fills its tank; a Held recipe
+ * A Harvester's Drilling Fluid (#11): mud in buckets by hopper, or by pipe, fills its tank; a Held recipe
  * that names a Drilling Fluid consumes it, and only a Held recipe ever does. The recipes are the game tests' own
  * datapack's.
  */
@@ -58,11 +58,9 @@ final class DrillingFluidTests {
     }
 
     static void register(FieldworksGameTests.Registrar tests) {
-        tests.test("mud_bottles_fed_by_hopper_fill_the_drilling_fluid_tank_and_glass_bottles_arrive_in_the_chest", 200,
-                DrillingFluidTests::bottlesFillTheTank);
         tests.test("mud_buckets_fed_by_hopper_fill_the_drilling_fluid_tank_and_empty_buckets_arrive_in_the_chest", 200,
                 DrillingFluidTests::bucketsFillTheTank);
-        tests.test("a_mud_bottle_waits_in_the_drain_slot_while_the_tank_has_no_room_for_it", 20, DrillingFluidTests::waitsForRoom);
+        tests.test("a_mud_bucket_waits_in_the_drain_slot_while_the_tank_has_no_room_for_it", 20, DrillingFluidTests::waitsForRoom);
         tests.test("a_pipe_fills_the_drilling_fluid_tank_with_mud_and_never_drains_it", 20, DrillingFluidTests::pipeFillsOnly);
         tests.test("the_drilling_fluid_tank_is_never_pushed_to_the_output_face", 20, DrillingFluidTests::neverPushed);
         tests.test("a_held_recipe_with_a_drilling_fluid_consumes_it_per_operation_and_idles_when_the_tank_runs_dry", 20,
@@ -73,20 +71,6 @@ final class DrillingFluidTests {
         tests.test("a_harvest_recipe_loads_with_a_drilling_fluid_and_one_with_none_to_take_is_refused", 1, DrillingFluidTests::loadsAndRefuses);
         tests.test("a_held_recipe_naming_a_fluid_outside_the_drilling_fluids_never_runs", 20, DrillingFluidTests::neverRunsOnAForeignFluid);
         tests.test("the_viewer_lists_a_recipes_drilling_fluid_and_its_mb_per_operation", 1, DrillingFluidTests::viewerLists);
-    }
-
-    /** One hopper at the side holding four mud bottles: the tank fills a bottle at a time, the glass bottles reach the chest. */
-    private static void bottlesFillTheTank(GameTestHelper helper) {
-        feed(helper, new ItemStack(DrillingMud.BOTTLE.get(), 4));
-        place(helper);
-
-        helper.succeedWhen(() -> {
-            helper.assertValueEqual(mud(helper), 1_000, "mud in the Drilling Fluid tank");
-            helper.assertValueEqual(HarvesterTests.count(helper, CHEST, Items.GLASS_BOTTLE), 4, "glass bottles in the chest");
-            helper.assertValueEqual(HarvesterTests.count(helper, CHEST, DrillingMud.BOTTLE.get()), 0, "mud bottles in the chest");
-            helper.assertItemEntityNotPresent(Items.GLASS_BOTTLE);
-            helper.assertItemEntityNotPresent(DrillingMud.BOTTLE.get());
-        });
     }
 
     private static void bucketsFillTheTank(GameTestHelper helper) {
@@ -102,26 +86,26 @@ final class DrillingFluidTests {
     }
 
     /**
-     * 7,900 mB in the tank leaves no room for a 250 mB bottle: it stays in the drain slot, whole, and the tank, the
+     * 7,500 mB in the tank leaves no room for a 1,000 mB bucket: it stays in the drain slot, whole, and the tank, the
      * chest and the world are as they were.
      */
     private static void waitsForRoom(GameTestHelper helper) {
         HarvesterBlockEntity machine = place(helper);
-        fill(helper, 7_900);
+        fill(helper, 7_500);
         helper.setBlock(CHEST, Blocks.CHEST);
         ResourceHandler<ItemResource> items = helper.getLevel().getCapability(Capabilities.Item.BLOCK,
                 helper.absolutePos(ORIGIN.west()), Direction.WEST);
         try (Transaction feeding = Transaction.openRoot()) {
-            helper.assertValueEqual(items.insert(ItemResource.of(DrillingMud.BOTTLE.get()), 1, feeding), 1, "mud bottles the Harvester took");
+            helper.assertValueEqual(items.insert(ItemResource.of(DrillingMud.BUCKET.get()), 1, feeding), 1, "mud buckets the Harvester took");
             feeding.commit();
         }
 
         HarvesterTests.tick(helper, machine, 30);
 
-        helper.assertValueEqual(mud(helper), 7_900, "mud in the tank");
-        helper.assertValueEqual(HarvesterTests.count(helper, CHEST, Items.GLASS_BOTTLE), 0, "glass bottles in the chest");
-        helper.assertValueEqual(HarvesterTests.count(helper, CHEST, DrillingMud.BOTTLE.get()), 0, "mud bottles in the chest");
-        helper.assertItemEntityNotPresent(DrillingMud.BOTTLE.get());
+        helper.assertValueEqual(mud(helper), 7_500, "mud in the tank");
+        helper.assertValueEqual(HarvesterTests.count(helper, CHEST, Items.BUCKET), 0, "empty buckets in the chest");
+        helper.assertValueEqual(HarvesterTests.count(helper, CHEST, DrillingMud.BUCKET.get()), 0, "mud buckets in the chest");
+        helper.assertItemEntityNotPresent(DrillingMud.BUCKET.get());
 
         helper.succeed();
     }

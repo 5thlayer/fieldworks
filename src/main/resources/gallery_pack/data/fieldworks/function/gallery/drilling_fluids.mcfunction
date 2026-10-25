@@ -1,6 +1,6 @@
 # An Electric Harvester charged full of FE on a uranium patch, holding the shipped recipe that needs drilling mud:
-# uranium is gated behind the Electric Harvester and the Overworld Drilling Fluid. Mud goes in by hopper in bottles;
-# the brewing stand beside it brews more from water bottles and clay.
+# uranium is gated behind the Electric Harvester and the Overworld Drilling Fluid. Mud goes in by hopper in buckets;
+# the crafter beside it holds a water bucket and a clay ball, which craft another.
 function fieldworks:gallery/clear
 
 setblock ~10 ~-1 ~-7 fieldworks:uranium_ore
@@ -68,9 +68,9 @@ setblock ~14 ~2 ~-6 fieldworks:harvester_2_part[facing=north,part=23] strict
 setblock ~12 ~2 ~-5 fieldworks:harvester_2_part[facing=north,part=24] strict
 setblock ~13 ~2 ~-5 fieldworks:harvester_2_part[facing=north,part=25] strict
 setblock ~14 ~2 ~-5 fieldworks:harvester_2_part[facing=north,part=26] strict
-setblock ~11 ~ ~-6 minecraft:hopper[facing=east]{Items:[{Slot:0b,id:"fieldworks:drilling_mud_bottle",count:16}]}
+setblock ~11 ~ ~-6 minecraft:hopper[facing=east]{Items:[{Slot:0b,id:"fieldworks:drilling_mud_bucket",count:1},{Slot:1b,id:"fieldworks:drilling_mud_bucket",count:1}]}
 setblock ~13 ~ ~-8 minecraft:chest[facing=south]
 
-setblock ~8 ~ ~-3 minecraft:brewing_stand{Items:[{Slot:0b,id:"minecraft:potion",count:1,components:{"minecraft:potion_contents":{potion:"minecraft:water"}}},{Slot:1b,id:"minecraft:potion",count:1,components:{"minecraft:potion_contents":{potion:"minecraft:water"}}},{Slot:2b,id:"minecraft:potion",count:1,components:{"minecraft:potion_contents":{potion:"minecraft:water"}}},{Slot:3b,id:"minecraft:clay_ball",count:3},{Slot:4b,id:"minecraft:blaze_powder",count:1}]}
+setblock ~8 ~ ~-3 minecraft:crafter{Items:[{Slot:0b,id:"minecraft:water_bucket",count:1},{Slot:1b,id:"minecraft:clay_ball",count:1}]}
 
 function fieldworks:gallery/sign {scene:"drilling_fluids"}

@@ -16,7 +16,7 @@ final class CreativeTabTests {
             "iron_ore", "copper_ore", "coal_ore", "stone_ore", "uranium_ore",
             "sulfur_ore", "redstone_ore", "gold_ore", "diamond_ore", "quartz_ore", "glowstone_ore", "netherite_ore",
             "sulfur", "raw_uranium", "uranium_ingot", "tar",
-            "crude_oil_bucket", "drilling_mud_bottle", "drilling_mud_bucket", "magma_slurry_bucket");
+            "crude_oil_bucket", "drilling_mud_bucket", "magma_slurry_bucket");
 
     private CreativeTabTests() {
     }

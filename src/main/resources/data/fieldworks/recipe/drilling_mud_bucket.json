@@ -1,0 +1,11 @@
+{
+  "type": "fieldworks:crafting_shapeless_no_remainder",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:water_bucket",
+    "minecraft:clay_ball"
+  ],
+  "result": {
+    "id": "fieldworks:drilling_mud_bucket"
+  }
+}
