@@ -4,7 +4,9 @@
 package io.github._5thlayer.fieldworks.gametest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -17,6 +19,7 @@ import io.github._5thlayer.fieldworks.marker.MarkerEvents;
 import io.github._5thlayer.fieldworks.marker.FoundPatchMarkers;
 import io.github._5thlayer.fieldworks.marker.PatchMarker;
 import io.github._5thlayer.fieldworks.marker.PatchMarkerData;
+import io.github._5thlayer.fieldworks.ore.GroundSpan;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreDelta;
 import io.github._5thlayer.fieldworks.ore.OreMining;
@@ -40,6 +43,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -52,10 +56,11 @@ import org.slf4j.Logger;
 
 /**
  * Each resource's patch, resolved out of the server's registry and placed: generated far enough out
- * that the flat test world never overlaps another test, with a tree standing on its centre, and
- * placed chunk by chunk the way {@code /place} does. The start is also recorded in its chunk, which
- * {@code /place} skips and worldgen does not, so a broken block reads its amount through the same
- * structure manager a real world would.
+ * that the flat test world never overlaps another test, with a tree on its centre and bamboo, cactus,
+ * huge mushrooms, a pumpkin, a melon, mangrove roots, a hanging bee nest, grass and a flower round it,
+ * all of which it clears with the snow on the tree, and placed chunk by chunk the way {@code /place}
+ * does. The start is also recorded in its chunk, which {@code /place} skips and worldgen does not, so a
+ * broken block reads its amount through the same structure manager a real world would.
  */
 final class PatchDiscTests {
 
@@ -98,6 +103,62 @@ final class PatchDiscTests {
                 PatchDiscTests::exhaustedBlocks);
         tests.test("patch_marker_is_found_once_and_removed_when_the_last_block_goes", 20,
                 helper -> markerFollowsThePatch(helper, OreResource.IRON, new ChunkPos(100, 140)));
+        tests.test("patch_growth_a_later_chunk_drops_on_it_is_cleared", 20,
+                helper -> laterChunksGrowthIsCleared(helper, OreResource.IRON, new ChunkPos(100, 240)));
+    }
+
+    /**
+     * A chunk's features reach one chunk out, so a chunk decorated after its neighbour drops its trees' leaves
+     * and its leaf litter on the neighbour's patch, which was placed and cleared already. The later chunk's own
+     * placement clears them, even where it holds none of the disc: here the later chunk is the one east of the
+     * disc's easternmost column.
+     */
+    private static void laterChunksGrowthIsCleared(GameTestHelper helper, OreResource resource, ChunkPos chunk) {
+        ServerLevel level = helper.getLevel();
+        Holder<Structure> structure = resolve(helper, resource);
+        if (structure == null) {
+            return;
+        }
+        StructureStart start = generate(level, structure, chunk);
+        if (!start.isValid() || !(start.getPieces().getFirst() instanceof PatchDisc.Source source)) {
+            helper.fail(resource.key() + " generated no disc at " + chunk);
+            return;
+        }
+        BoundingBox box = start.getBoundingBox();
+        BlockPos east = null;
+        for (int x = box.minX(); x <= box.maxX(); x++) {
+            for (int z = box.minZ(); z <= box.maxZ(); z++) {
+                if (source.covers(x, z)) {
+                    east = new BlockPos(x, 0, z);
+                }
+            }
+        }
+        if (east == null) {
+            helper.fail(resource.key() + "'s disc at " + chunk + " covers no column");
+            return;
+        }
+        ChunkPos later = new ChunkPos(SectionPos.blockToSectionCoord(east.getX()) + 1, SectionPos.blockToSectionCoord(east.getZ()));
+        loadChunks(level, box.inflatedBy(16));
+        place(level, structure.value(), start, chunk, box, at -> !at.equals(later));
+
+        BlockPos ore = new BlockPos(east.getX(), level.getHeight(Heightmap.Types.WORLD_SURFACE, east.getX(), east.getZ()) - 1, east.getZ());
+        if (!(level.getBlockState(ore).getBlock() instanceof OreBlock)) {
+            helper.fail(resource.key() + "'s disc left " + level.getBlockState(ore) + " at its easternmost column " + ore);
+            return;
+        }
+        int known = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
+        level.setBlock(ore.above(), Blocks.LEAF_LITTER.defaultBlockState(), known);
+        level.setBlock(ore.above(3), Blocks.BIRCH_LEAVES.defaultBlockState(), known);
+        placeInChunk(level, structure.value(), start, chunk, later);
+
+        for (BlockPos over : List.of(ore.above(), ore.above(3))) {
+            if (!level.getBlockState(over).isAir()) {
+                helper.fail(resource.key() + "'s disc left " + level.getBlockState(over) + " at " + over
+                        + " once " + later + ", decorated last, dropped it there");
+                return;
+            }
+        }
+        helper.succeed();
     }
 
     /**
@@ -205,10 +266,30 @@ final class PatchDiscTests {
 
         int ground = level.getHeight(Heightmap.Types.WORLD_SURFACE, box.minX(), box.minZ()) - 1;
         BlockPos trunk = new BlockPos(disc.centreX(), ground + 1, disc.centreZ());
-        for (int y = 0; y < 3; y++) {
-            level.setBlockAndUpdate(trunk.above(y), Blocks.OAK_LOG.defaultBlockState());
-        }
-        level.setBlockAndUpdate(trunk.above(3), Blocks.OAK_LEAVES.defaultBlockState());
+        // What grows on the ground round the centre, column by column, bottom first; air leaves a bee nest hanging.
+        BlockState air = Blocks.AIR.defaultBlockState();
+        BlockState log = Blocks.OAK_LOG.defaultBlockState();
+        BlockState bamboo = Blocks.BAMBOO.defaultBlockState();
+        BlockState cactus = Blocks.CACTUS.defaultBlockState();
+        BlockState stem = Blocks.MUSHROOM_STEM.defaultBlockState();
+        BlockState roots = Blocks.MANGROVE_ROOTS.defaultBlockState();
+        Map<BlockPos, List<BlockState>> growth = Map.ofEntries(
+                Map.entry(trunk, List.of(log, log, log, Blocks.OAK_LEAVES.defaultBlockState(), Blocks.SNOW.defaultBlockState())),
+                Map.entry(trunk.east(), List.of(bamboo, bamboo, bamboo)),
+                Map.entry(trunk.west(), List.of(cactus, cactus, cactus)),
+                Map.entry(trunk.north(), List.of(stem, stem, stem, Blocks.RED_MUSHROOM_BLOCK.defaultBlockState())),
+                Map.entry(trunk.south(), List.of(stem, stem, Blocks.BROWN_MUSHROOM_BLOCK.defaultBlockState())),
+                Map.entry(trunk.north().east(), List.of(Blocks.PUMPKIN.defaultBlockState())),
+                Map.entry(trunk.north().west(), List.of(Blocks.MELON.defaultBlockState())),
+                Map.entry(trunk.south().east(), List.of(roots, roots)),
+                Map.entry(trunk.south().west(), List.of(air, air, Blocks.BEE_NEST.defaultBlockState())),
+                Map.entry(trunk.east(2), List.of(Blocks.SHORT_GRASS.defaultBlockState())),
+                Map.entry(trunk.west(2), List.of(Blocks.POPPY.defaultBlockState())));
+        growth.forEach((base, blocks) -> {
+            for (int y = 0; y < blocks.size(); y++) {
+                level.setBlock(base.above(y), blocks.get(y), Block.UPDATE_CLIENTS);
+            }
+        });
 
         place(level, structure.value(), start, chunk, box);
 
@@ -255,9 +336,18 @@ final class PatchDiscTests {
             helper.fail(resource.key() + "'s piece stored " + disc.blockCount() + " blocks and " + placed + " were placed");
             return;
         }
-        if (!level.getBlockState(trunk.below()).is(ore.getBlock()) || !level.getBlockState(trunk).is(Blocks.OAK_LOG)) {
-            helper.fail(resource.key() + "'s disc did not land under the tree at " + trunk);
-            return;
+        for (Map.Entry<BlockPos, List<BlockState>> grown : growth.entrySet()) {
+            BlockPos base = grown.getKey();
+            if (!level.getBlockState(base.below()).is(ore.getBlock())) {
+                helper.fail(resource.key() + "'s disc did not land under the " + grown.getValue().getLast() + " at " + base);
+                return;
+            }
+            for (int y = 0; y <= grown.getValue().size(); y++) {
+                if (!level.getBlockState(base.above(y)).isAir()) {
+                    helper.fail(resource.key() + "'s disc left " + level.getBlockState(base.above(y)) + " over its ore at " + base.above(y));
+                    return;
+                }
+            }
         }
 
         double radius = PatchLaw.of(resource).radius(disc.sizeFactor(), disc.distance());
@@ -430,6 +520,26 @@ final class PatchDiscTests {
     }
 
     /**
+     * A huge crimson fungus grown on the open floor at a column, its stem standing on the floor and its
+     * wart cap and shroomlight over it, the floor found as {@code NetherFloor} finds it; where its stem stands.
+     */
+    private static BlockPos fungusOnTheFloor(ServerLevel level, int x, int z) {
+        int top = level.getMinY() + level.dimensionType().logicalHeight() - 1;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos(x, top - 6, z);
+        while (cursor.getY() > level.getMinY()
+                && !(level.getBlockState(cursor).blocksMotion() && !level.getBlockState(cursor.above()).blocksMotion())) {
+            cursor.move(0, -1, 0);
+        }
+        BlockPos stem = cursor.above().immutable();
+        for (int y = 0; y < 3; y++) {
+            level.setBlock(stem.above(y), Blocks.CRIMSON_STEM.defaultBlockState(), Block.UPDATE_CLIENTS);
+        }
+        level.setBlock(stem.above(3), Blocks.NETHER_WART_BLOCK.defaultBlockState(), Block.UPDATE_CLIENTS);
+        level.setBlock(stem.above(3).east(), Blocks.SHROOMLIGHT.defaultBlockState(), Block.UPDATE_CLIENTS);
+        return stem;
+    }
+
+    /**
      * A Nether patch in the server's real Nether, generated and placed through the structure's own biome
      * test, from the first chunk at or after {@code from} where one is found. Each ore block is the floor
      * itself, a solid block with air above it, under the bedrock roof and clear of lava, and the disc follows
@@ -458,9 +568,11 @@ final class PatchDiscTests {
         PatchDisc disc = source.disc();
         BoundingBox box = start.getBoundingBox();
         loadChunks(level, box);
+        BlockPos fungus = fungusOnTheFloor(level, disc.centreX(), disc.centreZ());
         place(level, structure.value(), start, chunk, box);
 
         BlockState ore = FieldworksRegistries.ore(resource).get().defaultBlockState();
+        Map<Long, Integer> heights = new HashMap<>();
         int placed = 0;
         int missed = 0;
         int lowest = Integer.MAX_VALUE;
@@ -471,8 +583,8 @@ final class PatchDiscTests {
                 List<BlockPos> ores = new ArrayList<>();
                 for (int y = level.getMinY(); y <= level.getMaxY(); y++) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    BlockState state = level.getBlockState(pos);
-                    if (state.getBlock() instanceof OreBlock) {
+                    // Only this resource's: the Nether tests' searches overlap, so another's disc may lie in this box.
+                    if (level.getBlockState(pos).is(ore.getBlock())) {
                         ores.add(pos);
                     }
                 }
@@ -481,7 +593,7 @@ final class PatchDiscTests {
                     return;
                 }
                 if (ores.isEmpty()) {
-                    // A column the disc covers and left bare is one whose floor lay under lava or out of the centre's reach.
+                    // A column the disc covers and left bare is one whose floor lay under lava, or that carvers took away.
                     if (source.covers(x, z)) {
                         missed++;
                     }
@@ -510,8 +622,20 @@ final class PatchDiscTests {
                 }
                 lowest = Math.min(lowest, pos.getY());
                 highest = Math.max(highest, pos.getY());
+                heights.put(ChunkPos.pack(x, z), pos.getY());
                 any = pos;
                 placed++;
+            }
+        }
+        if (!level.getBlockState(fungus.below()).is(ore.getBlock())) {
+            helper.fail(resource.key() + "'s disc did not land under the huge fungus at " + fungus + ": "
+                    + level.getBlockState(fungus.below()) + " is under it");
+            return;
+        }
+        for (int y = 0; y <= 3; y++) {
+            if (!level.getBlockState(fungus.above(y)).isAir()) {
+                helper.fail(resource.key() + "'s disc left the huge fungus's " + level.getBlockState(fungus.above(y)) + " over its ore at " + fungus.above(y));
+                return;
             }
         }
         if (placed == 0) {
@@ -522,14 +646,24 @@ final class PatchDiscTests {
             helper.fail(resource.key() + "'s disc left " + missed + " of its " + disc.blockCount() + " columns bare");
             return;
         }
-        // Each column within eight blocks of the centre's floor, so the disc is one place and not every cave level.
-        if (highest - lowest > 16) {
-            helper.fail(resource.key() + "'s disc spans floors from " + lowest + " to " + highest + ", more than 16 apart");
-            return;
+        // The ore as placed keeps its start's span: one Harvester footprint anywhere on it spans at most 3 (ADR 0011).
+        for (var column : heights.entrySet()) {
+            int x = ChunkPos.getX(column.getKey());
+            int z = ChunkPos.getZ(column.getKey());
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    Integer other = heights.get(ChunkPos.pack(x + dx, z + dz));
+                    if (other != null && Math.abs(other - column.getValue()) > GroundSpan.MAX) {
+                        helper.fail(resource.key() + "'s ore lies at " + column.getValue() + " at " + x + ", " + z + " and "
+                                + other + " at " + (x + dx) + ", " + (z + dz) + ", under one footprint");
+                        return;
+                    }
+                }
+            }
         }
         if (placed + missed != disc.blockCount()) {
             helper.fail(resource.key() + "'s piece stored " + disc.blockCount() + " blocks and " + placed + " were placed, with "
-                    + missed + " left to the lava");
+                    + missed + " left to the lava or the carvers");
             return;
         }
         OreBlock block = (OreBlock) ore.getBlock();
@@ -539,7 +673,7 @@ final class PatchDiscTests {
             helper.fail(resource.key() + " at " + any + " drew " + draw + " from a disc holding " + amount + " a block");
             return;
         }
-        LOGGER.info("PATCH {} nether disc at {}, {}: {} blocks on a floor from {} to {}, {} left to the lava",
+        LOGGER.info("PATCH {} nether disc at {}, {}: {} blocks on a floor from {} to {}, {} left bare",
                 resource.key(), disc.centreX(), disc.centreZ(), placed, lowest, highest, missed);
         helper.succeed();
     }
@@ -669,16 +803,28 @@ final class PatchDiscTests {
 
     static void place(ServerLevel level, Structure structure, StructureStart start, ChunkPos origin,
             BoundingBox box) {
+        place(level, structure, start, origin, box, chunk -> true);
+    }
+
+    /** Places the start in each chunk of {@code box} that {@code which} lets through, in order. */
+    static void place(ServerLevel level, Structure structure, StructureStart start, ChunkPos origin,
+            BoundingBox box, Predicate<ChunkPos> which) {
         level.getChunk(origin.x(), origin.z()).setStartForStructure(structure, start);
         for (int x = SectionPos.blockToSectionCoord(box.minX()); x <= SectionPos.blockToSectionCoord(box.maxX()); x++) {
             for (int z = SectionPos.blockToSectionCoord(box.minZ()); z <= SectionPos.blockToSectionCoord(box.maxZ()); z++) {
                 ChunkPos chunk = new ChunkPos(x, z);
-                level.getChunk(x, z).addReferenceForStructure(structure, origin.pack());
-                start.placeInChunk(level, level.structureManager(), level.getChunkSource().getGenerator(),
-                        level.getRandom(), new BoundingBox(chunk.getMinBlockX(), level.getMinY(), chunk.getMinBlockZ(),
-                                chunk.getMaxBlockX(), level.getMaxY(), chunk.getMaxBlockZ()), chunk);
+                if (which.test(chunk)) {
+                    placeInChunk(level, structure, start, origin, chunk);
+                }
             }
         }
+    }
+
+    static void placeInChunk(ServerLevel level, Structure structure, StructureStart start, ChunkPos origin, ChunkPos chunk) {
+        level.getChunk(chunk.x(), chunk.z()).addReferenceForStructure(structure, origin.pack());
+        start.placeInChunk(level, level.structureManager(), level.getChunkSource().getGenerator(),
+                level.getRandom(), new BoundingBox(chunk.getMinBlockX(), level.getMinY(), chunk.getMinBlockZ(),
+                        chunk.getMaxBlockX(), level.getMaxY(), chunk.getMaxBlockZ()), chunk);
     }
 
     static double distance(ChunkPos chunk) {

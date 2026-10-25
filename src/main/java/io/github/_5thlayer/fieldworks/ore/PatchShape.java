@@ -115,6 +115,14 @@ public final class PatchShape {
         return columns.cardinality();
     }
 
+    public int centreX() {
+        return centreX;
+    }
+
+    public int centreZ() {
+        return centreZ;
+    }
+
     /** Half the side of the square every column lies in. */
     public int reach() {
         return reach;

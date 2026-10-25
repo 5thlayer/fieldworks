@@ -9,6 +9,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.config.FieldworksConfig;
+import io.github._5thlayer.fieldworks.ore.GroundSpan;
 import io.github._5thlayer.fieldworks.ore.OreResource;
 import io.github._5thlayer.fieldworks.ore.PatchDimension;
 import io.github._5thlayer.fieldworks.ore.PatchDisc;
@@ -22,8 +23,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.QuartPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.LevelHeightAccessor;
-import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 import net.minecraft.world.level.levelgen.structure.Structure;
@@ -97,10 +96,13 @@ public final class PatchDiscStructure extends Structure {
         }
         ImprovedNoise noise = new ImprovedNoise(new XoroshiroRandomSource(context.seed()).forkPositional()
                 .fromHashOf(Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch/" + resource.key())));
+        Map<Long, OptionalInt> floors = new HashMap<>();
         PatchShape shape = PatchShape.of(PatchLaw.of(resource), sizeFactor, x, z,
                 (scaledX, scaledZ) -> noise.noise(scaledX, 0, scaledZ),
-                nether ? netherLand(context, y) : land(context, y));
-        if (shape.isEmpty()) {
+                nether ? netherLand(context, y, floors) : land(context, y));
+        // Ground a Harvester can't work generates nothing, rather than a patch trimmed to fit (ADR 0011).
+        if (shape.isEmpty()
+                || !GroundSpan.workable(shape, nether ? netherGround(context, floors) : ground(context))) {
             return Optional.empty();
         }
         PatchDisc disc = new PatchDisc(resource, sizeFactor, shape.blockCount(), x, z);
@@ -120,28 +122,28 @@ public final class PatchDiscStructure extends Structure {
                         QuartPos.fromBlock(x), quartY, QuartPos.fromBlock(z), context.randomState().sampler())));
     }
 
-    /** The open floor under a column, from the generator's base terrain, which is all that exists when a start is found. */
-    private static OptionalInt netherFloor(GenerationContext context, int x, int z) {
-        LevelHeightAccessor height = context.heightAccessor();
-        NoiseColumn column = context.chunkGenerator().getBaseColumn(x, z, height, context.randomState());
-        var generator = context.chunkGenerator();
-        // The terrain stops at the generator's depth, 128 in the Nether, where the dimension's own height spans 256.
-        return NetherFloor.of(column::getBlock, height.getMinY(),
-                Math.min(height.getMaxY(), generator.getMinY() + generator.getGenDepth() - 1));
+    /** An Overworld column's ground in the generator's base terrain. */
+    static GroundSpan.Height ground(GenerationContext context) {
+        return (x, z) -> Ground.overworldBase(context.chunkGenerator(), context.randomState(), context.heightAccessor(), x, z);
     }
 
-    /**
-     * A Nether column's land: a valid biome and an open floor that is not under lava and lies within
-     * {@link NetherFloor#MAX_STEP} of the centre's, so the disc follows the uneven floor and leaves a lava lake out.
-     */
-    private static PatchShape.Land netherLand(GenerationContext context, int y) {
+    /** A Nether column's floor, read once for both its land and its ground; the land has already left out a column with none. */
+    private static GroundSpan.Height netherGround(GenerationContext context, Map<Long, OptionalInt> floors) {
+        return (x, z) -> floor(context, floors, x, z).orElseThrow();
+    }
+
+    private static OptionalInt floor(GenerationContext context, Map<Long, OptionalInt> floors, int x, int z) {
+        return floors.computeIfAbsent(ChunkPos.pack(x, z), key -> netherFloor(context, x, z));
+    }
+
+    private static OptionalInt netherFloor(GenerationContext context, int x, int z) {
+        return Ground.netherBase(context.chunkGenerator(), context.randomState(), context.heightAccessor(), x, z);
+    }
+
+    /** A Nether column's land: a valid biome and an open floor that is not under lava, so the disc leaves a lava lake out. */
+    private static PatchShape.Land netherLand(GenerationContext context, int y, Map<Long, OptionalInt> floors) {
         PatchShape.Land biome = land(context, y);
-        Map<Long, Boolean> floors = new HashMap<>();
-        return (x, z) -> biome.at(x, z)
-                && floors.computeIfAbsent(ChunkPos.pack(x, z), key -> {
-                    OptionalInt floor = netherFloor(context, x, z);
-                    return floor.isPresent() && Math.abs(floor.getAsInt() - y) <= NetherFloor.MAX_STEP;
-                });
+        return (x, z) -> biome.at(x, z) && floor(context, floors, x, z).isPresent();
     }
 
     @Override
