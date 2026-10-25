@@ -101,6 +101,62 @@ final class PatchDiscTests {
                 PatchDiscTests::exhaustedBlocks);
         tests.test("patch_marker_is_found_once_and_removed_when_the_last_block_goes", 20,
                 helper -> markerFollowsThePatch(helper, OreResource.IRON, new ChunkPos(100, 140)));
+        tests.test("patch_growth_a_later_chunk_drops_on_it_is_cleared", 20,
+                helper -> laterChunksGrowthIsCleared(helper, OreResource.IRON, new ChunkPos(100, 240)));
+    }
+
+    /**
+     * A chunk's features reach one chunk out, so a chunk decorated after its neighbour drops its trees' leaves
+     * and its leaf litter on the neighbour's patch, which was placed and cleared already. The later chunk's own
+     * placement clears them, even where it holds none of the disc: here the later chunk is the one east of the
+     * disc's easternmost column.
+     */
+    private static void laterChunksGrowthIsCleared(GameTestHelper helper, OreResource resource, ChunkPos chunk) {
+        ServerLevel level = helper.getLevel();
+        Holder<Structure> structure = resolve(helper, resource);
+        if (structure == null) {
+            return;
+        }
+        StructureStart start = generate(level, structure, chunk);
+        if (!start.isValid() || !(start.getPieces().getFirst() instanceof PatchDisc.Source source)) {
+            helper.fail(resource.key() + " generated no disc at " + chunk);
+            return;
+        }
+        BoundingBox box = start.getBoundingBox();
+        BlockPos east = null;
+        for (int x = box.minX(); x <= box.maxX(); x++) {
+            for (int z = box.minZ(); z <= box.maxZ(); z++) {
+                if (source.covers(x, z)) {
+                    east = new BlockPos(x, 0, z);
+                }
+            }
+        }
+        if (east == null) {
+            helper.fail(resource.key() + "'s disc at " + chunk + " covers no column");
+            return;
+        }
+        ChunkPos later = new ChunkPos(SectionPos.blockToSectionCoord(east.getX()) + 1, SectionPos.blockToSectionCoord(east.getZ()));
+        loadChunks(level, box.inflatedBy(16));
+        place(level, structure.value(), start, chunk, box, at -> !at.equals(later));
+
+        BlockPos ore = new BlockPos(east.getX(), level.getHeight(Heightmap.Types.WORLD_SURFACE, east.getX(), east.getZ()) - 1, east.getZ());
+        if (!(level.getBlockState(ore).getBlock() instanceof OreBlock)) {
+            helper.fail(resource.key() + "'s disc left " + level.getBlockState(ore) + " at its easternmost column " + ore);
+            return;
+        }
+        int known = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
+        level.setBlock(ore.above(), Blocks.LEAF_LITTER.defaultBlockState(), known);
+        level.setBlock(ore.above(3), Blocks.BIRCH_LEAVES.defaultBlockState(), known);
+        placeInChunk(level, structure.value(), start, chunk, later);
+
+        for (BlockPos over : List.of(ore.above(), ore.above(3))) {
+            if (!level.getBlockState(over).isAir()) {
+                helper.fail(resource.key() + "'s disc left " + level.getBlockState(over) + " at " + over
+                        + " once " + later + ", decorated last, dropped it there");
+                return;
+            }
+        }
+        helper.succeed();
     }
 
     /**
@@ -733,16 +789,28 @@ final class PatchDiscTests {
 
     static void place(ServerLevel level, Structure structure, StructureStart start, ChunkPos origin,
             BoundingBox box) {
+        place(level, structure, start, origin, box, chunk -> true);
+    }
+
+    /** Places the start in each chunk of {@code box} that {@code which} lets through, in order. */
+    static void place(ServerLevel level, Structure structure, StructureStart start, ChunkPos origin,
+            BoundingBox box, Predicate<ChunkPos> which) {
         level.getChunk(origin.x(), origin.z()).setStartForStructure(structure, start);
         for (int x = SectionPos.blockToSectionCoord(box.minX()); x <= SectionPos.blockToSectionCoord(box.maxX()); x++) {
             for (int z = SectionPos.blockToSectionCoord(box.minZ()); z <= SectionPos.blockToSectionCoord(box.maxZ()); z++) {
                 ChunkPos chunk = new ChunkPos(x, z);
-                level.getChunk(x, z).addReferenceForStructure(structure, origin.pack());
-                start.placeInChunk(level, level.structureManager(), level.getChunkSource().getGenerator(),
-                        level.getRandom(), new BoundingBox(chunk.getMinBlockX(), level.getMinY(), chunk.getMinBlockZ(),
-                                chunk.getMaxBlockX(), level.getMaxY(), chunk.getMaxBlockZ()), chunk);
+                if (which.test(chunk)) {
+                    placeInChunk(level, structure, start, origin, chunk);
+                }
             }
         }
+    }
+
+    static void placeInChunk(ServerLevel level, Structure structure, StructureStart start, ChunkPos origin, ChunkPos chunk) {
+        level.getChunk(chunk.x(), chunk.z()).addReferenceForStructure(structure, origin.pack());
+        start.placeInChunk(level, level.structureManager(), level.getChunkSource().getGenerator(),
+                level.getRandom(), new BoundingBox(chunk.getMinBlockX(), level.getMinY(), chunk.getMinBlockZ(),
+                        chunk.getMaxBlockX(), level.getMaxY(), chunk.getMaxBlockZ()), chunk);
     }
 
     static double distance(ChunkPos chunk) {

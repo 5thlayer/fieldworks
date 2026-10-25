@@ -64,7 +64,7 @@ final class Ground {
      * grass, and the snow that lay on any of it. Water stays: a waterlogged plant or seagrass leaves its water,
      * so a patch under a pond keeps it, and snow lying on the ore itself stays.
      */
-    private static void clearAbove(WorldGenLevel level, BlockPos.MutableBlockPos cursor, int x, int y, int z) {
+    static void clearAbove(WorldGenLevel level, BlockPos.MutableBlockPos cursor, int x, int y, int z) {
         int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
         for (int above = y + 1; above < top; above++) {
             BlockState state = level.getBlockState(cursor.set(x, above, z));
