@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- A patch crossing bamboo, cactus or a huge mushroom lies on the ground under it, as it does under trees, rather than on its top.
+
 ## 0.5.0
 
 - **Breaking:** an ore block whose Default recipe a Harvest Recipe replaces can no longer be drawn by hand ([ADR 0010](docs/adr/0010-a-replaced-default-recipe-takes-away-the-hand-draw.md), [#44](https://github.com/5thlayer/fieldworks/issues/44)). Uranium, diamond and netherite, whose shipped recipes replace the default, are now worked only by the Electric Harvester with a Drilling Fluid: a hand break, or one by another mod's block breaker, takes nothing, leaves the block as it was and shows what it needs on the action bar; a creative break still removes it. Jade shows the same line under the amount and no longer shows its pickaxe icon on these blocks. A pack that drops `fieldworks:diamond_from_ore` makes diamond hand-minable again, and one that replaces another resource's default makes it Harvester-only. The `#fieldworks:drilling_fluids/overworld` and `/nether` tags are now named "drilling mud" and "magma slurry".

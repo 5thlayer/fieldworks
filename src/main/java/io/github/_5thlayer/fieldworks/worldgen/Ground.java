@@ -8,13 +8,14 @@ import java.util.OptionalInt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Where a patch lies in a column. Vanilla's heightmaps stop at leaves and logs, so a patch crossing
- * a wood would land on the canopy; this walks the column down through everything that grew there to
- * the first terrain block, so the patch lies under the trees.
+ * Where a patch lies in a column. Vanilla's heightmaps stop at leaves and logs, bamboo, cactus and huge
+ * mushrooms, so a patch crossing a wood would land on the canopy; this walks the column down through
+ * everything that grew there to the first terrain block, so the patch lies under the plants.
  */
 final class Ground {
 
@@ -46,6 +47,11 @@ final class Ground {
     private static boolean isTerrain(BlockState state) {
         return state.blocksMotion()
                 && !state.is(BlockTags.LOGS)
-                && !state.is(BlockTags.LEAVES);
+                && !state.is(BlockTags.LEAVES)
+                && !state.is(Blocks.BAMBOO)
+                && !state.is(Blocks.CACTUS)
+                && !state.is(Blocks.MUSHROOM_STEM)
+                && !state.is(Blocks.RED_MUSHROOM_BLOCK)
+                && !state.is(Blocks.BROWN_MUSHROOM_BLOCK);
     }
 }

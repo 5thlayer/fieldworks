@@ -40,6 +40,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -52,8 +53,8 @@ import org.slf4j.Logger;
 
 /**
  * Each resource's patch, resolved out of the server's registry and placed: generated far enough out
- * that the flat test world never overlaps another test, with a tree standing on its centre, and
- * placed chunk by chunk the way {@code /place} does. The start is also recorded in its chunk, which
+ * that the flat test world never overlaps another test, with a tree on its centre and bamboo, a cactus
+ * and a huge mushroom beside it, and placed chunk by chunk the way {@code /place} does. The start is also recorded in its chunk, which
  * {@code /place} skips and worldgen does not, so a broken block reads its amount through the same
  * structure manager a real world would.
  */
@@ -209,6 +210,15 @@ final class PatchDiscTests {
             level.setBlockAndUpdate(trunk.above(y), Blocks.OAK_LOG.defaultBlockState());
         }
         level.setBlockAndUpdate(trunk.above(3), Blocks.OAK_LEAVES.defaultBlockState());
+        BlockPos stalk = trunk.east();
+        BlockPos cactus = trunk.west();
+        BlockPos mushroom = trunk.north();
+        for (int y = 0; y < 3; y++) {
+            level.setBlock(stalk.above(y), Blocks.BAMBOO.defaultBlockState(), Block.UPDATE_CLIENTS);
+            level.setBlock(cactus.above(y), Blocks.CACTUS.defaultBlockState(), Block.UPDATE_CLIENTS);
+            level.setBlock(mushroom.above(y), Blocks.MUSHROOM_STEM.defaultBlockState(), Block.UPDATE_CLIENTS);
+        }
+        level.setBlock(mushroom.above(3), Blocks.RED_MUSHROOM_BLOCK.defaultBlockState(), Block.UPDATE_CLIENTS);
 
         place(level, structure.value(), start, chunk, box);
 
@@ -258,6 +268,12 @@ final class PatchDiscTests {
         if (!level.getBlockState(trunk.below()).is(ore.getBlock()) || !level.getBlockState(trunk).is(Blocks.OAK_LOG)) {
             helper.fail(resource.key() + "'s disc did not land under the tree at " + trunk);
             return;
+        }
+        for (BlockPos grown : List.of(stalk, cactus, mushroom)) {
+            if (!level.getBlockState(grown.below()).is(ore.getBlock())) {
+                helper.fail(resource.key() + "'s disc did not land under the " + level.getBlockState(grown) + " at " + grown);
+                return;
+            }
         }
 
         double radius = PatchLaw.of(resource).radius(disc.sizeFactor(), disc.distance());
