@@ -17,7 +17,7 @@ public final class FieldworksTags {
     /** The blocks, besides ore blocks, that a Harvester breaks for their loot. */
     public static final TagKey<Block> HARVESTABLE = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "harvestable"));
 
-    /** The blocks a patch lies under and never on, what grows on the ground: trees, huge mushrooms and fungi, bamboo, cactus. */
+    /** The blocks a patch lies under and never on: what grows on the ground, such as trees, huge mushrooms and fungi, bamboo and cactus. */
     public static final TagKey<Block> PATCH_LIES_UNDER = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch_lies_under"));
 
     /** The fluids a Harvest Recipe may consume, and so the only ones a Harvester's Drilling Fluid tank takes (#1). */

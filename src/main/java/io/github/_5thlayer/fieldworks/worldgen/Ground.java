@@ -15,7 +15,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * Where a patch lies in a column. Vanilla's heightmaps stop at whatever grows on the ground, so a patch
  * crossing a wood would land on the canopy; this walks the column down through everything that grew
  * there, the blocks of {@link FieldworksTags#PATCH_LIES_UNDER}, to the first terrain block, so the patch
- * lies under the trees.
+ * lies under what grows on it.
  */
 final class Ground {
 
