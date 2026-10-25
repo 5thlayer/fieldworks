@@ -19,6 +19,7 @@ import io.github._5thlayer.fieldworks.network.HeldRecipeSyncPacket;
 import io.github._5thlayer.fieldworks.network.HoldRecipePacket;
 import io.github._5thlayer.fieldworks.network.PatchMarkersPacket;
 import io.github._5thlayer.fieldworks.oil.Tar;
+import io.github._5thlayer.fieldworks.recipe.NoRemainderShapelessRecipe;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.worldgen.FieldworksWorldgen;
 import io.github._5thlayer.libworks.gallery.GalleryPack;
@@ -48,6 +49,7 @@ public final class Fieldworks {
         CrudeOil.register(modBus);
         DrillingMud.register(modBus);
         MagmaSlurry.register(modBus);
+        NoRemainderShapelessRecipe.register(modBus);
         Tar.register(modBus);
         Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);

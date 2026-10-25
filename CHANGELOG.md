@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Crafting magma slurry no longer leaves an empty bucket in the grid ([#47](https://github.com/5thlayer/fieldworks/issues/47)): the lava bucket becomes the magma slurry bucket, where it used to give back its empty bucket too, a bucket for free. The craft, `fieldworks:magma_slurry_bucket`, is of a new type, `fieldworks:crafting_shapeless_no_remainder`, written like `minecraft:crafting_shapeless` and leaving nothing in the grid. A Craftworks Assembler still gives the empty bucket back, since it asks each ingredient for its remainder ([#51](https://github.com/5thlayer/fieldworks/issues/51)).
+
 ## 0.6.0
 
 - A patch lies on the ground under what grows there, never on top of it, and clears it from over its blocks: trees, bamboo, cactus, huge mushrooms and fungi, pumpkins, melons, grass, flowers, vines and the like, in the Overworld and the Nether. The new block tag `#fieldworks:patch_clears` holds what a patch clears, and a pack can add its own plants. Chunks generated after updating are laid out this way; patches already in a world stay as they are.

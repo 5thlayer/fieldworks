@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "fieldworks:crafting_shapeless_no_remainder",
   "category": "misc",
   "ingredients": [
     "minecraft:lava_bucket",
