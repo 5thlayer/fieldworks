@@ -28,7 +28,8 @@ _Avoid_: demo pack, showcase pack, gallery datapack
 **Patch**:
 A disc of ore blocks of one resource, generated in new land beyond the spawn area and beyond its resource's
 minimum distance. It holds a total that its blocks share equally, and it is found, marked and mined as a whole. Its size law and ragged
-edge are shared with the oil field, which lays its wells over the same kind of disc.
+edge are shared with the oil field, which lays its wells over the same kind of disc. It lies only on ground a Harvester can work: under
+any footprint on it, its blocks lie within three of each other in height.
 _Avoid_: deposit, vein, outfield, field (an oil field is a different thing)
 
 **Ore block**:
@@ -54,7 +55,7 @@ cycle to a floor and never to zero.
 _Avoid_: oil spring, pumpjack site
 
 **Oil field**:
-A group of oil wells placed together on land, spaced apart and never on a patch's ore.
+A group of oil wells placed together on land, spaced apart and never on a patch's ore. Its ground keeps the same span as a patch's.
 
 **Clearance**:
 The open land a patch or an oil field keeps round itself, in which nothing of another kind generates: no patch of
