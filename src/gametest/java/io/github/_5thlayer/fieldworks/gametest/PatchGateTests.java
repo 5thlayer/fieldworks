@@ -39,10 +39,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CraftingInput;
-import net.minecraft.world.item.crafting.CraftingRecipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -282,28 +278,9 @@ final class PatchGateTests {
         helper.succeed();
     }
 
-    /**
-     * The lava bucket becomes the slurry bucket, so the craft leaves no empty bucket in the grid, where vanilla's
-     * remainder would leave one: one bucket in, one out (fieldworks#47).
-     */
+    /** A lava bucket and soul soil craft a slurry bucket, leaving no empty bucket in the grid; soul sand crafts nothing. */
     private static void slurryRecipe(GameTestHelper helper) {
-        ItemStack lava = new ItemStack(Items.LAVA_BUCKET);
-        ItemStack soulSoil = new ItemStack(Items.SOUL_SOIL);
-        for (List<ItemStack> grid : List.of(List.of(lava, soulSoil), List.of(soulSoil, lava))) {
-            CraftingInput input = CraftingInput.of(2, 1, grid.stream().map(ItemStack::copy).toList());
-            Optional<RecipeHolder<CraftingRecipe>> recipe = helper.getLevel().getServer().getRecipeManager()
-                    .getRecipeFor(RecipeType.CRAFTING, input, helper.getLevel());
-            helper.assertTrue(recipe.isPresent(), "no crafting recipe takes a lava bucket and soul soil");
-            ItemStack result = recipe.get().value().assemble(input);
-            helper.assertTrue(result.is(MagmaSlurry.BUCKET.get()) && result.getCount() == 1, "they craft " + result);
-            List<ItemStack> remaining = recipe.get().value().getRemainingItems(input).stream()
-                    .filter(stack -> !stack.isEmpty()).toList();
-            helper.assertTrue(remaining.isEmpty(), "the craft leaves " + remaining);
-        }
-        CraftingInput soulSand = CraftingInput.of(2, 1, List.of(lava.copy(), new ItemStack(Items.SOUL_SAND)));
-        helper.assertTrue(helper.getLevel().getServer().getRecipeManager()
-                        .getRecipeFor(RecipeType.CRAFTING, soulSand, helper.getLevel()).isEmpty(),
-                "soul sand crafts something with a lava bucket");
+        BucketCrafts.craftsLeavingNothing(helper, Items.LAVA_BUCKET, Items.SOUL_SOIL, Items.SOUL_SAND, MagmaSlurry.BUCKET.get());
         helper.succeed();
     }
 
@@ -317,8 +294,7 @@ final class PatchGateTests {
         helper.assertFalse(helper.getLevel().fuelValues().isFuel(new ItemStack(MagmaSlurry.BUCKET.get())), "the slurry bucket is furnace fuel");
         helper.assertTrue(helper.getLevel().fuelValues().isFuel(new ItemStack(Items.LAVA_BUCKET)), "a lava bucket is no fuel, so the check proves nothing");
         helper.assertTrue(MagmaSlurry.BLOCK.get().defaultBlockState().getFluidState().getType() == source, "the block holds another fluid");
-        helper.assertTrue(BuiltInRegistries.ITEM.getOptional(Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "magma_slurry_bottle")).isEmpty(),
-                "magma slurry has a bottle");
+        BucketCrafts.hasNoBottle(helper, "magma_slurry");
         helper.succeed();
     }
 

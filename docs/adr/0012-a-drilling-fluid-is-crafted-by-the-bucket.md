@@ -27,3 +27,5 @@ same rate, beside the bucket craft (fieldworks#51).
 ## Consequences
 
 - Mud bottles in existing saves disappear on update, so the change ships as breaking (ADR 0001).
+- ADR 0004's mud bottles, fed by hopper beside empty buckets or waiting in the drain slot for room in the tank,
+  now read as mud buckets; the rest of that ADR stands.
