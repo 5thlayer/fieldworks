@@ -4,6 +4,7 @@
 package io.github._5thlayer.fieldworks.gametest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +19,7 @@ import io.github._5thlayer.fieldworks.marker.MarkerEvents;
 import io.github._5thlayer.fieldworks.marker.FoundPatchMarkers;
 import io.github._5thlayer.fieldworks.marker.PatchMarker;
 import io.github._5thlayer.fieldworks.marker.PatchMarkerData;
+import io.github._5thlayer.fieldworks.ore.GroundSpan;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreDelta;
 import io.github._5thlayer.fieldworks.ore.OreMining;
@@ -570,6 +572,7 @@ final class PatchDiscTests {
         place(level, structure.value(), start, chunk, box);
 
         BlockState ore = FieldworksRegistries.ore(resource).get().defaultBlockState();
+        Map<Long, Integer> heights = new HashMap<>();
         int placed = 0;
         int missed = 0;
         int lowest = Integer.MAX_VALUE;
@@ -580,8 +583,8 @@ final class PatchDiscTests {
                 List<BlockPos> ores = new ArrayList<>();
                 for (int y = level.getMinY(); y <= level.getMaxY(); y++) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    BlockState state = level.getBlockState(pos);
-                    if (state.getBlock() instanceof OreBlock) {
+                    // Only this resource's: the Nether tests' searches overlap, so another's disc may lie in this box.
+                    if (level.getBlockState(pos).is(ore.getBlock())) {
                         ores.add(pos);
                     }
                 }
@@ -590,7 +593,7 @@ final class PatchDiscTests {
                     return;
                 }
                 if (ores.isEmpty()) {
-                    // A column the disc covers and left bare is one whose floor lay under lava or out of the centre's reach.
+                    // A column the disc covers and left bare is one whose floor lay under lava, or that carvers took away.
                     if (source.covers(x, z)) {
                         missed++;
                     }
@@ -619,6 +622,7 @@ final class PatchDiscTests {
                 }
                 lowest = Math.min(lowest, pos.getY());
                 highest = Math.max(highest, pos.getY());
+                heights.put(ChunkPos.pack(x, z), pos.getY());
                 any = pos;
                 placed++;
             }
@@ -642,14 +646,24 @@ final class PatchDiscTests {
             helper.fail(resource.key() + "'s disc left " + missed + " of its " + disc.blockCount() + " columns bare");
             return;
         }
-        // Each column within eight blocks of the centre's floor, so the disc is one place and not every cave level.
-        if (highest - lowest > 16) {
-            helper.fail(resource.key() + "'s disc spans floors from " + lowest + " to " + highest + ", more than 16 apart");
-            return;
+        // The ore as placed keeps its start's span: one Harvester footprint anywhere on it spans at most 3 (ADR 0011).
+        for (var column : heights.entrySet()) {
+            int x = ChunkPos.getX(column.getKey());
+            int z = ChunkPos.getZ(column.getKey());
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    Integer other = heights.get(ChunkPos.pack(x + dx, z + dz));
+                    if (other != null && Math.abs(other - column.getValue()) > GroundSpan.MAX) {
+                        helper.fail(resource.key() + "'s ore lies at " + column.getValue() + " at " + x + ", " + z + " and "
+                                + other + " at " + (x + dx) + ", " + (z + dz) + ", under one footprint");
+                        return;
+                    }
+                }
+            }
         }
         if (placed + missed != disc.blockCount()) {
             helper.fail(resource.key() + "'s piece stored " + disc.blockCount() + " blocks and " + placed + " were placed, with "
-                    + missed + " left to the lava");
+                    + missed + " left to the lava or the carvers");
             return;
         }
         OreBlock block = (OreBlock) ore.getBlock();
@@ -659,7 +673,7 @@ final class PatchDiscTests {
             helper.fail(resource.key() + " at " + any + " drew " + draw + " from a disc holding " + amount + " a block");
             return;
         }
-        LOGGER.info("PATCH {} nether disc at {}, {}: {} blocks on a floor from {} to {}, {} left to the lava",
+        LOGGER.info("PATCH {} nether disc at {}, {}: {} blocks on a floor from {} to {}, {} left bare",
                 resource.key(), disc.centreX(), disc.centreZ(), placed, lowest, highest, missed);
         helper.succeed();
     }

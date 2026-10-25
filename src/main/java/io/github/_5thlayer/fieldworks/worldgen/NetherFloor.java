@@ -21,9 +21,9 @@ final class NetherFloor {
     static final int ROOF_CLEARANCE = 6;
 
     /**
-     * How far above or below its centre's floor a patch's column may lie. A Nether column can hold several floors, caves
-     * over caves, and the topmost of each need not be within reach of its neighbours: a column further off than this is
-     * left out, so a patch stays one place a factory can stand beside rather than a scatter over every cave level.
+     * How far above or below its centre's floor a column of a patch saved before ADR 0011 may lie: a column further
+     * off is left out when its chunk places, as it was when the patch generated. A patch generated since keeps
+     * {@link io.github._5thlayer.fieldworks.ore.GroundSpan} instead, which leaves no such column to trim.
      */
     static final int MAX_STEP = 8;
 

@@ -7,12 +7,17 @@ import io.github._5thlayer.fieldworks.FieldworksTags;
 import java.util.OptionalInt;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.RandomState;
 
 /**
  * Where a patch lies in a column. Vanilla's heightmaps stop at whatever grows on the ground, so a patch
@@ -47,9 +52,55 @@ final class Ground {
      */
     static OptionalInt nether(LevelReader level, int x, int z) {
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos(x, 0, z);
-        // The Nether's blocks stop at its logical height, 128; the 256 the dimension spans are empty air over the roof.
-        int top = Math.min(level.getMaxY(), level.getMinY() + level.dimensionType().logicalHeight() - 1);
-        return NetherFloor.of(y -> level.getBlockState(cursor.setY(y)), level.getMinY(), top);
+        return NetherFloor.of(y -> level.getBlockState(cursor.setY(y)), level.getMinY(), netherTop(level));
+    }
+
+    /** The top of a Nether column's blocks: its logical height, 128; the 256 the dimension spans are empty air over the roof. */
+    private static int netherTop(LevelReader level) {
+        return Math.min(level.getMaxY(), level.getMinY() + level.dimensionType().logicalHeight() - 1);
+    }
+
+    /**
+     * The y of an Overworld column's ground in the generator's base terrain, which is all that exists when a start is
+     * found: its topmost solid block, a pond's or lake's floor and not its water, as {@link #of} lays the ore.
+     */
+    static int overworldBase(ChunkGenerator generator, RandomState randomState, LevelHeightAccessor height, int x, int z) {
+        return generator.getBaseHeight(x, z, Heightmap.Types.OCEAN_FLOOR_WG, height, randomState) - 1;
+    }
+
+    /**
+     * The y of the open floor in a Nether column of the generator's base terrain, or empty where it lies under lava:
+     * the floor a start judges its ground by, before carvers and features, which is all that exists when a start is found.
+     */
+    static OptionalInt netherBase(ChunkGenerator generator, RandomState randomState, LevelHeightAccessor height, int x, int z) {
+        NoiseColumn column = generator.getBaseColumn(x, z, height, randomState);
+        // The terrain stops at the generator's depth, 128 in the Nether, where the dimension's own height spans 256.
+        return NetherFloor.of(column::getBlock, height.getMinY(),
+                Math.min(height.getMaxY(), generator.getMinY() + generator.getGenDepth() - 1));
+    }
+
+    /**
+     * Whether a Nether column still has an open floor at {@code y} once carvers and features have run: a solid block
+     * with no terrain above it, and no lava. What grows or burns on it does not make it less open.
+     */
+    static boolean netherOpenAt(LevelReader level, int x, int y, int z) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos(x, y, z);
+        if (!isTerrain(level.getBlockState(cursor))) {
+            return false;
+        }
+        BlockState above = level.getBlockState(cursor.setY(y + 1));
+        return !isTerrain(above) && !above.getFluidState().is(FluidTags.LAVA);
+    }
+
+    /** The y of the topmost block of {@code ore} in a Nether column under its roof, or empty where it holds none. */
+    static OptionalInt netherOre(LevelReader level, int x, int z, BlockState ore) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos(x, 0, z);
+        for (int y = netherTop(level) - NetherFloor.ROOF_CLEARANCE; y > level.getMinY(); y--) {
+            if (level.getBlockState(cursor.setY(y)).is(ore.getBlock())) {
+                return OptionalInt.of(y);
+            }
+        }
+        return OptionalInt.empty();
     }
 
     /** Sets a patch's ore block at {@code y} and clears what grows over it. */

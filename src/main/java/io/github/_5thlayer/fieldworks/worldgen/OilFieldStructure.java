@@ -8,6 +8,7 @@ import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.config.FieldworksConfig;
 import io.github._5thlayer.fieldworks.oil.OilCorpus;
 import io.github._5thlayer.fieldworks.oil.OilField;
+import io.github._5thlayer.fieldworks.ore.GroundSpan;
 import io.github._5thlayer.fieldworks.ore.PatchShape;
 import java.util.List;
 import java.util.Optional;
@@ -48,7 +49,8 @@ public final class OilFieldStructure extends Structure {
                 .fromHashOf(Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "patch/crude_oil")));
         OilField field = OilField.of(x, z, (scaledX, scaledZ) -> noise.noise(scaledX, 0, scaledZ),
                 PatchDiscStructure.land(context, y));
-        if (field.shape().isEmpty()) {
+        // An oil field keeps a patch's ground (ADR 0011).
+        if (field.shape().isEmpty() || !GroundSpan.workable(field.shape(), PatchDiscStructure.ground(context))) {
             return Optional.empty();
         }
         List<OilField.Well> wells = field.draw(context.random()::nextDouble);
