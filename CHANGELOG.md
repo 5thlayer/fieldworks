@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+## 0.7.0
+
 - Fieldworks requires Groundworks 0.7.0 or later, below 0.8. With it, a sheet of paper copies, cuts and pastes a box of blocks as a Blueprint, and Next Assembly is now Next Choice, still on `V` (5thlayer/groundworks#76).
 
 - **Breaking:** drilling mud is crafted, not brewed ([ADR 0012](docs/adr/0012-a-drilling-fluid-is-crafted-by-the-bucket.md), [#52](https://github.com/5thlayer/fieldworks/issues/52)). A water bucket and a clay ball craft a drilling mud bucket, `fieldworks:drilling_mud_bucket`, of the type `fieldworks:crafting_shapeless_no_remainder`, so the water bucket becomes the mud bucket and no empty bucket is left in the grid, as with magma slurry. A brewing stand no longer brews drilling mud from a clay ball or a clay block, and EMI no longer shows that brewing. The item `fieldworks:drilling_mud_bottle` is gone: drilling mud comes in a bucket only, and mud bottles in a world disappear when it updates.
