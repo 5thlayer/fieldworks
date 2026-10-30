@@ -60,6 +60,8 @@ final class GalleryTests {
                         new Scene("nether", new BlockPos(13, -1, -6), FieldworksRegistries.ore(OreResource.NETHERITE).get()))));
         tests.testOnItsOwn("the_gallery_scenes_sign_clicked_builds_the_scene_again_and_leaves_nothing_loose", GalleryCheck.TICKS,
                 GalleryTests::signReplays);
+        tests.testOnItsOwn("the_gallery_clear_empties_its_plot", GalleryCheck.TICKS,
+                helper -> GalleryCheck.clears(helper, Fieldworks.MOD_ID, ORIGIN, GalleryCheck.Layout.ONE_ROW));
     }
 
     /**
