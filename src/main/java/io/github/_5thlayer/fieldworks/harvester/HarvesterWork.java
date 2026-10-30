@@ -21,8 +21,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * What a Harvester does on a tick: the Held recipe looked up, the next operation chosen by {@link OperationChoice},
  * and, with one chosen, a tick of it paid for and, on its last tick, its Drilling Fluid taken and its work done. It
- * keeps the operation's progress, the round's cursor and why the last tick did no work. It reads no game state, so it
- * is tested on a plain JVM; the block entity reads the world through a {@link Port} and saves the progress and cursor.
+ * keeps the operation's progress, which a stall keeps and turning to another source or recipe loses, the round's
+ * cursor and why the last tick did no work. It reads no game state, so it is tested on a plain JVM; the block entity
+ * reads the world through a {@link Port} and saves the progress and cursor.
  */
 final class HarvesterWork<R> {
 
@@ -57,6 +58,11 @@ final class HarvesterWork<R> {
     }
 
     private int progress;
+    /**
+     * The operation {@link #progress} belongs to, or null after a load, when the first operation chosen takes it up: no
+     * save keeps it.
+     */
+    private @Nullable Underway underway;
     private int cursor;
     /** Ticks the operation under way takes on the tier, for the menu's progress bar; not saved, set as it works (#13). */
     private int operationTicks;
@@ -80,6 +86,11 @@ final class HarvesterWork<R> {
             idle = ((Idle<R>) choice).reason();
             return false;
         }
+        Underway chosen = Underway.of(operation);
+        if (underway != null && !underway.equals(chosen)) {
+            progress = 0;
+        }
+        underway = chosen;
         int ticks = port.ticks(operation.ticks());
         boolean completes = progress + 1 >= ticks;
         if (completes) {
@@ -95,6 +106,14 @@ final class HarvesterWork<R> {
             cursor = operation.nextCursor();
         }
         return true;
+    }
+
+    /** An operation as its progress knows it: the position it works and the recipe it runs, empty for a Default. */
+    private record Underway(int position, Optional<String> recipe) {
+
+        static Underway of(Operation<?> operation) {
+            return new Underway(operation.position(), operation.recipe().map(Recipe::id));
+        }
     }
 
     /** Ticks into the operation under way. */
@@ -120,6 +139,7 @@ final class HarvesterWork<R> {
     /** Takes up the progress and cursor a save kept. */
     void restore(int progress, int cursor) {
         this.progress = progress;
+        underway = null;
         this.cursor = cursor;
     }
 

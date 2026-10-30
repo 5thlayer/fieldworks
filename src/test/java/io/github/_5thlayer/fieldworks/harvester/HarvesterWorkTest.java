@@ -181,16 +181,65 @@ class HarvesterWorkTest {
         assertEquals(0, work.progress());
     }
 
-    /** Today's rule, which #11's follow-up changes: progress is the Harvester's, so a new operation takes it up. */
+    /** Progress is the operation's: with its source gone, the next source starts from nothing. */
     @Test
-    void progressCarriesOverWhenTheChosenOperationChanges() {
+    void anOperationWhoseSourceIsGoneTakesItsProgressWithIt() {
         List<Source> layer = new ArrayList<>(TWO_IRON);
         tick(layer, Optional.empty(), 15);
         layer.set(0, NONE);
 
-        tick(layer, Optional.empty(), 5);
+        tick(layer, Optional.empty(), 1);
+        assertEquals(1, work.progress());
 
+        tick(layer, Optional.empty(), 19);
         assertEquals(List.of(4), port.performed);
+        assertEquals(List.of("pay 0/20"), port.calls.subList(15, 16));
+    }
+
+    /** A different Held recipe on the same source is a different operation, and starts from nothing. */
+    @Test
+    void anotherHeldRecipeMidwayStartsFromNothing() {
+        port.tank = new Tank("fieldworks:drilling_mud", 1_000);
+        tick(TWO_IRON, Optional.of(NUGGETS.id()), 15);
+
+        tick(TWO_IRON, Optional.of(MUDDY_IRON.id()), 1);
+
+        assertEquals(1, work.progress());
+        assertEquals(20, work.operationTicks());
+    }
+
+    /** Dropping the Held recipe mid-way turns to the Default recipe, another operation, which starts from nothing. */
+    @Test
+    void droppingTheHeldRecipeMidwayStartsFromNothing() {
+        tick(TWO_IRON, Optional.of(NUGGETS.id()), 15);
+
+        tick(TWO_IRON, Optional.empty(), 1);
+
+        assertEquals(1, work.progress());
+        assertEquals(20, work.operationTicks());
+    }
+
+    /** A stall keeps the operation, so it goes on where it stopped (#11). */
+    @Test
+    void anOperationThatStallsAndResumesKeepsItsProgress() {
+        tick(TWO_IRON, Optional.empty(), 15);
+        port.fits = false;
+        tick(TWO_IRON, Optional.empty(), 3);
+        port.fits = true;
+
+        tick(TWO_IRON, Optional.empty(), 5);
+
+        assertEquals(List.of(0), port.performed);
+    }
+
+    /** No save keeps which operation was under way, so the first one chosen after a load takes up the saved progress. */
+    @Test
+    void afterALoadTheFirstOperationChosenTakesUpTheSavedProgress() {
+        work.restore(15, 4);
+
+        tick(TWO_IRON, Optional.of(NUGGETS.id()), 1);
+
+        assertEquals(16, work.progress());
     }
 
     private boolean tick(List<Source> layer, Optional<String> held) {
