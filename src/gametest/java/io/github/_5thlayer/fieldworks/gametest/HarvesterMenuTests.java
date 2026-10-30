@@ -90,16 +90,16 @@ final class HarvesterMenuTests {
         helper.setBlock(CENTRE, Blocks.STONE);
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
         HarvesterMenu burner = menu(helper);
-        helper.assertTrue(burner.takesFuel(), "the Burner Harvester's menu shows no fuel");
-        helper.assertFalse(burner.takesEnergy(), "the Burner Harvester's menu shows FE");
-        helper.assertValueEqual(burner.energyCapacity(), 0, "the Burner Harvester's FE capacity");
+        helper.assertTrue(burner.status().takesFuel(), "the Burner Harvester's menu shows no fuel");
+        helper.assertFalse(burner.status().takesEnergy(), "the Burner Harvester's menu shows FE");
+        helper.assertValueEqual(burner.status().energyCapacity(), 0, "the Burner Harvester's FE capacity");
         helper.getLevel().destroyBlock(helper.absolutePos(ORIGIN), false);
 
         HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_2);
         HarvesterMenu electric = menu(helper);
-        helper.assertFalse(electric.takesFuel(), "the Electric Harvester's menu shows fuel");
-        helper.assertTrue(electric.takesEnergy(), "the Electric Harvester's menu shows no FE");
-        helper.assertValueEqual(electric.energyCapacity(), 50_000, "the Electric Harvester's FE capacity");
+        helper.assertFalse(electric.status().takesFuel(), "the Electric Harvester's menu shows fuel");
+        helper.assertTrue(electric.status().takesEnergy(), "the Electric Harvester's menu shows no FE");
+        helper.assertValueEqual(electric.status().energyCapacity(), 50_000, "the Electric Harvester's FE capacity");
         helper.getLevel().destroyBlock(helper.absolutePos(ORIGIN), false);
 
         HarvesterTier both = HarvesterTiers.get(BOTH_KINDS);
@@ -107,8 +107,8 @@ final class HarvesterMenuTests {
         try (var swap = HarvesterTiers.swapped(TierBlock.HARVESTER_2, both)) {
             HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_2);
             HarvesterMenu menu = menu(helper);
-            helper.assertTrue(menu.takesFuel() && menu.takesEnergy(), "a tier of both kinds does not show both");
-            helper.assertValueEqual(menu.energyCapacity(), 400, "the both-kinds tier's FE capacity");
+            helper.assertTrue(menu.status().takesFuel() && menu.status().takesEnergy(), "a tier of both kinds does not show both");
+            helper.assertValueEqual(menu.status().energyCapacity(), 400, "the both-kinds tier's FE capacity");
         }
         helper.succeed();
     }
@@ -125,11 +125,11 @@ final class HarvesterMenuTests {
 
         HarvesterTests.tick(helper, machine, 10);
 
-        helper.assertValueEqual(menu.progress(), 10, "ticks of progress");
-        helper.assertValueEqual(menu.operationTicks(), 20, "ticks the operation takes");
-        helper.assertValueEqual(menu.progressFraction(), 0.5f, "progress as a fraction");
-        helper.assertValueEqual(menu.burnTotal(), burnTime, "the coal's burn time");
-        helper.assertValueEqual(menu.burnLeft(), burnTime - perOperation / 2, "the burn left");
+        helper.assertValueEqual(menu.status().progress(), 10, "ticks of progress");
+        helper.assertValueEqual(menu.status().operationTicks(), 20, "ticks the operation takes");
+        helper.assertValueEqual(menu.status().progressFraction(), 0.5f, "progress as a fraction");
+        helper.assertValueEqual(menu.status().burnTotal(), burnTime, "the coal's burn time");
+        helper.assertValueEqual(menu.status().burnLeft(), burnTime - perOperation / 2, "the burn left");
         helper.assertValueEqual(menu.status().burnOperations(), (burnTime - perOperation / 2) / (float) perOperation,
                 "the operations the burn has left");
         helper.getLevel().destroyBlock(helper.absolutePos(ORIGIN), false);
@@ -138,9 +138,9 @@ final class HarvesterMenuTests {
         feed(helper, 1_000);
         HarvesterTests.tick(helper, machine(helper), 5);
         HarvesterMenu electric = menu(helper);
-        helper.assertValueEqual(electric.energy(), 1_000 - 5 * 40, "FE in the buffer after five ticks at 40 FE");
-        helper.assertValueEqual(electric.operationTicks(), 10, "ticks an operation takes at speed x2");
-        helper.assertValueEqual(electric.progress(), 5, "ticks of progress at speed x2");
+        helper.assertValueEqual(electric.status().energy(), 1_000 - 5 * 40, "FE in the buffer after five ticks at 40 FE");
+        helper.assertValueEqual(electric.status().operationTicks(), 10, "ticks an operation takes at speed x2");
+        helper.assertValueEqual(electric.status().progress(), 5, "ticks of progress at speed x2");
         helper.succeed();
     }
 
@@ -150,8 +150,8 @@ final class HarvesterMenuTests {
         HarvesterTests.holdingTheWellsCycle(helper);
         insertItem(helper, Items.COAL, 4);
         HarvesterMenu menu = menu(helper);
-        helper.assertTrue(menu.drillingFluid().isEmpty() && menu.product().isEmpty(), "a new Harvester's menu shows a tank holding something");
-        helper.assertValueEqual(menu.tankCapacity(), 8_000, "a tank's capacity");
+        helper.assertTrue(menu.status().drillingFluidStack().isEmpty() && menu.status().productStack().isEmpty(), "a new Harvester's menu shows a tank holding something");
+        helper.assertValueEqual(menu.status().tankCapacity(), 8_000, "a tank's capacity");
 
         ResourceHandler<FluidResource> pipe = helper.getLevel().getCapability(Capabilities.Fluid.BLOCK,
                 helper.absolutePos(ORIGIN.east()), Direction.EAST);
@@ -161,10 +161,10 @@ final class HarvesterMenuTests {
         }
         HarvesterTests.tick(helper, machine(helper), 40);
 
-        helper.assertTrue(FluidStack.matches(menu.drillingFluid(), new FluidStack(DrillingMud.SOURCE.get(), 750)),
-                "the Drilling Fluid tank shows " + menu.drillingFluid());
-        helper.assertTrue(FluidStack.matches(menu.product(), new FluidStack(CrudeOil.SOURCE.get(), 2_000)),
-                "the product tank shows " + menu.product());
+        helper.assertTrue(FluidStack.matches(menu.status().drillingFluidStack(), new FluidStack(DrillingMud.SOURCE.get(), 750)),
+                "the Drilling Fluid tank shows " + menu.status().drillingFluidStack());
+        helper.assertTrue(FluidStack.matches(menu.status().productStack(), new FluidStack(CrudeOil.SOURCE.get(), 2_000)),
+                "the product tank shows " + menu.status().productStack());
         helper.assertTrue(well.amount() > 0, "the well is gone");
         helper.succeed();
     }
@@ -178,19 +178,19 @@ final class HarvesterMenuTests {
         HarvesterMenu menu = open(helper, player);
 
         HarvesterTests.tick(helper, machine, 1);
-        helper.assertValueEqual(menu.idleReason(), Optional.empty(), "the menu's idle reason while working");
+        helper.assertValueEqual(menu.status().idle(), Optional.empty(), "the menu's idle reason while working");
         helper.assertValueEqual(machine.status().idle(), Optional.empty(), "the status's idle reason while working");
 
         hold(player, MUDDY_IRON);
         HarvesterTests.tick(helper, machine, 1);
         helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.NO_FLUID), "the Harvester's idle reason");
-        helper.assertValueEqual(menu.idleReason(), machine.idleReason(), "the menu's idle reason");
+        helper.assertValueEqual(menu.status().idle(), machine.idleReason(), "the menu's idle reason");
         helper.assertValueEqual(machine.status().idle(), machine.idleReason(), "the status's idle reason");
 
         helper.setBlock(CENTRE, Blocks.STONE);
         HarvesterTests.tick(helper, machine, 1);
         helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.NOTHING_MATCHING), "the Harvester's idle reason over stone");
-        helper.assertValueEqual(menu.idleReason(), machine.idleReason(), "the menu's idle reason over stone");
+        helper.assertValueEqual(menu.status().idle(), machine.idleReason(), "the menu's idle reason over stone");
         helper.succeed();
     }
 
@@ -289,7 +289,7 @@ final class HarvesterMenuTests {
 
         HarvesterTests.tick(helper, machine, 1);
         helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.NO_POWER), "the Burner Harvester's idle reason with no fuel");
-        helper.assertValueEqual(menu(helper).idleReason(), Optional.of(IdleReason.NO_POWER), "the menu's idle reason with no fuel");
+        helper.assertValueEqual(menu(helper).status().idle(), Optional.of(IdleReason.NO_POWER), "the menu's idle reason with no fuel");
 
         insertItem(helper, Items.COAL, 1);
         HarvesterTests.tick(helper, machine, 1);
@@ -323,7 +323,7 @@ final class HarvesterMenuTests {
         HarvesterTests.tick(helper, machine, 15_000);
 
         helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.OUTPUT_FULL), "the idle reason with a full buffer");
-        helper.assertValueEqual(menu(helper).idleReason(), Optional.of(IdleReason.OUTPUT_FULL), "the menu's idle reason with a full buffer");
+        helper.assertValueEqual(menu(helper).status().idle(), Optional.of(IdleReason.OUTPUT_FULL), "the menu's idle reason with a full buffer");
         helper.succeed();
     }
 
@@ -337,9 +337,9 @@ final class HarvesterMenuTests {
 
         HarvesterTests.tick(helper, machine, 8 * 20 + 40);
 
-        helper.assertTrue(FluidStack.matches(menu(helper).product(), new FluidStack(CrudeOil.SOURCE.get(), 8_000)), "the product tank is not full");
+        helper.assertTrue(FluidStack.matches(menu(helper).status().productStack(), new FluidStack(CrudeOil.SOURCE.get(), 8_000)), "the product tank is not full");
         helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.OUTPUT_FULL), "the idle reason with a full product tank");
-        helper.assertValueEqual(menu(helper).idleReason(), Optional.of(IdleReason.OUTPUT_FULL), "the menu's idle reason with a full product tank");
+        helper.assertValueEqual(menu(helper).status().idle(), Optional.of(IdleReason.OUTPUT_FULL), "the menu's idle reason with a full product tank");
         helper.succeed();
     }
 

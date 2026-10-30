@@ -22,7 +22,6 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.IndexModifier;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
@@ -168,59 +167,6 @@ public final class HarvesterMenu extends AbstractContainerMenu {
                 BuiltInRegistries.FLUID.byId(data.get(DATA_DRILLING_FLUID)), data.get(DATA_DRILLING_AMOUNT),
                 BuiltInRegistries.FLUID.byId(data.get(DATA_PRODUCT_FLUID)), data.get(DATA_PRODUCT_AMOUNT),
                 data.get(DATA_TANK_CAPACITY));
-    }
-
-    public boolean takesFuel() {
-        return status().takesFuel();
-    }
-
-    public boolean takesEnergy() {
-        return status().takesEnergy();
-    }
-
-    public int energy() {
-        return status().energy();
-    }
-
-    public int energyCapacity() {
-        return status().energyCapacity();
-    }
-
-    public int burnLeft() {
-        return status().burnLeft();
-    }
-
-    public int burnTotal() {
-        return status().burnTotal();
-    }
-
-    public int progress() {
-        return status().progress();
-    }
-
-    public int operationTicks() {
-        return status().operationTicks();
-    }
-
-    public float progressFraction() {
-        return status().progressFraction();
-    }
-
-    public FluidStack drillingFluid() {
-        return status().drillingFluidStack();
-    }
-
-    public FluidStack product() {
-        return status().productStack();
-    }
-
-    public int tankCapacity() {
-        return status().tankCapacity();
-    }
-
-    /** Why the Harvester did no work on its last tick, the choice module's reason; empty while it works. */
-    public Optional<IdleReason> idleReason() {
-        return status().idle();
     }
 
     /** The Held recipe: the server's own, read live, and on the client as it was last sent. */
