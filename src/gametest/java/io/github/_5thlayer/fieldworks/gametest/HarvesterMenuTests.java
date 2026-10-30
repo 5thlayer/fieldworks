@@ -21,7 +21,7 @@ import io.github._5thlayer.fieldworks.harvester.HeldRecipeView;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.IdleReason;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
 import io.github._5thlayer.fieldworks.network.ClearHeldRecipePacket;
-import io.github._5thlayer.fieldworks.network.HeldRecipeSyncPacket;
+import io.github._5thlayer.fieldworks.network.HarvesterViewPacket;
 import io.github._5thlayer.fieldworks.network.HoldRecipePacket;
 import io.github._5thlayer.fieldworks.ore.OreResource;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
@@ -360,11 +360,12 @@ final class HarvesterMenuTests {
 
         Optional<HeldRecipeView> held = machine.heldView(helper.getLevel());
         helper.assertValueEqual(held.map(HeldRecipeView::id), Optional.of(MUDDY_IRON), "the Held recipe's view");
-        HeldRecipeSyncPacket packet = new HeldRecipeSyncPacket(7, held);
-        HeldRecipeSyncPacket.STREAM_CODEC.encode(buffer, packet);
-        HeldRecipeSyncPacket read = HeldRecipeSyncPacket.STREAM_CODEC.decode(buffer);
-        helper.assertValueEqual(read.containerId(), 7, "the sync's container id");
-        helper.assertValueEqual(read.held().map(HeldRecipeView::id), Optional.of(MUDDY_IRON), "the sync's Held recipe");
+        HarvesterViewPacket packet = new HarvesterViewPacket(7, status, held);
+        HarvesterViewPacket.STREAM_CODEC.encode(buffer, packet);
+        HarvesterViewPacket read = HarvesterViewPacket.STREAM_CODEC.decode(buffer);
+        helper.assertValueEqual(read.containerId(), 7, "the view's container id");
+        helper.assertValueEqual(read.status(), status, "the view's status");
+        helper.assertValueEqual(read.held().map(HeldRecipeView::id), Optional.of(MUDDY_IRON), "the view's Held recipe");
 
         Component state = HarvesterStatusLines.state(status.idle());
         helper.assertTrue(state.getContents() instanceof TranslatableContents contents

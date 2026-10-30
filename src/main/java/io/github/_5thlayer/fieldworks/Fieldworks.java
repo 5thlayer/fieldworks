@@ -15,7 +15,7 @@ import io.github._5thlayer.fieldworks.harvester.client.HarvesterClient;
 import io.github._5thlayer.fieldworks.marker.MarkerEvents;
 import io.github._5thlayer.fieldworks.marker.client.PatchMapClient;
 import io.github._5thlayer.fieldworks.network.ClearHeldRecipePacket;
-import io.github._5thlayer.fieldworks.network.HeldRecipeSyncPacket;
+import io.github._5thlayer.fieldworks.network.HarvesterViewPacket;
 import io.github._5thlayer.fieldworks.network.HoldRecipePacket;
 import io.github._5thlayer.fieldworks.network.PatchMarkersPacket;
 import io.github._5thlayer.fieldworks.oil.Tar;
@@ -41,7 +41,7 @@ public final class Fieldworks {
     /** The mod id, which gradle.properties' {@code mod_id} must match. */
     public static final String MOD_ID = "fieldworks";
 
-    private static final String NETWORK_VERSION = "1";
+    private static final String NETWORK_VERSION = "2";
 
     public Fieldworks(IEventBus modBus, ModContainer container) {
         FieldworksConfig.register(container);
@@ -74,6 +74,6 @@ public final class Fieldworks {
                 .playToClient(PatchMarkersPacket.TYPE, PatchMarkersPacket.STREAM_CODEC, PatchMarkersPacket::handle)
                 .playToServer(HoldRecipePacket.TYPE, HoldRecipePacket.STREAM_CODEC, HoldRecipePacket::handle)
                 .playToServer(ClearHeldRecipePacket.TYPE, ClearHeldRecipePacket.STREAM_CODEC, ClearHeldRecipePacket::handle)
-                .playToClient(HeldRecipeSyncPacket.TYPE, HeldRecipeSyncPacket.STREAM_CODEC, HeldRecipeSyncPacket::handle);
+                .playToClient(HarvesterViewPacket.TYPE, HarvesterViewPacket.STREAM_CODEC, HarvesterViewPacket::handle);
     }
 }

@@ -12,12 +12,13 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
- * What a Harvester shows of itself (#13), read off the block entity in one place: the menu syncs these figures to
- * its screen and the Jade tooltip sends the record whole, so the two cannot disagree. The idle reason is the choice
- * module's own, as the last tick found it.
+ * What a Harvester shows of itself (#13), read off the block entity in one place: the menu and the Jade tooltip both
+ * send the record whole, in one codec, so the two cannot disagree. The idle reason is the choice module's own, as the
+ * last tick found it.
  *
  * <p>Power is shown only for the kinds the tier declares: a kind it does not take reads {@code false} and zero. A
  * tier with no file reads neither.
@@ -62,6 +63,10 @@ public record HarvesterStatus(boolean takesFuel, boolean takesEnergy, int burnLe
                     FLUID.decode(buffer), buffer.readVarInt(),
                     FLUID.decode(buffer), buffer.readVarInt(),
                     buffer.readVarInt()));
+
+    /** What a menu shows before the server first tells it anything: no power, no progress, empty tanks, working. */
+    public static final HarvesterStatus BLANK =
+            new HarvesterStatus(false, false, 0, 0, 0, 0, 0, 0, 0, Optional.empty(), Fluids.EMPTY, 0, Fluids.EMPTY, 0, 0);
 
     /** The Drilling Fluid tank's contents, empty when it holds none. */
     public FluidStack drillingFluidStack() {
