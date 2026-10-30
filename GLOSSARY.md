@@ -120,6 +120,12 @@ _Avoid_: level, mark, burner/electric (as tier names)
 What one Harvester operation takes and yields: a source, an optional Drilling Fluid, a result and a duration.
 _Avoid_: mining recipe, drill recipe
 
+**Operation**:
+One run of a Harvest Recipe on one source under a Harvester. It lasts the recipe's duration over the tier's speed, is
+paid for tick by tick, and yields on its last tick. It keeps its progress while it stalls and loses it when the Harvester
+turns to another source or recipe.
+_Avoid_: job, cycle (a well's)
+
 **Default recipe**:
 The fluid-free Harvest Recipe every source has without one being written: a draw of an ore block, the loot of a harvestable block, crude from an oil well. A written recipe with `replaces_default` takes it away, from the hand as from the Harvester: uranium, diamond, netherite and the oil well have one, which needs the Electric Harvester.
 _Avoid_: base recipe, fallback
