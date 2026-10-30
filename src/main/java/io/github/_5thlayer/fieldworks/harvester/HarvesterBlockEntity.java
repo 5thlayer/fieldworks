@@ -11,12 +11,11 @@ import java.util.OptionalInt;
 
 import com.mojang.serialization.Codec;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipe.Result;
-import io.github._5thlayer.fieldworks.harvester.OperationChoice.Choice;
-import io.github._5thlayer.fieldworks.harvester.OperationChoice.Idle;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.DrillingFluid;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.IdleReason;
-import io.github._5thlayer.fieldworks.harvester.OperationChoice.Machine;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Operation;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.Source;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.Tank;
 import io.github._5thlayer.fieldworks.oil.OilWellBlockEntity;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
 import io.github._5thlayer.fieldworks.ore.OreMining;
@@ -67,8 +66,8 @@ import org.jspecify.annotations.Nullable;
  * A Harvester at work: each tick it exchanges the containers in its fill and drain slots with its tanks, pushes its
  * output buffer and its crude into the item and fluid handlers at its output face, then, with room for the result and
  * a tick of power, puts a tick into the operation the choice module names. A full buffer or product tank stops it;
- * nothing is dropped in the world. {@link HarvesterPower} pays for the work and {@link HarvesterFluids} holds the
- * tanks; this keeps the tick, the choice and what it shows of itself.
+ * nothing is dropped in the world. {@link HarvesterWork} runs the operation, {@link HarvesterPower} pays for it and
+ * {@link HarvesterFluids} holds the tanks; this reads the world for them, does the work and shows what it is doing.
  */
 public final class HarvesterBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -96,10 +95,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     /** Whether the energy capability was last seen exposed, so a reload that re-powers the tier invalidates it. */
     private boolean exposesEnergy;
 
-    private int progress;
-    /** Ticks the operation under way takes on this tier, for the menu's progress bar; not saved, set as it works (#13). */
-    private int operationTicks;
-    private int cursor;
+    /** The operation under way, the round's cursor and why the last tick did no work. */
+    private final HarvesterWork<Result> work = new HarvesterWork<>();
     /**
      * What each of the nine columns shows (ADR 0008), in the cursor's order: 0 for no source, 1 for a source directly
      * under the Harvester, whose bottom block is the drill head, and more for a source that deep, whose drill head
@@ -110,8 +107,6 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
 
     /** The Held recipe's id, resolved on each tick: a block entity loads before the recipes do. */
     private @Nullable Identifier held;
-    /** Why the last tick did no work, or null if it worked; read again every tick, so never saved. */
-    private @Nullable IdleReason idle;
 
     public HarvesterBlockEntity(BlockPos pos, BlockState state) {
         super(Harvesters.BLOCK_ENTITY.get(), pos, state);
@@ -159,49 +154,77 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     /** One tick of choosing and advancing an operation; whether it was paid for and progressed. */
     private boolean operate(ServerLevel level, HarvesterTier tier, List<Column> columns) {
         HarvestRecipes.Loaded recipes = HarvestRecipes.loaded(level);
-        Optional<OperationChoice.Recipe<Result>> heldChoice = Optional.empty();
-        if (held != null) {
-            OperationChoice.Recipe<Result> recipe = recipes.byId().get(held);
-            if (recipe == null) {
-                // A Held recipe a reload removed matches nothing; it never falls back to the Default recipes (#10).
-                idle = IdleReason.NOTHING_MATCHING;
-                return false;
-            }
-            heldChoice = Optional.of(recipe);
-        }
         List<BlockPos> layer = columns.stream().map(Column::pos).toList();
-        Machine<Result> machine = new Machine<>(tier.rank(), fluids.choiceTank(), operation -> work(level, layer, operation) != null,
-                power.canPay(level, tier));
-        Choice<Result> choice = OperationChoice.choose(sources(level, layer), cursor, recipes.choices(), heldChoice, machine);
-        if (!(choice instanceof Operation<Result> operation)) {
-            idle = ((Idle<Result>) choice).reason();
-            return false;
+        boolean worked = work.tick(sources(level, layer), recipes.choices(), recipes.byId(), heldRecipe().map(Identifier::toString),
+                new WorldPort(level, tier, layer));
+        if (worked) {
+            setChanged();
         }
-        Runnable work = work(level, layer, operation);
-        if (work == null) {
-            return false;
+        return worked;
+    }
+
+    /**
+     * The Harvester as {@link HarvesterWork} reads and changes it on one tick. The work that {@link #fits} prepares for
+     * the operation the choice names is the work {@link #perform} does, so it is not built twice.
+     */
+    private final class WorldPort implements HarvesterWork.Port<Result> {
+
+        private final ServerLevel level;
+        private final HarvesterTier tier;
+        private final List<BlockPos> layer;
+        private @Nullable Operation<Result> prepared;
+        private @Nullable Runnable preparedWork;
+
+        WorldPort(ServerLevel level, HarvesterTier tier, List<BlockPos> layer) {
+            this.level = level;
+            this.tier = tier;
+            this.layer = layer;
         }
-        int ticks = tier.ticks(operation.ticks());
-        boolean completes = progress + 1 >= ticks;
-        // The fluid is taken on completion, so it is checked before that tick is paid for: one short keeps its place (#11).
-        if (completes && !fluids.takeDrillingFluid(operation.drillingFluid(), false)) {
-            idle = IdleReason.NO_FLUID;
-            return false;
+
+        @Override
+        public int tierRank() {
+            return tier.rank();
         }
-        if (!power.pay(level, tier, progress, ticks)) {
-            return false;
+
+        @Override
+        public int ticks(int duration) {
+            return tier.ticks(duration);
         }
-        idle = null;
-        progress++;
-        operationTicks = ticks;
-        if (completes) {
-            fluids.takeDrillingFluid(operation.drillingFluid(), true);
-            work.run();
-            progress = 0;
-            cursor = operation.nextCursor();
+
+        @Override
+        public Tank tank() {
+            return fluids.choiceTank();
         }
-        setChanged();
-        return true;
+
+        @Override
+        public boolean fits(Operation<Result> operation) {
+            prepared = operation;
+            preparedWork = work(level, layer, operation);
+            return preparedWork != null;
+        }
+
+        @Override
+        public boolean powered() {
+            return power.canPay(level, tier);
+        }
+
+        @Override
+        public void takeFluid(DrillingFluid need) {
+            fluids.takeDrillingFluid(Optional.of(need), true);
+        }
+
+        @Override
+        public void pay(int progress, int ticks) {
+            power.pay(level, tier, progress, ticks);
+        }
+
+        @Override
+        public void perform(Operation<Result> operation) {
+            Runnable chosen = operation.equals(prepared) ? preparedWork : work(level, layer, operation);
+            if (chosen != null) {
+                chosen.run();
+            }
+        }
     }
 
     /** Sets the origin's LIT only when it changes, so a Harvester at work does not update its state every tick. */
@@ -297,7 +320,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
      */
     public void setHeldRecipe(@Nullable Identifier recipe) {
         held = recipe;
-        progress = 0;
+        work.restart();
         setChanged();
     }
 
@@ -308,7 +331,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
 
     /** Why the Harvester did no work on its last tick, or empty if it worked (#13 shows it). */
     public Optional<IdleReason> idleReason() {
-        return Optional.ofNullable(idle);
+        return work.idle();
     }
 
     /**
@@ -324,7 +347,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         FluidStack crude = fluids.crude();
         return new HarvesterStatus(takesFuel, takesEnergy, takesFuel ? power.burnLeft() : 0, takesFuel ? power.burnTotal() : 0,
                 takesFuel ? tier.power().burnPerOperation() : 0,
-                takesEnergy ? energy : 0, takesEnergy ? tier.feBuffer() : 0, progress, operationTicks, idleReason(),
+                takesEnergy ? energy : 0, takesEnergy ? tier.feBuffer() : 0, work.progress(), work.operationTicks(), idleReason(),
                 drillingFluid.getFluid(), drillingFluid.getAmount(), crude.getFluid(), crude.getAmount(), HarvesterFluids.TANK_CAPACITY);
     }
 
@@ -554,8 +577,8 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         buffer.serialize(output.child(BUFFER_KEY));
         power.save(output);
         fluids.save(output);
-        output.putInt(PROGRESS_KEY, progress);
-        output.putInt(CURSOR_KEY, cursor);
+        output.putInt(PROGRESS_KEY, work.progress());
+        output.putInt(CURSOR_KEY, work.cursor());
         if (held != null) {
             output.store(HELD_KEY, Identifier.CODEC, held);
         }
@@ -581,8 +604,7 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         buffer.deserialize(input.childOrEmpty(BUFFER_KEY));
         power.load(input);
         fluids.load(input);
-        progress = input.getIntOr(PROGRESS_KEY, 0);
-        cursor = input.getIntOr(CURSOR_KEY, 0);
+        work.restore(input.getIntOr(PROGRESS_KEY, 0), input.getIntOr(CURSOR_KEY, 0));
         held = input.read(HELD_KEY, Identifier.CODEC).orElse(null);
         heads = input.read(HEADS_KEY, HEADS_CODEC).filter(saved -> saved.size() == DrillParts.COLUMNS)
                 .map(saved -> saved.stream().mapToInt(Integer::intValue).toArray()).orElseGet(() -> new int[DrillParts.COLUMNS]);

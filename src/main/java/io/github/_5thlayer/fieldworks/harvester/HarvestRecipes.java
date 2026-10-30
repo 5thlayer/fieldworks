@@ -68,8 +68,8 @@ public final class HarvestRecipes {
         return holder != null && holder.value() instanceof HarvestRecipe recipe ? Optional.of(recipe) : Optional.empty();
     }
 
-    /** Every Harvest Recipe on the server, as the choice reads them and by id. */
-    record Loaded(List<OperationChoice.Recipe<HarvestRecipe.Result>> choices, Map<Identifier, OperationChoice.Recipe<HarvestRecipe.Result>> byId) {
+    /** Every Harvest Recipe on the server, as the choice reads them and by id, the id as the choice writes it. */
+    record Loaded(List<OperationChoice.Recipe<HarvestRecipe.Result>> choices, Map<String, OperationChoice.Recipe<HarvestRecipe.Result>> byId) {
     }
 
     private record Cache(RecipeManager manager, Map<Identifier, HarvesterTier> tiers, Loaded loaded) {
@@ -87,7 +87,7 @@ public final class HarvestRecipes {
             return current.loaded;
         }
         List<OperationChoice.Recipe<HarvestRecipe.Result>> choices = new ArrayList<>();
-        Map<Identifier, OperationChoice.Recipe<HarvestRecipe.Result>> byId = new HashMap<>();
+        Map<String, OperationChoice.Recipe<HarvestRecipe.Result>> byId = new HashMap<>();
         for (RecipeHolder<HarvestRecipe> holder : manager.recipeMap().byType(TYPE.get())) {
             Identifier id = holder.id().identifier();
             OperationChoice.Recipe<HarvestRecipe.Result> choice = holder.value().forChoice(id, tier ->
@@ -97,7 +97,7 @@ public final class HarvestRecipes {
                 LOGGER.warn("Harvest Recipe {} names no fluid in #fieldworks:drilling_fluids, so it can never run", id);
             }
             choices.add(choice);
-            byId.put(id, choice);
+            byId.put(choice.id(), choice);
         }
         Loaded loaded = new Loaded(List.copyOf(choices), Map.copyOf(byId));
         cache = new Cache(manager, tiers, loaded);

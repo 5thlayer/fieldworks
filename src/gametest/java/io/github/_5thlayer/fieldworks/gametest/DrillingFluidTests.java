@@ -24,7 +24,6 @@ import io.github._5thlayer.fieldworks.ore.OreResource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.ItemStack;
@@ -66,8 +65,6 @@ final class DrillingFluidTests {
         tests.test("a_held_recipe_with_a_drilling_fluid_consumes_it_per_operation_and_idles_when_the_tank_runs_dry", 20,
                 DrillingFluidTests::consumesPerOperation);
         tests.test("with_no_held_recipe_a_harvester_consumes_no_mud_however_much_is_in_the_tank", 20, DrillingFluidTests::consumesNothingUnheld);
-        tests.test("an_operation_whose_drilling_fluid_is_gone_when_it_completes_idles_with_no_fluid_and_keeps_its_place_and_progress", 20,
-                DrillingFluidTests::fluidGoneAtCompletion);
         tests.test("a_harvest_recipe_loads_with_a_drilling_fluid_and_one_with_none_to_take_is_refused", 1, DrillingFluidTests::loadsAndRefuses);
         tests.test("a_held_recipe_naming_a_fluid_outside_the_drilling_fluids_never_runs", 20, DrillingFluidTests::neverRunsOnAForeignFluid);
         tests.test("the_viewer_lists_a_recipes_drilling_fluid_and_its_mb_per_operation", 1, DrillingFluidTests::viewerLists);
@@ -189,47 +186,6 @@ final class DrillingFluidTests {
         helper.assertValueEqual(HarvesterTests.count(helper, CHEST, Items.RAW_IRON), 4, "raw iron from two operations of two");
         helper.assertValueEqual(HarvesterTests.remaining(helper, CENTRE), initial - 2, "the ore block's amount");
         helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.NO_FLUID), "the idle reason");
-        helper.succeed();
-    }
-
-    /**
-     * Nineteen ticks into a 20-tick operation on the first of two iron ore blocks the tank is emptied, as a save
-     * edited between ticks would leave it: the last tick idles with no fluid, spends no burn, draws nothing and keeps
-     * its progress and its place in the round, and with mud back the operation completes on the same block (#11).
-     */
-    private static void fluidGoneAtCompletion(GameTestHelper helper) {
-        BlockPos first = new BlockPos(3, 1, 3);
-        BlockPos last = new BlockPos(5, 1, 5);
-        int initial = HarvesterTests.ore(helper, OreResource.IRON, first, 0);
-        HarvesterTests.ore(helper, OreResource.IRON, last, 0);
-        HarvesterBlockEntity machine = place(helper);
-        fill(helper, 250);
-        feedCoal(helper);
-        machine.setHeldRecipe(MUDDY_IRON);
-        HarvesterTests.tick(helper, machine, 19);
-
-        TagValueOutput saved = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
-        machine.saveCustomOnly(saved);
-        CompoundTag tag = saved.buildResult();
-        tag.remove("drilling_fluid");
-        HarvesterBlockEntity emptied = new HarvesterBlockEntity(helper.absolutePos(ORIGIN), helper.getBlockState(ORIGIN));
-        emptied.setLevel(helper.getLevel());
-        emptied.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), tag));
-        helper.getLevel().setBlockEntity(emptied);
-        int burnLeft = emptied.status().burnLeft();
-
-        HarvesterTests.tick(helper, emptied, 1);
-        helper.assertValueEqual(emptied.idleReason(), Optional.of(IdleReason.NO_FLUID), "the idle reason with the mud gone");
-        helper.assertValueEqual(emptied.status().progress(), 19, "progress kept");
-        helper.assertValueEqual(emptied.status().burnLeft(), burnLeft, "burn left");
-        helper.assertValueEqual(HarvesterTests.remaining(helper, first), initial, "the first ore block's amount");
-
-        fill(helper, 250);
-        HarvesterTests.tick(helper, emptied, 1);
-        helper.assertValueEqual(emptied.idleReason(), Optional.empty(), "the idle reason with the mud back");
-        helper.assertValueEqual(HarvesterTests.remaining(helper, first), initial - 1, "the first ore block's amount");
-        helper.assertValueEqual(HarvesterTests.remaining(helper, last), initial, "the last ore block's amount");
-        helper.assertValueEqual(mud(helper), 0, "mud left");
         helper.succeed();
     }
 

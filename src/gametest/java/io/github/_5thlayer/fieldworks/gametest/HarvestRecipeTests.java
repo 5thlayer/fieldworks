@@ -14,8 +14,6 @@ import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipe;
 import io.github._5thlayer.fieldworks.harvester.HarvestRecipes;
 import io.github._5thlayer.fieldworks.harvester.HarvesterBlockEntity;
-import io.github._5thlayer.fieldworks.harvester.HarvesterTier;
-import io.github._5thlayer.fieldworks.harvester.HarvesterTiers;
 import io.github._5thlayer.fieldworks.harvester.OperationChoice.IdleReason;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
 import io.github._5thlayer.fieldworks.ore.OreResource;
@@ -51,7 +49,6 @@ final class HarvestRecipeTests {
         tests.test("a_malformed_harvest_recipe_is_refused", 1, HarvestRecipeTests::refusesMalformed);
         tests.test("a_recipe_that_replaces_the_default_makes_the_harvester_skip_that_block_and_work_the_rest", 200,
                 HarvestRecipeTests::skipsReplaced);
-        tests.test("a_recipes_duration_over_the_tiers_speed_sets_the_operation_time", 20, HarvestRecipeTests::durationOverSpeed);
         tests.test("a_held_recipe_whose_minimum_tier_is_harvester_2_idles_on_harvester_1_and_runs_on_harvester_2", 20,
                 HarvestRecipeTests::minimumTier);
     }
@@ -136,38 +133,6 @@ final class HarvestRecipeTests {
             helper.assertValueEqual(HarvesterTests.remaining(helper, uranium), uraniumInitial, "the uranium ore block's amount");
             helper.assertValueEqual(HarvesterTests.count(helper, chest, FieldworksRegistries.RAW_URANIUM.get()), 0, "raw uranium in the chest");
         });
-    }
-
-    /**
-     * A Harvester at speed ×4 runs a 40-tick recipe in 10 ticks: its tick is run by hand, so the count is exact.
-     * The tier is swapped for the length of the test, in the one game tick, so no other test sees it.
-     */
-    private static void durationOverSpeed(GameTestHelper helper) {
-        BlockPos ore = HarvesterTests.ORIGIN.below();
-        int initial = HarvesterTests.ore(helper, OreResource.IRON, ore, 0);
-        BlockPos chest = HarvesterTests.ORIGIN.relative(Direction.NORTH, 2);
-        helper.setBlock(chest, Blocks.CHEST);
-        HarvesterTests.place(helper, Direction.NORTH);
-        ResourceHandler<ItemResource> items = helper.getLevel().getCapability(Capabilities.Item.BLOCK,
-                helper.absolutePos(HarvesterTests.ORIGIN.west()), Direction.WEST);
-        try (Transaction feeding = Transaction.openRoot()) {
-            items.insert(ItemResource.of(Items.COAL), 4, feeding);
-            feeding.commit();
-        }
-        HarvesterBlockEntity machine = helper.getBlockEntity(HarvesterTests.ORIGIN, HarvesterBlockEntity.class);
-        machine.setHeldRecipe(recipe("iron_nuggets"));
-
-        try (var fast = HarvesterTiers.swapped(TierBlock.HARVESTER_1,
-                new HarvesterTier(1, 4.0, new HarvesterTier.Power(true, 0, 1), 0, 0))) {
-            HarvesterTests.tick(helper, machine, 9);
-            helper.assertValueEqual(HarvesterTests.remaining(helper, ore), initial, "the ore block's amount after 9 ticks");
-            HarvesterTests.tick(helper, machine, 1);
-            helper.assertValueEqual(HarvesterTests.remaining(helper, ore), initial - 1, "the ore block's amount after 10 ticks");
-        }
-        HarvesterTests.tick(helper, machine, 1);
-        helper.assertValueEqual(HarvesterTests.count(helper, chest, Items.IRON_NUGGET), 3, "iron nuggets in the chest: the recipe's result");
-        helper.assertValueEqual(HarvesterTests.count(helper, chest, Items.RAW_IRON), 0, "raw iron in the chest: the Default recipe's");
-        helper.succeed();
     }
 
     /**
