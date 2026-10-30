@@ -41,7 +41,10 @@ final class HarvesterWork<R> {
         /** The Drilling Fluid tank, as the choice reads it. */
         Tank tank();
 
-        /** Whether the output has room for what {@code operation} yields. */
+        /**
+         * Whether the output has room for what {@code operation} yields, beside the remainder of a fuel item the tick's
+         * payment would light: paying and performing share the buffer.
+         */
         boolean fits(Operation<R> operation);
 
         /** Whether a tick of work could be paid for now, spending nothing. */

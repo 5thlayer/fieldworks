@@ -199,7 +199,10 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         @Override
         public boolean fits(Operation<Result> operation) {
             prepared = operation;
-            preparedWork = work(level, layer, operation);
+            try (Transaction simulated = Transaction.openRoot()) {
+                power.reserveRemainder(tier, simulated);
+                preparedWork = work(level, layer, operation, simulated);
+            }
             return preparedWork != null;
         }
 
@@ -220,9 +223,16 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
 
         @Override
         public void perform(Operation<Result> operation) {
-            Runnable chosen = operation.equals(prepared) ? preparedWork : work(level, layer, operation);
+            Runnable chosen = operation.equals(prepared) ? preparedWork : prepare(operation);
             if (chosen != null) {
                 chosen.run();
+            }
+        }
+
+        /** The operation's work, checked against the buffer as it stands: a tick paid for has its remainder in already. */
+        private @Nullable Runnable prepare(Operation<Result> operation) {
+            try (Transaction simulated = Transaction.openRoot()) {
+                return work(level, layer, operation, simulated);
             }
         }
     }
@@ -235,14 +245,17 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
         }
     }
 
-    /** The operation's work, or null while there is no room for what it yields. */
-    private @Nullable Runnable work(ServerLevel level, List<BlockPos> layer, Operation<Result> operation) {
+    /**
+     * The operation's work, or null while there is no room for what it yields beside what {@code simulated} has already
+     * put in the buffer.
+     */
+    private @Nullable Runnable work(ServerLevel level, List<BlockPos> layer, Operation<Result> operation, TransactionContext simulated) {
         BlockPos at = layer.get(operation.position());
         Optional<Result> result = operation.recipe().map(OperationChoice.Recipe::result);
         return switch (HarvestSources.kindOf(level.getBlockState(at))) {
             case WELL -> level.getBlockEntity(at) instanceof OilWellBlockEntity well ? pump(well, result) : null;
-            case ORE_BLOCK -> draw(level, at, result);
-            case HARVESTABLE -> breakBlock(level, at, result);
+            case ORE_BLOCK -> draw(level, at, result, simulated);
+            case HARVESTABLE -> breakBlock(level, at, result, simulated);
             case NONE -> null;
         };
     }
@@ -251,11 +264,11 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
      * One draw of the ore block at {@code at}, paying the recipe's result or, with none, the block's own item,
      * or null while the buffer has no room for it.
      */
-    private @Nullable Runnable draw(ServerLevel level, BlockPos at, Optional<Result> recipeResult) {
+    private @Nullable Runnable draw(ServerLevel level, BlockPos at, Optional<Result> recipeResult, TransactionContext simulated) {
         OreBlock ore = (OreBlock) level.getBlockState(at).getBlock();
         ItemStack stack = recipeResult.map(Result::stack).orElseGet(() -> drop(ore));
         ItemResource result = ItemResource.of(stack);
-        if (!fits(result, stack.getCount())) {
+        if (!fits(result, stack.getCount(), simulated)) {
             return null;
         }
         return () -> {
@@ -270,11 +283,11 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
      * going to the buffer; or null while the buffer has no room for all of it. The loot table runs against an
      * unenchanted pick and nothing checks the tool, so a diamond ore breaks for its diamond (#1).
      */
-    private @Nullable Runnable breakBlock(ServerLevel level, BlockPos at, Optional<Result> recipeResult) {
+    private @Nullable Runnable breakBlock(ServerLevel level, BlockPos at, Optional<Result> recipeResult, TransactionContext simulated) {
         BlockState state = level.getBlockState(at);
         List<ItemStack> loot = recipeResult.map(result -> List.of(result.stack()))
                 .orElseGet(() -> Block.getDrops(state, level, at, level.getBlockEntity(at), null, new ItemStack(Items.DIAMOND_PICKAXE)));
-        if (!fitsAll(loot)) {
+        if (!fitsAll(loot, simulated)) {
             return null;
         }
         return () -> {
@@ -519,24 +532,17 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** Whether the buffer has room for every stack at once. */
-    private boolean fitsAll(List<ItemStack> stacks) {
-        try (Transaction simulated = Transaction.openRoot()) {
-            for (ItemStack stack : stacks) {
-                if (!stack.isEmpty() && ResourceHandlerUtil.insertStacking(buffer, ItemResource.of(stack), stack.getCount(), simulated) != stack.getCount()) {
-                    return false;
-                }
+    private boolean fitsAll(List<ItemStack> stacks, TransactionContext simulated) {
+        for (ItemStack stack : stacks) {
+            if (!stack.isEmpty() && ResourceHandlerUtil.insertStacking(buffer, ItemResource.of(stack), stack.getCount(), simulated) != stack.getCount()) {
+                return false;
             }
-            return true;
         }
+        return true;
     }
 
-    private boolean fits(ItemResource result, int amount) {
-        if (result.isEmpty()) {
-            return true;
-        }
-        try (Transaction simulated = Transaction.openRoot()) {
-            return ResourceHandlerUtil.insertStacking(buffer, result, amount, simulated) == amount;
-        }
+    private boolean fits(ItemResource result, int amount, TransactionContext simulated) {
+        return result.isEmpty() || ResourceHandlerUtil.insertStacking(buffer, result, amount, simulated) == amount;
     }
 
     /**

@@ -126,6 +126,18 @@ final class HarvesterPower {
     }
 
     /**
+     * Puts in the output buffer, under {@code simulated}, the remainder that lighting the fuel item would leave there if
+     * the next tick of work lights it, so the room an operation's result needs is checked beside the remainder's.
+     */
+    void reserveRemainder(HarvesterTier tier, TransactionContext simulated) {
+        sizeEnergy(tier);
+        ItemResource item = fuel.getResource(0);
+        if (!item.isEmpty() && tier.power().payment(burnLeft, energy.getAmountAsInt()) == HarvesterTier.Payment.LIGHT) {
+            putRemainder(item, simulated);
+        }
+    }
+
+    /**
      * Lights the fuel item in the fuel slot, when {@code commit}, or says whether it would light. A fuel item's
      * remainder, the bucket of a lava bucket, goes to the output buffer, so a fuel item whose remainder has no room
      * there is not lit.
@@ -138,9 +150,7 @@ final class HarvesterPower {
         }
         try (Transaction lighting = Transaction.openRoot()) {
             fuel.extract(0, item, 1, lighting);
-            ItemStackTemplate remainder = item.toStack(1).getCraftingRemainder();
-            if (remainder != null && ResourceHandlerUtil.insertStacking(remainders,
-                    ItemResource.of(remainder.create()), 1, lighting) != 1) {
+            if (!putRemainder(item, lighting)) {
                 return false;
             }
             if (!commit) {
@@ -151,6 +161,13 @@ final class HarvesterPower {
         burnLeft = burnTime;
         burnTotal = burnLeft;
         return true;
+    }
+
+    /** Puts {@code item}'s remainder, if it leaves one, in the output buffer; whether there was room for it. */
+    private boolean putRemainder(ItemResource item, TransactionContext transaction) {
+        ItemStackTemplate remainder = item.toStack(1).getCraftingRemainder();
+        return remainder == null
+                || ResourceHandlerUtil.insertStacking(remainders, ItemResource.of(remainder.create()), 1, transaction) == 1;
     }
 
     void save(ValueOutput output) {

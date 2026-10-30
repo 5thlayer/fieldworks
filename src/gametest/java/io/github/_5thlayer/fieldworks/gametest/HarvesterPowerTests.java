@@ -5,22 +5,28 @@ package io.github._5thlayer.fieldworks.gametest;
 
 import static io.github._5thlayer.fieldworks.gametest.HarvesterTests.ORIGIN;
 
+import java.util.Optional;
+
 import io.github._5thlayer.fieldworks.Fieldworks;
 import io.github._5thlayer.fieldworks.harvester.HarvesterBlockEntity;
+import io.github._5thlayer.fieldworks.harvester.HarvesterMenu;
 import io.github._5thlayer.fieldworks.harvester.HarvesterTier;
 import io.github._5thlayer.fieldworks.harvester.HarvesterTiers;
+import io.github._5thlayer.fieldworks.harvester.OperationChoice.IdleReason;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
 import io.github._5thlayer.fieldworks.ore.OreResource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HopperBlock;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandlerUtil;
@@ -42,6 +48,8 @@ final class HarvesterPowerTests {
     /** An ore draw's ticks at speed x1. */
     private static final int OPERATION_TICKS = 20;
 
+    private static final int BUFFER_SLOTS = HarvesterMenu.FIRST_PLAYER_SLOT - HarvesterMenu.BUFFER_FIRST;
+
     private HarvesterPowerTests() {
     }
 
@@ -54,6 +62,8 @@ final class HarvesterPowerTests {
                 HarvesterPowerTests::coalBuysEightOperations);
         tests.test("a_burner_harvester_exposes_no_energy_capability", 20, HarvesterPowerTests::burnOnlyHasNoEnergy);
         tests.test("an_electric_harvester_takes_no_fuel_from_a_hopper", 60, HarvesterPowerTests::feOnlyTakesNoFuel);
+        tests.test("a_harvester_lighting_a_lava_bucket_as_it_draws_waits_for_room_for_the_bucket_and_the_draw", 20,
+                HarvesterPowerTests::roomForTheBucketAndTheDraw);
     }
 
     /** 200 ticks of work: ten 20-tick draws at speed x1, twenty at the Electric Harvester's x2. */
@@ -169,6 +179,54 @@ final class HarvesterPowerTests {
                 .thenSucceed();
     }
 
+    /**
+     * A Burner Harvester fast enough that its first tick both lights a lava bucket and completes a draw, over a buffer
+     * with one slot free: the bucket and the raw iron need a slot each, so it waits rather than lose either (ADR 0004).
+     * With a second slot freed, it lights and draws, and both are in the buffer.
+     */
+    private static void roomForTheBucketAndTheDraw(GameTestHelper helper) {
+        HarvesterTier burner = HarvesterTiers.get(TierBlock.HARVESTER_1);
+        helper.assertTrue(burner != null, "the Burner Harvester's tier did not load");
+        HarvesterTier oneTick = new HarvesterTier(burner.rank(), OPERATION_TICKS, burner.power(), burner.feBuffer(), burner.reach());
+        BlockPos ore = ORIGIN.below();
+        int initial = HarvesterTests.ore(helper, OreResource.IRON, ore, 0);
+
+        try (var swap = HarvesterTiers.swapped(TierBlock.HARVESTER_1, oneTick)) {
+            FakePlayer player = HarvesterTests.place(helper, Direction.NORTH, TierBlock.HARVESTER_1);
+            HarvesterBlockEntity machine = machine(helper);
+            HarvesterMenu menu = (HarvesterMenu) machine.createMenu(1, player.getInventory(), player);
+            menu.slots.get(HarvesterMenu.FUEL_SLOT).set(new ItemStack(Items.LAVA_BUCKET));
+            for (int index = 1; index < BUFFER_SLOTS; index++) {
+                menu.slots.get(HarvesterMenu.BUFFER_FIRST + index).set(new ItemStack(Items.COBBLESTONE, 64));
+            }
+
+            HarvesterTests.tick(helper, machine, 1);
+            helper.assertValueEqual(initial - HarvesterTests.remaining(helper, ore), 0, "units drawn with room for one of two");
+            helper.assertValueEqual(machine.idleReason(), Optional.of(IdleReason.OUTPUT_FULL), "the idle reason with room for one of two");
+            helper.assertTrue(menu.slots.get(HarvesterMenu.FUEL_SLOT).getItem().is(Items.LAVA_BUCKET), "the lava bucket was lit");
+            helper.assertTrue(menu.slots.get(HarvesterMenu.BUFFER_FIRST).getItem().isEmpty(), "the free slot was filled");
+
+            menu.slots.get(HarvesterMenu.BUFFER_FIRST + 1).set(ItemStack.EMPTY);
+            HarvesterTests.tick(helper, machine, 1);
+            helper.assertValueEqual(initial - HarvesterTests.remaining(helper, ore), 1, "units drawn with room for both");
+            helper.assertTrue(menu.slots.get(HarvesterMenu.FUEL_SLOT).getItem().isEmpty(), "the lava bucket was not lit");
+            helper.assertValueEqual(buffered(menu, Items.BUCKET), 1, "buckets in the buffer");
+            helper.assertTrue(buffered(menu, Items.RAW_IRON) > 0, "the draw's raw iron is not in the buffer");
+        }
+        helper.succeed();
+    }
+
+    private static int buffered(HarvesterMenu menu, Item item) {
+        int count = 0;
+        for (int index = 0; index < BUFFER_SLOTS; index++) {
+            ItemStack stack = menu.slots.get(HarvesterMenu.BUFFER_FIRST + index).getItem();
+            if (stack.is(item)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
     // -- fixtures -------------------------------------------------------------------------------
 
     private static HarvesterBlockEntity machine(GameTestHelper helper) {
@@ -176,7 +234,7 @@ final class HarvesterPowerTests {
     }
 
     /** Through a block on the footprint's edge, as a hopper or a cable there would. */
-    private static int insert(GameTestHelper helper, net.minecraft.world.item.Item item, int count) {
+    private static int insert(GameTestHelper helper, Item item, int count) {
         ResourceHandler<ItemResource> items = helper.getLevel().getCapability(Capabilities.Item.BLOCK,
                 helper.absolutePos(ORIGIN.west()), Direction.WEST);
         helper.assertTrue(items != null, "the Harvester has no item capability");
