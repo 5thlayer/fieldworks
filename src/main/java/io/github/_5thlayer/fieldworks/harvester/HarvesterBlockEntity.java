@@ -72,6 +72,12 @@ import org.jspecify.annotations.Nullable;
  */
 public final class HarvesterBlockEntity extends BlockEntity implements MenuProvider {
 
+    /** The item face's slots, in the order the face combines them, which the menu's slots keep. */
+    static final int FUEL_SLOT = 0;
+    static final int FILL_SLOT = 1;
+    static final int DRAIN_SLOT = 2;
+    /** The output buffer's first slot; its nine follow. */
+    static final int BUFFER_FIRST = 3;
     static final int BUFFER_SLOTS = 9;
 
     private static final String BUFFER_KEY = "buffer";
@@ -604,10 +610,6 @@ public final class HarvesterBlockEntity extends BlockEntity implements MenuProvi
      * Harvester full once the slot its item goes to is.
      */
     private final class Face extends GuardedResourceHandler<ItemResource> {
-
-        private static final int FUEL_SLOT = 0;
-        private static final int FILL_SLOT = 1;
-        private static final int DRAIN_SLOT = 2;
 
         Face(ResourceHandler<ItemResource> slots) {
             super(slots);

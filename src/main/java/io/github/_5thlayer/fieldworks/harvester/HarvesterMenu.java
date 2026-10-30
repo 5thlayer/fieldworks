@@ -42,11 +42,11 @@ import org.jspecify.annotations.Nullable;
  */
 public final class HarvesterMenu extends AbstractContainerMenu {
 
-    public static final int FUEL_SLOT = 0;
-    public static final int FILL_SLOT = 1;
-    public static final int DRAIN_SLOT = 2;
-    /** The output buffer's first slot; its nine follow. */
-    public static final int BUFFER_FIRST = 3;
+    /** The Harvester's own slot indices: each menu slot stands at the index of the slot it shows. */
+    public static final int FUEL_SLOT = HarvesterBlockEntity.FUEL_SLOT;
+    public static final int FILL_SLOT = HarvesterBlockEntity.FILL_SLOT;
+    public static final int DRAIN_SLOT = HarvesterBlockEntity.DRAIN_SLOT;
+    public static final int BUFFER_FIRST = HarvesterBlockEntity.BUFFER_FIRST;
     public static final int FIRST_PLAYER_SLOT = BUFFER_FIRST + HarvesterBlockEntity.BUFFER_SLOTS;
 
     public static final int FUEL_X = 8;
