@@ -40,9 +40,9 @@ final class GenerationSwitchTests {
                 return;
             }
             ServerLevel level = PatchDiscTests.levelOf(helper, resource);
-            ChunkPos at = PatchDiscTests.firstGenerating(level, structure, PatchDiscTests.far(resource));
+            ChunkPos at = PatchDiscTests.firstGenerating(level, structure, PatchDiscTests.discChunk(resource));
             if (at == null) {
-                helper.fail(resource.key() + " generated nowhere near " + PatchDiscTests.far(resource) + " with every switch on");
+                helper.fail(resource.key() + " generated nowhere near " + PatchDiscTests.discChunk(resource) + " with every switch on");
                 return;
             }
             sites.add(new Site(resource.key(), level, structure, at));

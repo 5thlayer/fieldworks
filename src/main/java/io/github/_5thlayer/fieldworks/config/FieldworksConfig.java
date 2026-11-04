@@ -12,8 +12,8 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * {@code fieldworks-common.toml}: a generation switch per ore resource, one for oil fields (ADR-0002), and
- * one over all of them. A switch off stops new patches or fields from generating; those already in the world stay.
+ * {@code fieldworks-common.toml}: a generation switch per ore resource, one for oil fields, and one over all of
+ * them (ADR-0002). A switch off stops new patches or fields from generating; those already in the world stay.
  */
 public final class FieldworksConfig {
 
@@ -41,19 +41,19 @@ public final class FieldworksConfig {
         container.registerConfig(ModConfig.Type.COMMON, SPEC);
     }
 
-    /** The switch over all the others, so a harness can turn it off and back on. */
+    /** The switch over all the others, to turn off and back on while the game runs. */
     public static ModConfigSpec.BooleanValue generateAllSwitch() {
         return GENERATE_ALL;
     }
 
-    /** The switch itself, so a harness can turn it off and back on. */
+    /** The switch itself, to turn off and back on while the game runs. */
     public static ModConfigSpec.BooleanValue generateSwitch(OreResource resource) {
         return GENERATE.get(resource);
     }
 
-    /** Defaults to on before the config has loaded, which only a harness can observe. */
+    /** Defaults to on before the config has loaded. */
     public static boolean generates(OreResource resource) {
-        return !SPEC.isLoaded() || GENERATE_ALL.get() && GENERATE.get(resource).get();
+        return !SPEC.isLoaded() || (generatesAll() && GENERATE.get(resource).get());
     }
 
     public static ModConfigSpec.BooleanValue generateOilFieldsSwitch() {
@@ -61,6 +61,10 @@ public final class FieldworksConfig {
     }
 
     public static boolean generatesOilFields() {
-        return !SPEC.isLoaded() || GENERATE_ALL.get() && GENERATE_OIL_FIELDS.get();
+        return !SPEC.isLoaded() || (generatesAll() && GENERATE_OIL_FIELDS.get());
+    }
+
+    private static boolean generatesAll() {
+        return GENERATE_ALL.get();
     }
 }
