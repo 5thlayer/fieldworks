@@ -82,21 +82,21 @@ final class PatchDiscTests {
         OreResource[] resources = OreResource.values();
         for (int i = 0; i < resources.length; i++) {
             OreResource resource = resources[i];
-            ChunkPos far = discChunk(resource);
+            ChunkPos chunk = discChunk(resource);
             if (nether(resource)) {
                 tests.test("patches_" + resource.key() + "_disc_lies_on_the_open_nether_floor", 40,
-                        helper -> netherDiscPlaces(helper, resource, far));
+                        helper -> netherDiscPlaces(helper, resource, chunk));
             } else {
-                tests.test("patch_" + resource.key() + "_disc_places", 20, helper -> discPlaces(helper, resource, far));
+                tests.test("patch_" + resource.key() + "_disc_places", 20, helper -> discPlaces(helper, resource, chunk));
             }
             tests.test("patches_" + resource.key() + "_nothing_inside_its_minimum_distance", 40,
                     helper -> nothingInsideTheMinimumDistance(helper, resource));
             tests.test("patch_" + resource.key() + "_nothing_off_the_land", 40,
-                    helper -> nothingOffTheLand(helper, resource, far));
+                    helper -> nothingOffTheLand(helper, resource, chunk));
             tests.test("patch_" + resource.key() + "_switched_off_generates_nothing", 40,
-                    helper -> switchedOff(helper, resource, far));
+                    helper -> switchedOff(helper, resource, chunk));
             tests.test("patches_" + resource.key() + "_generates_only_in_its_own_dimension", 40,
-                    helper -> onlyInItsOwnDimension(helper, resource, far));
+                    helper -> onlyInItsOwnDimension(helper, resource, chunk));
         }
         tests.test("patches_a_nether_ore_block_exhausted_becomes_netherrack_and_an_overworld_one_stone", 1000,
                 PatchDiscTests::exhaustedBlocks);
