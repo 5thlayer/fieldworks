@@ -38,8 +38,9 @@ break until the last, when it becomes stone, or netherrack in the Nether.
 _Avoid_: ore node, tile
 
 **Generation switch**:
-The config entry that stops new patches of one resource from generating, one for each of the twelve. Patches already in the
-world stay.
+A config entry that stops new patches or oil fields from generating: one for each of the twelve resources, one for oil
+fields, and one over all of them, which when off stops every patch and oil field whatever the others say. Patches and oil
+fields already in the world stay.
 _Avoid_: toggle, spawn rate
 
 **Resource**:

@@ -46,7 +46,7 @@ final class OilFieldTests {
     private static final Identifier SET = Identifier.fromNamespaceAndPath(Fieldworks.MOD_ID, "oil_field");
     private static final int HOLE = 150;
     /** About 2,300 blocks out, clear of the patch disc tests' chunks. */
-    private static final ChunkPos FAR = new ChunkPos(144, 20);
+    static final ChunkPos FAR = new ChunkPos(144, 20);
     private static final ChunkPos UNDER_IRON = new ChunkPos(144, 60);
 
     private OilFieldTests() {

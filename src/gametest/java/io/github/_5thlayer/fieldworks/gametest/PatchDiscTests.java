@@ -82,8 +82,7 @@ final class PatchDiscTests {
         OreResource[] resources = OreResource.values();
         for (int i = 0; i < resources.length; i++) {
             OreResource resource = resources[i];
-            // Coal's and diamond's first chunks lie within the clearance of another kind's start (ADR 0009), which would leave no disc.
-            ChunkPos far = new ChunkPos(100 + 8 * i, resource == OreResource.COAL || resource == OreResource.DIAMOND ? 112 : 100);
+            ChunkPos far = far(resource);
             if (nether(resource)) {
                 tests.test("patches_" + resource.key() + "_disc_lies_on_the_open_nether_floor", 40,
                         helper -> netherDiscPlaces(helper, resource, far));
@@ -503,6 +502,25 @@ final class PatchDiscTests {
         helper.succeed();
     }
 
+    /** The chunk near which a resource's disc tests look for its patch, clear of the other resources' chunks. */
+    static ChunkPos far(OreResource resource) {
+        // Coal's and diamond's first chunks lie within the clearance of another kind's start (ADR 0009), which would leave no disc.
+        return new ChunkPos(100 + 8 * resource.ordinal(),
+                resource == OreResource.COAL || resource == OreResource.DIAMOND ? 112 : 100);
+    }
+
+    /** The first chunk from {@code chunk} eastwards that the structure generates at, or {@code null}. */
+    static ChunkPos firstGenerating(ServerLevel level, Holder<Structure> structure, ChunkPos chunk) {
+        // A Nether resource may find no floor at one chunk.
+        for (int i = 0; i <= 80; i++) {
+            ChunkPos at = new ChunkPos(chunk.x() + i, chunk.z());
+            if (generate(level, structure, at).isValid()) {
+                return at;
+            }
+        }
+        return null;
+    }
+
     static boolean nether(OreResource resource) {
         return resource.dimension() == PatchDimension.NETHER;
     }
@@ -714,12 +732,8 @@ final class PatchDiscTests {
             return;
         }
         ServerLevel level = levelOf(helper, resource);
-        // A Nether resource may find no floor at one chunk, so the first chunk it generates at is the one switched.
-        ChunkPos at = chunk;
-        for (int i = 0; i < 80 && !generate(level, structure, at).isValid(); i++) {
-            at = new ChunkPos(chunk.x() + i + 1, chunk.z());
-        }
-        if (!generate(level, structure, at).isValid()) {
+        ChunkPos at = firstGenerating(level, structure, chunk);
+        if (at == null) {
             helper.fail(resource.key() + " generated nowhere near " + chunk + " with its switch on");
             return;
         }

@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- A Generation switch over all the others, `generate.all` in `fieldworks-common.toml`, on by default ([#55](https://github.com/5thlayer/fieldworks/issues/55)). Off, no new patch of any resource and no new oil field generates, whatever their own switches say, including the switches of resources a later version adds: a pack that gets its ores another way sets it once. Patches and oil fields already in a world stay.
+
 ## 0.7.0
 
 - Fieldworks requires Groundworks 0.7.0 or later, below 0.8. With it, a sheet of paper copies, cuts and pastes a box of blocks as a Blueprint, and Next Assembly is now Next Choice, still on `V` (5thlayer/groundworks#76).
