@@ -16,7 +16,7 @@ Conventional commits: `<type>(<optional scope>): <summary>`, with the summary in
 
 ### Running the tests
 
-- `sh ./gradlew build` runs the JUnit tests, on a plain JVM with no Minecraft.
+- `sh ./gradlew build` runs the JUnit tests, on a plain JVM with no Minecraft. `JadePluginServerLoadTest` alone loads the game, in a class loader of its own that stands in for a dedicated server.
 - `sh ./gradlew runGameTestServer` runs the game tests headless, a real player on a real server with only Groundworks beside the Module, and names each one it ran; it fails if it ran none.
 - The `skillworks:gametest-loop` skill runs a subset, `--tests 'fieldworks:<glob>' 1`, one glob a run, so a ticket's new game tests share a name prefix that selects them all.
 - `python3 scripts/build-textures.py --check` checks the committed sprites match the script.

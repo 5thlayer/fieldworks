@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- Jade shows an ore block's remaining amount and its requirement line on a dedicated server too ([#56](https://github.com/5thlayer/fieldworks/issues/56)). Jade failed to load the Module's ore plugin there, logging `Failed to load plugin from Fieldworks`, so the server never sent the amount. Single player was unaffected.
+
 ## 0.7.1
 
 - A Generation switch over all the others, `generate.all` in `fieldworks-common.toml`, on by default ([#55](https://github.com/5thlayer/fieldworks/issues/55)). Off, no new patch of any resource and no new oil field generates, whatever their own switches say, including the switches of resources a later version adds: a pack that gets its ores another way sets it once. Patches and oil fields already in a world stay.

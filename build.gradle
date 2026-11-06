@@ -101,3 +101,10 @@ dependencies {
 
 // The JUnit tests run on a plain JVM, with no Minecraft on their classpath: they test the rules
 // that read no game state, and the game tests test the rest.
+// One test alone loads the game: the Jade plugins, as a dedicated server would (#56), in a loader of its own
+// over the main classes and their compile classpath that refuses the client's packages.
+tasks.named('test') {
+    def serverClasspath = sourceSets.main.output.classesDirs + sourceSets.main.compileClasspath
+    inputs.files(serverClasspath).withPropertyName('serverClasspath').withNormalizer(ClasspathNormalizer)
+    jvmArgumentProviders.add({ ["-Dfieldworks.serverClasspath=${serverClasspath.asPath}".toString()] } as CommandLineArgumentProvider)
+}
