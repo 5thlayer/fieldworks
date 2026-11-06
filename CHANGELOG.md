@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+## 0.7.2
+
 - Jade shows an ore block's remaining amount and its requirement line on a dedicated server too ([#56](https://github.com/5thlayer/fieldworks/issues/56)). Jade failed to load the Module's ore plugin there, logging `Failed to load plugin from Fieldworks`, so the server never sent the amount. Single player was unaffected.
 
 ## 0.7.1
