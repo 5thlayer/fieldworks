@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+## 0.7.3
+
 - A pack sets an ore block's default amount, what a block no patch placed starts with, through the block data map `fieldworks:default_amount` ([#59](https://github.com/5thlayer/fieldworks/issues/59)). Fieldworks ships today's numbers in `data/fieldworks/data_maps/block/default_amount.json`; a block left without an entry starts at 1 and the reload logs it. Blocks already in the world follow a change. `default_amount` leaves the classpath `fieldworks/ore/amounts.json` and `OreCorpus.Resource`.
 - Ore blocks look worn sooner: every ore follows one curve, each stage beginning at half the amount of the one before, so a block reaches its second stage after losing half its amount ([#60](https://github.com/5thlayer/fieldworks/issues/60)). The per-resource `stage_ratios` leave the classpath `fieldworks/ore/amounts.json` for one `stage_ratio`, and `OreCorpus.Resource` drops `stageRatios`.
 
