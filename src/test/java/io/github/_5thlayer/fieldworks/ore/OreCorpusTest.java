@@ -62,12 +62,7 @@ class OreCorpusTest {
     @Test
     void everyOreRendersThroughEightStages() {
         assertEquals(8, OreCorpus.get().stageCount());
-        for (OreCorpus.Resource resource : OreCorpus.get().resources().values()) {
-            assertEquals(1.0, resource.stageRatios().get(0), 1e-9,
-                    resource.name() + "'s first stage is a full block");
-            assertTrue(resource.stageRatios().get(7) < 0.01,
-                    resource.name() + "'s last stage is nearly gone");
-        }
+        assertEquals(0.5, OreCorpus.get().stageRatio(), 1e-9, "each stage begins at half the one before");
     }
 
     @Test

@@ -55,7 +55,7 @@ public final class OreBlock extends Block {
 
     public BlockState stateFor(int remaining, int initial) {
         return defaultBlockState()
-                .setValue(STAGE, OreStage.stage(remaining, initial, resource.corpus().stageRatios()));
+                .setValue(STAGE, OreStage.stage(remaining, initial, OreCorpus.get().stageRatio()));
     }
 
     /** Every removal goes through here, so a delta never outlives its block. A stage change is not a removal. */

@@ -34,14 +34,16 @@ public final class OreCorpus {
     private final DensityLaw density;
     private final Edge edge;
     private final int clearance;
+    private final double stageRatio;
 
     private OreCorpus(Map<String, Resource> resources, DistanceLaw law, DensityLaw density, Edge edge,
-            int clearance) {
+            int clearance, double stageRatio) {
         this.resources = resources;
         this.law = law;
         this.density = density;
         this.edge = edge;
         this.clearance = clearance;
+        this.stageRatio = stageRatio;
     }
 
     public static OreCorpus get() {
@@ -59,11 +61,9 @@ public final class OreCorpus {
             JsonObject entries = root.getAsJsonObject("resources");
             for (String name : entries.keySet()) {
                 JsonObject entry = entries.getAsJsonObject(name);
-                List<Double> ratios = new ArrayList<>();
-                entry.getAsJsonArray("stage_ratios").forEach(value -> ratios.add(value.getAsDouble()));
                 resources.put(name, new Resource(name,
                         PatchDimension.of(entry.get("dimension").getAsString()), entry.get("min_distance").getAsInt(),
-                        List.copyOf(ratios), patch(entry.getAsJsonObject("patch"))));
+                        patch(entry.getAsJsonObject("patch"))));
             }
             JsonObject distance = root.getAsJsonObject("distance_law");
             JsonObject density = root.getAsJsonObject("density_law");
@@ -82,7 +82,8 @@ public final class OreCorpus {
                             density.get("double_density_distance").getAsDouble()),
                     new Edge(edge.get("radius_cap").getAsDouble(), List.copyOf(octaves),
                             edge.get("offset").getAsDouble()),
-                    root.get("clearance").getAsInt());
+                    root.get("clearance").getAsInt(),
+                    root.get("stage_ratio").getAsDouble());
         } catch (IOException broken) {
             throw new IllegalStateException("could not read " + path, broken);
         }
@@ -113,12 +114,14 @@ public final class OreCorpus {
         return resources;
     }
 
-    /** The longest stage ladder, which sizes the blockstate property every ore block shares. */
+    /** Every ore block's stages, sizing the blockstate property they share. */
     public int stageCount() {
-        return resources.values().stream()
-                .mapToInt(resource -> OreStage.count(resource.stageRatios()))
-                .max()
-                .orElse(1);
+        return OreStage.COUNT;
+    }
+
+    /** Each stage begins at this fraction of the one before, the same for every resource (ADR 0014). */
+    public double stageRatio() {
+        return stageRatio;
     }
 
     public DistanceLaw distanceLaw() {
@@ -141,10 +144,9 @@ public final class OreCorpus {
     /**
      * @param dimension the one dimension its Patches lie in (ADR 0007)
      * @param minDistance the distance from origin, in Overworld-equivalent blocks, below which none of its Patches generate
-     * @param stageRatios fractions of a block's own initial amount at which each stage begins, richest first
      */
     public record Resource(String name, PatchDimension dimension, int minDistance,
-            List<Double> stageRatios, Patch patch) {
+            Patch patch) {
     }
 
     /** A resource's autoplace arguments, and the range a spot's size factor is drawn from. */

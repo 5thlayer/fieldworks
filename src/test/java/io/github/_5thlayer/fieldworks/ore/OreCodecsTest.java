@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -50,23 +49,6 @@ class OreCodecsTest {
 
         assertEquals(11, roundTrip(delta).remaining(-4_000_000_007L, 12),
                 "half the world has a negative coordinate");
-    }
-
-    @Test
-    void theStageLadderFallsWithTheAmount() {
-        List<Double> ratios = List.of(1.0, 0.633, 0.367, 0.193, 0.087, 0.027, 0.010, 0.0053);
-
-        assertEquals(0, OreStage.stage(1000, 1000, ratios), "untouched shows the full sprite");
-        assertEquals(1, OreStage.stage(500, 1000, ratios));
-        assertEquals(4, OreStage.stage(50, 1000, ratios));
-        assertEquals(7, OreStage.stage(1, 1000, ratios), "one unit left is the last stage");
-        assertEquals(7, OreStage.stage(0, 1000, ratios), "and so is none");
-    }
-
-    @Test
-    void aStagelessResourceStaysAtOneStage() {
-        assertEquals(0, OreStage.stage(5, 10, List.of()));
-        assertEquals(1, OreStage.count(List.of()));
     }
 
     private static OreDelta roundTrip(OreDelta delta) {
