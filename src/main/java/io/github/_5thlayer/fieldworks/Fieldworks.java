@@ -19,6 +19,7 @@ import io.github._5thlayer.fieldworks.network.HarvesterViewPacket;
 import io.github._5thlayer.fieldworks.network.HoldRecipePacket;
 import io.github._5thlayer.fieldworks.network.PatchMarkersPacket;
 import io.github._5thlayer.fieldworks.oil.Tar;
+import io.github._5thlayer.fieldworks.ore.OreDefaultAmount;
 import io.github._5thlayer.fieldworks.recipe.NoRemainderShapelessRecipe;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.worldgen.FieldworksWorldgen;
@@ -53,6 +54,7 @@ public final class Fieldworks {
         Tar.register(modBus);
         Harvesters.register(modBus);
         FieldworksWorldgen.register(modBus);
+        OreDefaultAmount.register(modBus);
         GalleryPack.register(modBus, MOD_ID);
         modBus.addListener(WorksTabContents::add);
         modBus.addListener(Fieldworks::registerPayloads);

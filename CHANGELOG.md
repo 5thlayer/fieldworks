@@ -4,6 +4,8 @@ Written for Consumers: what a mod building against Fieldworks can use, or will s
 
 ## Unreleased
 
+- A pack sets an ore block's default amount, what a block no patch placed starts with, through the block data map `fieldworks:default_amount` ([#59](https://github.com/5thlayer/fieldworks/issues/59)). Fieldworks ships today's numbers in `data/fieldworks/data_maps/block/default_amount.json`; a block left without an entry starts at 1 and the reload logs it. Blocks already in the world follow a change. `default_amount` leaves the classpath `fieldworks/ore/amounts.json` and `OreCorpus.Resource`.
+
 ## 0.7.2
 
 - Jade shows an ore block's remaining amount and its requirement line on a dedicated server too ([#56](https://github.com/5thlayer/fieldworks/issues/56)). Jade failed to load the Module's ore plugin there, logging `Failed to load plugin from Fieldworks`, so the server never sent the amount. Single player was unaffected.

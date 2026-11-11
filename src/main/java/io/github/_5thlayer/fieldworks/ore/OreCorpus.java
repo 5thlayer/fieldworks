@@ -61,7 +61,7 @@ public final class OreCorpus {
                 JsonObject entry = entries.getAsJsonObject(name);
                 List<Double> ratios = new ArrayList<>();
                 entry.getAsJsonArray("stage_ratios").forEach(value -> ratios.add(value.getAsDouble()));
-                resources.put(name, new Resource(name, entry.get("default_amount").getAsInt(),
+                resources.put(name, new Resource(name,
                         PatchDimension.of(entry.get("dimension").getAsString()), entry.get("min_distance").getAsInt(),
                         List.copyOf(ratios), patch(entry.getAsJsonObject("patch"))));
             }
@@ -139,12 +139,11 @@ public final class OreCorpus {
     }
 
     /**
-     * @param defaultAmount what an ore block no patch placed starts with (ADR-0002)
      * @param dimension the one dimension its Patches lie in (ADR 0007)
      * @param minDistance the distance from origin, in Overworld-equivalent blocks, below which none of its Patches generate
      * @param stageRatios fractions of a block's own initial amount at which each stage begins, richest first
      */
-    public record Resource(String name, int defaultAmount, PatchDimension dimension, int minDistance,
+    public record Resource(String name, PatchDimension dimension, int minDistance,
             List<Double> stageRatios, Patch patch) {
     }
 

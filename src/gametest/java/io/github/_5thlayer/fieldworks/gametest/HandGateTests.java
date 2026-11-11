@@ -15,6 +15,7 @@ import io.github._5thlayer.fieldworks.harvester.HarvestRecipe;
 import io.github._5thlayer.fieldworks.harvester.Requirement;
 import io.github._5thlayer.fieldworks.harvester.TierBlock;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
+import io.github._5thlayer.fieldworks.ore.OreDefaultAmount;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.ore.OreResource;
 import io.github._5thlayer.libworks.testkit.GalleryCheck;
@@ -89,7 +90,7 @@ final class HandGateTests {
         breakWith(level, pos, GameType.SURVIVAL, Items.NETHERITE_PICKAXE);
 
         helper.assertTrue(level.getBlockState(pos).getBlock() instanceof OreBlock, "a hand break removed the diamond block: " + level.getBlockState(pos));
-        helper.assertValueEqual(OreMining.remaining(level, pos, ore), OreResource.DIAMOND.corpus().defaultAmount(), "the block's amount");
+        helper.assertValueEqual(OreMining.remaining(level, pos, ore), OreDefaultAmount.of(ore), "the block's amount");
         helper.assertValueEqual(dropped(level, pos, OreResource.DIAMOND), 0, "diamonds dropped");
         helper.succeed();
     }
@@ -145,20 +146,21 @@ final class HandGateTests {
 
     private static void liftedByAPack(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
-        LiftedGatePack.offer(server, true);
-        CompletableFuture<Void> on = GalleryCheck.select(server, LiftedGatePack.ID, true);
+        String id = OfferedPacks.id(OfferedPacks.LIFTED_DIAMOND_GATE);
+        OfferedPacks.offer(server, OfferedPacks.LIFTED_DIAMOND_GATE, true);
+        CompletableFuture<Void> on = GalleryCheck.select(server, id, true);
         var off = new AtomicReference<CompletableFuture<Void>>();
         helper.startSequence()
-                .thenWaitUntil(() -> helper.assertTrue(on.isDone(), LiftedGatePack.ID + " is not on yet"))
+                .thenWaitUntil(() -> helper.assertTrue(on.isDone(), id + " is not on yet"))
                 .thenExecute(() -> {
                     try {
                         diamondIsHandMinable(helper);
                     } finally {
-                        off.set(GalleryCheck.select(server, LiftedGatePack.ID, false));
+                        off.set(GalleryCheck.select(server, id, false));
                     }
                 })
-                .thenWaitUntil(() -> helper.assertTrue(off.get() != null && off.get().isDone(), LiftedGatePack.ID + " is not off yet"))
-                .thenExecute(() -> LiftedGatePack.offer(server, false))
+                .thenWaitUntil(() -> helper.assertTrue(off.get() != null && off.get().isDone(), id + " is not off yet"))
+                .thenExecute(() -> OfferedPacks.offer(server, OfferedPacks.LIFTED_DIAMOND_GATE, false))
                 .thenSucceed();
     }
 
@@ -171,7 +173,7 @@ final class HandGateTests {
         helper.assertValueEqual(requirement(helper, OreResource.DIAMOND), Optional.<Component>empty(), "diamond's requirement without its recipe");
         breakWith(level, pos, GameType.SURVIVAL, Items.IRON_PICKAXE);
 
-        helper.assertValueEqual(OreMining.remaining(level, pos, ore), OreResource.DIAMOND.corpus().defaultAmount() - 1, "the block's amount");
+        helper.assertValueEqual(OreMining.remaining(level, pos, ore), OreDefaultAmount.of(ore) - 1, "the block's amount");
         helper.assertValueEqual(dropped(level, pos, OreResource.DIAMOND), 1, "diamonds dropped");
     }
 

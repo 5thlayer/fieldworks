@@ -29,7 +29,6 @@
   "clearance": 16,
   "resources": {
     "iron": {
-      "default_amount": 6400,
       "dimension": "overworld",
       "min_distance": 0,
       "stage_ratios": [
@@ -53,7 +52,6 @@
       }
     },
     "copper": {
-      "default_amount": 6400,
       "dimension": "overworld",
       "min_distance": 0,
       "stage_ratios": [
@@ -77,7 +75,6 @@
       }
     },
     "coal": {
-      "default_amount": 8000,
       "dimension": "overworld",
       "min_distance": 0,
       "stage_ratios": [
@@ -101,7 +98,6 @@
       }
     },
     "stone": {
-      "default_amount": 3200,
       "dimension": "overworld",
       "min_distance": 0,
       "stage_ratios": [
@@ -125,7 +121,6 @@
       }
     },
     "sulfur": {
-      "default_amount": 2400,
       "dimension": "overworld",
       "min_distance": 300,
       "stage_ratios": [
@@ -149,7 +144,6 @@
       }
     },
     "uranium": {
-      "default_amount": 1440,
       "dimension": "overworld",
       "min_distance": 600,
       "stage_ratios": [
@@ -173,7 +167,6 @@
       }
     },
     "redstone": {
-      "default_amount": 4800,
       "dimension": "overworld",
       "min_distance": 300,
       "stage_ratios": [
@@ -197,7 +190,6 @@
       }
     },
     "gold": {
-      "default_amount": 3200,
       "dimension": "overworld",
       "min_distance": 500,
       "stage_ratios": [
@@ -221,7 +213,6 @@
       }
     },
     "diamond": {
-      "default_amount": 480,
       "dimension": "overworld",
       "min_distance": 1500,
       "stage_ratios": [
@@ -245,7 +236,6 @@
       }
     },
     "quartz": {
-      "default_amount": 4800,
       "dimension": "nether",
       "min_distance": 0,
       "stage_ratios": [
@@ -269,7 +259,6 @@
       }
     },
     "glowstone": {
-      "default_amount": 2400,
       "dimension": "nether",
       "min_distance": 0,
       "stage_ratios": [
@@ -293,7 +282,6 @@
       }
     },
     "netherite": {
-      "default_amount": 160,
       "dimension": "nether",
       "min_distance": 2000,
       "stage_ratios": [

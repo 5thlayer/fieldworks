@@ -1,0 +1,16 @@
+{
+  "values": {
+    "fieldworks:iron_ore": 6400,
+    "fieldworks:copper_ore": 6400,
+    "fieldworks:coal_ore": 8000,
+    "fieldworks:stone_ore": 3200,
+    "fieldworks:sulfur_ore": 2400,
+    "fieldworks:uranium_ore": 1440,
+    "fieldworks:redstone_ore": 4800,
+    "fieldworks:gold_ore": 3200,
+    "fieldworks:diamond_ore": 480,
+    "fieldworks:quartz_ore": 4800,
+    "fieldworks:glowstone_ore": 2400,
+    "fieldworks:netherite_ore": 160
+  }
+}

@@ -46,20 +46,16 @@ class OreCorpusTest {
         OreCorpus.Resource iron = OreCorpus.get().resource("iron");
         OreCorpus.Resource coal = OreCorpus.get().resource("coal");
 
-        assertEquals(6400, iron.defaultAmount());
         assertEquals(8.0, iron.patch().baseDensity(), 1e-9);
         assertEquals(0.1, iron.patch().rqFactor(), 1e-9);
-        assertEquals(8000, coal.defaultAmount());
         assertEquals(10.0, coal.patch().baseDensity(), 1e-9);
         assertEquals(0.11, coal.patch().rqFactor(), 1e-9);
     }
 
     @Test
-    void theRareResourcesAreFewerAndSmallerThanTheCommonOnes() {
+    void theRareResourcesAreFewerThanTheCommonOnes() {
         OreCorpus corpus = OreCorpus.get();
 
-        assertTrue(corpus.resource("diamond").defaultAmount() < corpus.resource("gold").defaultAmount());
-        assertTrue(corpus.resource("netherite").defaultAmount() < corpus.resource("glowstone").defaultAmount());
         assertTrue(corpus.resource("netherite").patch().baseSpotsPerKm2() < corpus.resource("quartz").patch().baseSpotsPerKm2());
     }
 

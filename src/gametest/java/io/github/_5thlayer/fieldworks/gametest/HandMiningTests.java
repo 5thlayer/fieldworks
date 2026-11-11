@@ -7,6 +7,7 @@ import java.util.List;
 
 import io.github._5thlayer.fieldworks.FieldworksRegistries;
 import io.github._5thlayer.fieldworks.ore.OreBlock;
+import io.github._5thlayer.fieldworks.ore.OreDefaultAmount;
 import io.github._5thlayer.fieldworks.ore.OreMining;
 import io.github._5thlayer.fieldworks.ore.OreResource;
 import io.github._5thlayer.fieldworks.ore.PatchDisc;
@@ -59,7 +60,7 @@ final class HandMiningTests {
         BlockPos pos = helper.absolutePos(new BlockPos(1, 2, 1));
         OreBlock ore = FieldworksRegistries.ore(resource).get();
         level.setBlockAndUpdate(pos, ore.defaultBlockState());
-        int amount = resource.corpus().defaultAmount();
+        int amount = OreDefaultAmount.of(ore);
 
         ServerPlayer player = FakePlayerFactory.getMinecraft(level);
         player.setGameMode(GameType.SURVIVAL);

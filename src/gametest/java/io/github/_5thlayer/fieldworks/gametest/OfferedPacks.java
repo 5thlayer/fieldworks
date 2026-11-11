@@ -4,6 +4,8 @@
 package io.github._5thlayer.fieldworks.gametest;
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.github._5thlayer.fieldworks.Fieldworks;
 import net.minecraft.network.chat.Component;
@@ -20,19 +22,24 @@ import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.resource.JarContentsPackResources;
 
 /**
- * Offers {@code gametest_packs/lifted_diamond_gate/}, when its test asks: a pack that drops
- * {@code fieldworks:diamond_from_ore}. {@link HandGateTests} turns it on for the one test that needs it, which reloads
- * the server's data, so that test runs in a batch of its own.
+ * Offers a pack under {@code gametest_packs/<folder>/} when its test asks. Turning one on reloads the server's data,
+ * so a test that does runs in a batch of its own.
  */
 @EventBusSubscriber(modid = Fieldworks.MOD_ID)
-final class LiftedGatePack {
+final class OfferedPacks {
 
-    static final String FOLDER = "lifted_diamond_gate";
-    static final String ID = Fieldworks.MOD_ID + "_" + FOLDER;
+    /** Drops {@code fieldworks:diamond_from_ore}, for {@link HandGateTests}. */
+    static final String LIFTED_DIAMOND_GATE = "lifted_diamond_gate";
+    /** Sets iron ore's default amount to 3 and leaves netherite ore without one, for {@link DefaultAmountTests}. */
+    static final String ORE_AMOUNT = "ore_amount";
 
-    private static volatile boolean offered;
+    private static final Set<String> offered = ConcurrentHashMap.newKeySet();
 
-    private LiftedGatePack() {
+    private OfferedPacks() {
+    }
+
+    static String id(String folder) {
+        return Fieldworks.MOD_ID + "_" + folder;
     }
 
     @SubscribeEvent
@@ -42,21 +49,26 @@ final class LiftedGatePack {
         }
         var contents = ModList.get().getModFileById(Fieldworks.MOD_ID).getFile().getContents();
         event.addRepositorySource(packs -> {
-            if (offered) {
+            for (String folder : offered) {
+                String id = id(folder);
                 packs.accept(Pack.readMetaAndCreate(
-                        new PackLocationInfo(ID, Component.literal(ID), PackSource.create(PackSource.BUILT_IN::decorate, false), Optional.empty()),
-                        new JarContentsPackResources.JarContentsResourcesSupplier(contents, "gametest_packs/" + FOLDER),
+                        new PackLocationInfo(id, Component.literal(id), PackSource.create(PackSource.BUILT_IN::decorate, false), Optional.empty()),
+                        new JarContentsPackResources.JarContentsResourcesSupplier(contents, "gametest_packs/" + folder),
                         PackType.SERVER_DATA, new PackSelectionConfig(false, Pack.Position.TOP, false)));
             }
         });
     }
 
     /**
-     * Whether the server's pack repository offers the pack. The game test server switches on every pack it is offered
+     * Whether the server's pack repository offers the pack in {@code folder}. The game test server switches on every pack it is offered
      * when it starts, so the pack is offered only from the moment its test asks, and the repository is read again.
      */
-    static void offer(MinecraftServer server, boolean on) {
-        offered = on;
+    static void offer(MinecraftServer server, String folder, boolean on) {
+        if (on) {
+            offered.add(folder);
+        } else {
+            offered.remove(folder);
+        }
         server.getPackRepository().reload();
     }
 }

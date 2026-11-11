@@ -1,0 +1,8 @@
+{
+  "values": {
+    "fieldworks:iron_ore": 3
+  },
+  "remove": [
+    "fieldworks:netherite_ore"
+  ]
+}
