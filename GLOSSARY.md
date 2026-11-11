@@ -37,6 +37,11 @@ One block of a patch. It holds an amount, shows it as one of eight stages, and g
 break until the last, when it becomes stone, or netherrack in the Nether.
 _Avoid_: ore node, tile
 
+**Default amount**:
+What an ore block that no patch placed starts with: one per resource, which a pack may set. A block placed in creative,
+by a command or by another mod starts at it.
+_Avoid_: base amount, fallback amount
+
 **Generation switch**:
 A config entry that stops new patches or oil fields from generating: one for each of the twelve resources, one for oil
 fields, and one over all of them, which when off stops every patch and oil field whatever the others say. Patches and oil
